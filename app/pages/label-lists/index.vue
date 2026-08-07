@@ -1,4 +1,4 @@
-<template>
+д<template>
   <div class="lists-page">
     <div class="page-header">
       <h3 class="page-title">Этикетки</h3>
@@ -31,6 +31,14 @@
             <td class="actions">
               <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteList(list.id)">уд.</a>
+              <a
+                href="#"
+                class="action-link action-download"
+                :class="{ disabled: downloading === list.id }"
+                @click.prevent="downloadPdf(list.id)"
+              >
+                {{ downloading === list.id ? '...' : 'скач.' }}
+              </a>
             </td>
           </tr>
         </tbody>
@@ -72,6 +80,7 @@ const lists = ref<LabelListResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
+const downloading = ref<number | null>(null)
 
 function formatDate(iso: string): string {
   if (!iso) return ''
@@ -104,6 +113,26 @@ async function loadLists(page?: number) {
 
 function goToPage(page: number) {
   router.push({ query: { page } })
+}
+
+async function downloadPdf(id: number) {
+  downloading.value = id
+  try {
+    const blob = await $fetch<Blob>(`/api/label-list/${id}/generate`, { responseType: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `labels-${id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    $notify.add('Документ отправлен на загрузку', { type: 'success' })
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+  } finally {
+    downloading.value = null
+  }
 }
 
 async function deleteList(id: number) {
@@ -211,6 +240,20 @@ watch(() => route.query.page, (newPage) => {
 
 .action-link:hover {
   color: #aaf;
+}
+
+.action-download {
+  color: #6a6;
+}
+
+.action-download:hover {
+  color: #8c8;
+}
+
+.action-download.disabled {
+  opacity: 0.4;
+  cursor: wait;
+  color: #666;
 }
 
 .action-del {

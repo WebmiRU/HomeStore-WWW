@@ -1,6 +1,11 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование списка #{{ id }}</h3>
+    <div class="page-header">
+      <h3 class="page-title">Редактирование списка #{{ id }}</h3>
+      <button class="btn-download" :disabled="downloading" @click="downloadPdf">
+        {{ downloading ? 'Загрузка...' : 'Скачать' }}
+      </button>
+    </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
@@ -113,6 +118,7 @@ const listItems = ref<ItemResponse[]>([])
 const listStores = ref<StoreResponse[]>([])
 const removingItem = ref<number | null>(null)
 const removingStore = ref<number | null>(null)
+const downloading = ref(false)
 
 const form = reactive({
   title: '',
@@ -177,14 +183,61 @@ async function removeStore(storeId: number) {
   }
 }
 
+async function downloadPdf() {
+  downloading.value = true
+  try {
+    const blob = await $fetch<Blob>(`/api/label-list/${id}/generate`, { responseType: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `labels-${id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    $notify.add('Документ отправлен на загрузку', { type: 'success' })
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+  } finally {
+    downloading.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
 <style scoped>
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
 .page-title {
-  margin: 0 0 20px;
+  margin: 0;
   font-size: 18px;
   color: #ccc;
+}
+
+.btn-download {
+  padding: 6px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #2a5a5a;
+  color: #cff;
+  border: 1px solid #3a7a7a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-download:hover:not(:disabled) {
+  background: #3a7a7a;
+}
+
+.btn-download:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .loading,
