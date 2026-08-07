@@ -17,8 +17,15 @@
       </label>
 
       <label class="field">
-        <span class="field-label">parent_id</span>
-        <input v-model.number="form.parent_id" type="number" class="field-input" />
+        <span class="field-label">Родительское хранилище</span>
+        <select v-model.number="form.parent_id" class="field-select">
+          <option :value="null">[НЕТ]</option>
+          <option
+            v-for="opt in parentOptions"
+            :key="opt.id"
+            :value="opt.id"
+          >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+        </select>
       </label>
 
       <div v-if="saveError" class="save-error">{{ saveError }}</div>
@@ -34,6 +41,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api } = useNuxtApp()
 const route = useRoute()
@@ -53,14 +61,65 @@ const form = reactive({
   parent_id: null as number | null,
 })
 
+interface ParentOption {
+  id: number
+  title: string
+  depth: number
+}
+
+const parentOptions = ref<ParentOption[]>([])
+
+interface TreeNode {
+  store: StoreResponse
+  children: TreeNode[]
+}
+
+function buildTree(stores: StoreResponse[]): TreeNode[] {
+  const map = new Map<number, TreeNode>()
+  const roots: TreeNode[] = []
+
+  for (const store of stores) {
+    map.set(store.id, { store, children: [] })
+  }
+
+  for (const store of stores) {
+    const node = map.get(store.id)!
+    if (store.parent_id && map.has(store.parent_id)) {
+      map.get(store.parent_id)!.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+
+  return roots
+}
+
+function flattenTree(nodes: TreeNode[], depth: number = 0): ParentOption[] {
+  const result: ParentOption[] = []
+  for (const node of nodes) {
+    result.push({ id: node.store.id, title: node.store.title, depth })
+    result.push(...flattenTree(node.children, depth + 1))
+  }
+  return result
+}
+
 async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const store = await $api.store.get(Number(id))
+    const [store, stores] = await Promise.all([
+      $api.store.get(Number(id)),
+      $api.store.list(),
+    ])
+
     form.title = store.title
     form.title_print = store.title_print ?? ''
     form.parent_id = store.parent_id
+
+    // Строим дерево для селекта, исключая текущее хранилище
+    const filtered = stores.filter(s => s.id !== store.id)
+    const tree = buildTree(filtered)
+    parentOptions.value = flattenTree(tree)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -138,8 +197,22 @@ onMounted(load)
   box-sizing: border-box;
 }
 
-.field-input:focus {
+.field-input:focus,
+.field-select:focus {
   border-color: #666;
+}
+
+.field-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
 }
 
 .save-error {
