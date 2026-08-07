@@ -1,13 +1,13 @@
 <template>
   <div class="toggler" ref="rootEl">
-    <button class="toggler-btn" @click.stop="toggle" :title="itemId ? 'Добавить предмет в наборы' : 'Добавить хранилище в наборы'">
-      📋<span v-if="inAnyList" class="toggler-dot" title="В наборах этикеток">●</span>
+    <button class="toggler-btn" @click.stop="toggle" :title="itemId ? 'Добавить предмет в этикетки' : 'Добавить хранилище в этикетки'">
+      📋<span v-if="inAnyList" class="toggler-dot" title="В списках этикеток">●</span>
     </button>
 
     <div v-if="open" class="toggler-dropdown" @click.stop>
       <div v-if="loading" class="toggler-loading">Загрузка...</div>
       <template v-else-if="lists.length === 0">
-        <div class="toggler-empty">Нет наборов</div>
+        <div class="toggler-empty">Нет списков</div>
       </template>
       <template v-else>
         <label
@@ -88,7 +88,7 @@ async function loadLists() {
   try {
     lists.value = await $api.labelList.all()
   } catch {
-    $notify.add('Ошибка загрузки наборов', { type: 'error', timer: 5 })
+    $notify.add('Ошибка загрузки списков', { type: 'error', timer: 5 })
   } finally {
     loading.value = false
   }

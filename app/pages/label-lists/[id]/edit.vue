@@ -1,6 +1,6 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование набора #{{ id }}</h3>
+    <h3 class="page-title">Редактирование списка #{{ id }}</h3>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
@@ -29,7 +29,7 @@
       </form>
 
       <section class="content-section">
-        <h4 class="section-title">Предметы в наборе ({{ listItems.length }})</h4>
+        <h4 class="section-title">Предметы в списке ({{ listItems.length }})</h4>
         <div v-if="listItems.length === 0" class="section-empty">Нет предметов</div>
         <table v-else class="content-table">
           <thead>
@@ -61,7 +61,7 @@
       </section>
 
       <section class="content-section">
-        <h4 class="section-title">Хранилища в наборе ({{ listStores.length }})</h4>
+        <h4 class="section-title">Хранилища в списке ({{ listStores.length }})</h4>
         <div v-if="listStores.length === 0" class="section-empty">Нет хранилищ</div>
         <table v-else class="content-table">
           <thead>
@@ -143,7 +143,7 @@ async function save() {
   saving.value = true
   try {
     await $api.labelList.update(Number(id), { title: form.title, label_preset_id: form.label_preset_id })
-    $notify.add('Набор сохранён', { type: 'success' })
+    $notify.add('Список сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {
@@ -156,7 +156,7 @@ async function removeItem(itemId: number) {
   try {
     await $api.labelList.detachItem(Number(id), itemId)
     listItems.value = listItems.value.filter(i => i.payload.id !== itemId)
-    $notify.add('Предмет удалён из набора', { type: 'success' })
+    $notify.add('Предмет удалён из списка', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   } finally {
@@ -169,7 +169,7 @@ async function removeStore(storeId: number) {
   try {
     await $api.labelList.detachStore(Number(id), storeId)
     listStores.value = listStores.value.filter(s => s.id !== storeId)
-    $notify.add('Хранилище удалено из набора', { type: 'success' })
+    $notify.add('Хранилище удалено из списка', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   } finally {

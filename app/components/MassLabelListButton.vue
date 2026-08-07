@@ -11,7 +11,7 @@
     <div v-if="open" class="mass-dropdown" @click.stop>
       <div v-if="loading" class="mass-loading">Загрузка...</div>
       <template v-else-if="lists.length === 0">
-        <div class="mass-empty">Нет наборов</div>
+        <div class="mass-empty">Нет списков</div>
       </template>
       <template v-else>
         <div
@@ -67,7 +67,7 @@ async function loadLists() {
   try {
     lists.value = await $api.labelList.all()
   } catch {
-    $notify.add('Ошибка загрузки наборов', { type: 'error', timer: 5 })
+    $notify.add('Ошибка загрузки списков', { type: 'error', timer: 5 })
   } finally {
     loading.value = false
   }

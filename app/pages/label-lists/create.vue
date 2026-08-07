@@ -1,6 +1,6 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление набора этикеток</h3>
+    <h3 class="page-title">Добавление списка этикеток</h3>
 
     <form @submit.prevent="save" class="create-form">
       <fieldset class="fieldset">
@@ -55,7 +55,7 @@ async function save() {
   saving.value = true
   try {
     const created = await $api.labelList.create({ title: form.title, label_preset_id: form.label_preset_id })
-    $notify.add('Набор создан', { type: 'success' })
+    $notify.add('Список создан', { type: 'success' })
     router.push(`/label-lists/${created.id}/edit`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })

@@ -1,7 +1,7 @@
 <template>
   <div class="lists-page">
     <div class="page-header">
-      <h3 class="page-title">Наборы этикеток</h3>
+      <h3 class="page-title">Этикетки</h3>
       <NuxtLink to="/label-lists/create" class="btn-add">Добавить</NuxtLink>
     </div>
 
@@ -36,7 +36,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет наборов</div>
+      <div v-else class="empty">Нет списков</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -107,10 +107,10 @@ function goToPage(page: number) {
 }
 
 async function deleteList(id: number) {
-  if (!confirm('Удалить набор?')) return
+  if (!confirm('Удалить список?')) return
   try {
     await $api.labelList.delete(id)
-    $notify.add('Набор удалён', { type: 'success' })
+    $notify.add('Список удалён', { type: 'success' })
     await loadLists(meta.value.current_page)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })

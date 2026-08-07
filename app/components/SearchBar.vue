@@ -14,7 +14,7 @@
       <NuxtLink to="/items" class="entity-link">Предметы</NuxtLink>
       <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
       <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
-      <NuxtLink to="/label-lists" class="entity-link">Наборы</NuxtLink>
+      <NuxtLink to="/label-lists" class="entity-link">Этикетки</NuxtLink>
     </nav>
   </div>
 </template>
