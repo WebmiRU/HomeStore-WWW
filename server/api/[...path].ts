@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
   // event.context.params.path содержит остаток пути после /api/
   const path = event.context.params?.path ?? ''
   const query = getQuery(event)
+  const body = event.method !== 'GET' && event.method !== 'HEAD' ? await readBody(event) : undefined
 
   const url = `${apiBaseUrl}/${path}`
 
@@ -12,6 +13,7 @@ export default defineEventHandler(async (event) => {
     const data = await $fetch(url, {
       method: event.method,
       query,
+      body,
     })
     return data
   } catch (err: any) {
