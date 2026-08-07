@@ -2,9 +2,9 @@
   <div class="search-row">
     <input
       ref="searchInputRef"
-      v-model="searchUuid"
+      v-model="searchQuery"
       type="text"
-      placeholder="Введите UUID..."
+      placeholder="Поиск предметов и хранилищ..."
       class="search-input"
       @keydown.enter="doSearch"
     />
@@ -22,17 +22,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const searchUuid = ref('')
+const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const emit = defineEmits<{
-  search: [uuid: string]
+  search: [query: string]
 }>()
 
 function doSearch() {
-  const uuid = searchUuid.value.trim()
-  if (!uuid) return
-  emit('search', uuid)
+  const q = searchQuery.value.trim()
+  if (!q) return
+  emit('search', q)
 }
 </script>
 

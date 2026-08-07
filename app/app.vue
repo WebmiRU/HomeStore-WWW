@@ -14,68 +14,56 @@
 
     <SearchBar @search="doSearch" />
 
-    <div v-if="searchError" class="search-error">{{ searchError }}</div>
-
-    <div v-if="searchResult !== null && !searchError" class="search-result">
-      <!-- Вариант 1: найден предмет -->
-      <div v-if="searchResult.type === 'item' && searchResult.payload" class="result-card">
-        <div class="result-label">Предмет</div>
-        <h2 class="result-title">{{ (searchResult.payload as ItemPayload).title }}</h2>
-        <div class="result-date">
-          Обновлён: {{ formatDate((searchResult.payload as ItemPayload).updated_at) }}
-        </div>
-      </div>
-
-      <!-- Вариант 2: найдено хранилище -->
-      <div v-else-if="searchResult.type === 'store' && searchResult.payload" class="result-card">
-        <div class="result-label">Хранилище</div>
-        <h2 class="result-title">{{ (searchResult.payload as StorePayload).title }}</h2>
-        <div class="result-date">
-          Обновлён: {{ formatDate((searchResult.payload as StorePayload).updated_at) }}
-        </div>
-      </div>
-
-      <!-- Вариант 3: ничего не найдено -->
-      <div v-else class="result-empty">Ничего не найдено</div>
-    </div>
-
     <NuxtPage />
+
+    <footer class="page-footer">
+      <div class="uuid-search">
+        <span class="uuid-label">Поиск по UUID:</span>
+        <input
+          v-model="uuidQuery"
+          type="text"
+          placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+          class="uuid-input"
+          @keydown.enter="doUuidSearch"
+        />
+        <button class="uuid-btn" @click="doUuidSearch">Найти</button>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
-
-const searchResult = ref<CodeSearchResponse | null>(null)
-const searchError = ref<string | null>(null)
 
 const { $api, $notify } = useNuxtApp()
 const { items, remove: removeNotify } = $notify
+const router = useRouter()
 
-function formatDate(iso: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return d.toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+const uuidQuery = ref('')
 
-async function doSearch(uuid: string) {
-  searchError.value = null
-  searchResult.value = null
-
+async function doSearch(q: string) {
   try {
-    searchResult.value = await $api.code.search(uuid)
+    const results = await $api.code.fulltextSearch(q)
+    if (results.length === 0) {
+      $notify.add('Ничего не найдено', { type: 'info', timer: 5 })
+      return
+    }
+    router.push({ path: '/search', query: { q } })
   } catch (err: any) {
-    searchError.value = err?.data?.error || err?.message || String(err)
+    $notify.add(err?.data?.error || err?.message || 'Ошибка поиска', { type: 'error', timer: 10 })
   }
 }
 
+async function doUuidSearch() {
+  const q = uuidQuery.value.trim()
+  if (!q) return
+  try {
+    await $api.code.search(q)
+    router.push({ path: '/search', query: { q } })
+  } catch {
+    $notify.add('Ничего не найдено', { type: 'info', timer: 5 })
+  }
+}
 </script>
 
 <style>
@@ -214,56 +202,62 @@ body {
 .page {
   min-height: 100vh;
   padding: 40px;
+  display: flex;
+  flex-direction: column;
 }
 
-.search-error {
-  margin-bottom: 24px;
-  padding: 12px 16px;
-  background: #3a1a1a;
-  border: 1px solid #622;
-  border-radius: 4px;
-  color: #f88;
-  font-size: 14px;
+.page-footer {
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  justify-content: center;
 }
 
-.search-result {
-  margin-bottom: 24px;
-}
-
-.result-card {
-  padding: 20px;
-  background: #222;
+.uuid-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 6px;
 }
 
-.result-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  color: #888;
-  margin-bottom: 6px;
-  letter-spacing: 1px;
-}
-
-.result-title {
-  margin: 0 0 8px;
-  font-size: 22px;
-  color: #eee;
-}
-
-.result-date {
+.uuid-label {
   font-size: 13px;
-  color: #999;
+  color: #777;
+  white-space: nowrap;
 }
 
-.result-empty {
-  padding: 20px;
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #888;
-  text-align: center;
-  font-size: 15px;
+.uuid-input {
+  width: 300px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: monospace;
+  background: #2a2a2a;
+  color: #bbb;
+  border: 1px solid #444;
+  border-radius: 4px;
+  outline: none;
 }
 
+.uuid-input:focus {
+  border-color: #666;
+  color: #ddd;
+}
+
+.uuid-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  background: #333;
+  color: #aaa;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.uuid-btn:hover {
+  background: #444;
+  color: #ddd;
+}
 </style>
