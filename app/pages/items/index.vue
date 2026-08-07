@@ -1,6 +1,9 @@
 <template>
   <div class="items-page">
-    <h3 class="page-title">Список предметов</h3>
+    <div class="page-header">
+      <h3 class="page-title">Список предметов</h3>
+      <NuxtLink to="/items/create" class="btn-add">Добавить</NuxtLink>
+    </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
@@ -129,10 +132,32 @@ watch(() => route.query.page, (newPage) => {
   /* */
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .page-title {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 18px;
   color: #ccc;
+}
+
+.btn-add {
+  padding: 6px 16px;
+  font-size: 14px;
+  background: #2a5a2a;
+  color: #cfc;
+  border: 1px solid #3a7a3a;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background: #3a7a3a;
 }
 
 .loading,

@@ -2,12 +2,14 @@ import { $fetch } from 'ofetch'
 import type { FetchOptions } from 'ofetch'
 import CodeModule from '~/repository/modules/code'
 import ItemModule from '~/repository/modules/item'
+import LabelListModule from '~/repository/modules/labelList'
 import LabelPresetModule from '~/repository/modules/labelPreset'
 import StoreModule from '~/repository/modules/store'
 
 interface IApiInstance {
   code: CodeModule
   item: ItemModule
+  labelList: LabelListModule
   labelPreset: LabelPresetModule
   store: StoreModule
 }
@@ -60,6 +62,7 @@ export default defineNuxtPlugin(() => {
   const modules: IApiInstance = {
     code: new CodeModule(apiFetcher),
     item: new ItemModule(apiFetcher),
+    labelList: new LabelListModule(apiFetcher),
     labelPreset: new LabelPresetModule(apiFetcher),
     store: new StoreModule(apiFetcher),
   }

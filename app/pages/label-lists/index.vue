@@ -1,8 +1,8 @@
 <template>
-  <div class="presets-page">
+  <div class="lists-page">
     <div class="page-header">
-      <h3 class="page-title">Шаблоны этикеток</h3>
-      <NuxtLink to="/label-presets/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">Наборы этикеток</h3>
+      <NuxtLink to="/label-lists/create" class="btn-add">Добавить</NuxtLink>
     </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -10,35 +10,33 @@
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
-      <table class="presets-table" v-if="presets.length">
+      <table class="lists-table" v-if="lists.length">
         <thead>
           <tr>
             <th>ID</th>
             <th>Название</th>
-            <th>Страница</th>
-            <th>Ячейка</th>
-            <th>Штрих-код</th>
-            <th>Шрифт</th>
+            <th>Шаблон</th>
+            <th>Создан</th>
+            <th>Обновлён</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in presets" :key="p.id">
-            <td>{{ p.id }}</td>
-            <td>{{ p.title }}</td>
-            <td>{{ p.page_width }}×{{ p.page_height }}</td>
-            <td>{{ p.cell_width }}×{{ p.cell_height }}</td>
-            <td>{{ p.barcode_position }}</td>
-            <td>{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
+          <tr v-for="list in lists" :key="list.id">
+            <td>{{ list.id }}</td>
+            <td>{{ list.title }}</td>
+            <td>{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
+            <td>{{ formatDate(list.created_at) }}</td>
+            <td>{{ formatDate(list.updated_at) }}</td>
             <td class="actions">
-              <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link">ред.</NuxtLink>
-              <a href="#" class="action-link action-del" @click.prevent="deletePreset(p.id)">уд.</a>
+              <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link">ред.</NuxtLink>
+              <a href="#" class="action-link action-del" @click.prevent="deleteList(list.id)">уд.</a>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет шаблонов</div>
+      <div v-else class="empty">Нет наборов</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -63,23 +61,35 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
+import type { LabelListResponse } from '~/repository/modules/labelList'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
 
-const presets = ref<LabelPresetResponse[]>([])
+const lists = ref<LabelListResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
-async function loadPresets(page?: number) {
+function formatDate(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+async function loadLists(page?: number) {
   loading.value = true
   error.value = null
   try {
-    const result = await $api.labelPreset.list(page)
-    presets.value = result.data
+    const result = await $api.labelList.list(page)
+    lists.value = result.data
     meta.value = {
       current_page: result.meta.current_page,
       last_page: result.meta.last_page,
@@ -95,12 +105,12 @@ function goToPage(page: number) {
   router.push({ query: { page } })
 }
 
-async function deletePreset(id: number) {
-  if (!confirm('Удалить шаблон?')) return
+async function deleteList(id: number) {
+  if (!confirm('Удалить набор?')) return
   try {
-    await $api.labelPreset.delete(id)
-    $notify.add('Шаблон удалён', { type: 'success' })
-    await loadPresets(meta.value.current_page)
+    await $api.labelList.delete(id)
+    $notify.add('Набор удалён', { type: 'success' })
+    await loadLists(meta.value.current_page)
   } catch (err: any) {
     $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
   }
@@ -108,12 +118,12 @@ async function deletePreset(id: number) {
 
 onMounted(() => {
   const page = Number(route.query.page) || 1
-  loadPresets(page)
+  loadLists(page)
 })
 
 watch(() => route.query.page, (newPage) => {
   const page = Number(newPage) || 1
-  loadPresets(page)
+  loadLists(page)
 })
 </script>
 
@@ -159,31 +169,31 @@ watch(() => route.query.page, (newPage) => {
   border-radius: 4px;
 }
 
-.presets-table {
+.lists-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.presets-table th,
-.presets-table td {
+.lists-table th,
+.lists-table td {
   padding: 8px 12px;
   text-align: left;
   border-bottom: 1px solid #333;
   font-size: 14px;
 }
 
-.presets-table th {
+.lists-table th {
   color: #888;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.presets-table td {
+.lists-table td {
   color: #ccc;
 }
 
-.presets-table tr:hover td {
+.lists-table tr:hover td {
   background: #252525;
 }
 

@@ -1,6 +1,9 @@
 <template>
   <div class="stores-page">
-    <h3 class="page-title">Список хранилищ</h3>
+    <div class="page-header">
+      <h3 class="page-title">Список хранилищ</h3>
+      <NuxtLink to="/stores/create" class="btn-add">Добавить</NuxtLink>
+    </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -124,10 +127,32 @@ onMounted(load)
 </script>
 
 <style scoped>
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .page-title {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 18px;
   color: #ccc;
+}
+
+.btn-add {
+  padding: 6px 16px;
+  font-size: 14px;
+  background: #2a5a2a;
+  color: #cfc;
+  border: 1px solid #3a7a3a;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background: #3a7a3a;
 }
 
 .loading,

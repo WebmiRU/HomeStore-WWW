@@ -1,4 +1,4 @@
-с<template>
+<template>
   <div class="search-row">
     <input
       ref="searchInputRef"
@@ -10,20 +10,11 @@
     />
     <button class="search-btn" @click="doSearch">Поиск</button>
 
-    <nav class="debug-menu">
-      <span class="debug-menu-label">Предметы:</span>
-      <NuxtLink to="/items" class="debug-menu-link">Список</NuxtLink>
-      <NuxtLink to="/items/create" class="debug-menu-link">Добавить</NuxtLink>
-    </nav>
-    <nav class="debug-menu">
-      <span class="debug-menu-label">Хранилища:</span>
-      <NuxtLink to="/stores" class="debug-menu-link">Список</NuxtLink>
-      <NuxtLink to="/stores/create" class="debug-menu-link">Добавить</NuxtLink>
-    </nav>
-    <nav class="debug-menu">
-      <span class="debug-menu-label">Этикетки:</span>
-      <NuxtLink to="/label-presets" class="debug-menu-link">Шаблоны</NuxtLink>
-      <NuxtLink to="/label-presets/create" class="debug-menu-link">Добавить</NuxtLink>
+    <nav class="entity-nav">
+      <NuxtLink to="/items" class="entity-link">Предметы</NuxtLink>
+      <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
+      <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
+      <NuxtLink to="/label-lists" class="entity-link">Наборы</NuxtLink>
     </nav>
   </div>
 </template>
@@ -84,37 +75,31 @@ function doSearch() {
   background: #444;
 }
 
-.debug-menu {
+.entity-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: auto;
-  padding: 4px 12px;
-  background: #1a1a1a;
-  border: 1px dashed #444;
-  border-radius: 4px;
 }
 
-.debug-menu-label {
-  font-size: 13px;
-  color: #666;
-}
-
-.debug-menu-link {
-  font-size: 13px;
+.entity-link {
+  font-size: 14px;
   color: #88a;
   text-decoration: none;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
 }
 
-.debug-menu-link:hover {
+.entity-link:hover {
   background: #2a2a2a;
   color: #aaf;
+  border-color: #444;
 }
 
-.router-link-active.debug-menu-link {
+.router-link-active.entity-link {
   color: #aaf;
   background: #2a2a3a;
+  border-color: #3a3a5a;
 }
 </style>
