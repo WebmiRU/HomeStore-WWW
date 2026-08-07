@@ -145,6 +145,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const router = useRouter()
@@ -182,7 +183,7 @@ async function save() {
     $notify.add('Шаблон создан', { type: 'success' })
     router.push(`/label-presets/${created.id}/edit`)
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка создания', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

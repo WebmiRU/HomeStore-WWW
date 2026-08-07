@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const { items, remove: removeNotify } = $notify
@@ -50,7 +51,7 @@ async function doSearch(q: string) {
     }
     router.push({ path: '/search', query: { q } })
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка поиска', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка поиска'), { type: 'error', timer: 10 })
   }
 }
 

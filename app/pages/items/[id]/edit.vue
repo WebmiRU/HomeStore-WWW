@@ -129,7 +129,7 @@ async function save() {
     })
     $notify.add('Предмет сохранён', { type: 'success' })
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка сохранения', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

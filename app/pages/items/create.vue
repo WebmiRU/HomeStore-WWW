@@ -120,7 +120,7 @@ async function save() {
     $notify.add('Предмет создан', { type: 'success' })
     router.push(`/items/${created.payload.id}/edit`)
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка создания', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

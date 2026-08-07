@@ -21,40 +21,6 @@ export default defineNuxtPlugin(() => {
 
   const fetchOptions: FetchOptions = {
     baseURL: apiBaseUrl,
-    onResponseError({ response }) {
-      if (response.status === 422) {
-        const body = response._data
-        let message = 'Ошибка валидации'
-
-        if (typeof body === 'string') {
-          message = body
-        } else if (body?.errors) {
-          const errorMessages = Object.values(body.errors).flat()
-          message = errorMessages.join('\n')
-        } else if (body?.message) {
-          message = body.message
-        } else if (body?.error) {
-          message = typeof body.error === 'string' ? body.error : JSON.stringify(body.error)
-        } else if (body?.detail) {
-          if (Array.isArray(body.detail)) {
-            message = body.detail
-              .map((err: { loc?: string[]; msg?: string; type?: string }) =>
-                `${err.loc?.slice(1)?.join('.') || 'field'}: ${err.msg || err.type}`
-              )
-              .join('\n')
-          } else {
-            message = body.detail
-          }
-        }
-
-        try {
-          const nuxtApp = useNuxtApp()
-          nuxtApp.$notify.add(message, { type: 'warning', timer: 15 })
-        } catch {
-          console.warn('notify plugin not available yet:', message)
-        }
-      }
-    },
   }
 
   const apiFetcher = $fetch.create(fetchOptions)

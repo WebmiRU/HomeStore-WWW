@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import type { LabelListResponse } from '~/repository/modules/labelList'
+import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
@@ -112,7 +113,7 @@ async function deleteList(id: number) {
     $notify.add('Набор удалён', { type: 'success' })
     await loadLists(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   }
 }
 

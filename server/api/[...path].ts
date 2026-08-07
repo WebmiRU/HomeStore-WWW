@@ -19,9 +19,6 @@ export default defineEventHandler(async (event) => {
   } catch (err: any) {
     const status = err.status || 500
     setResponseStatus(event, status)
-    return {
-      error: err.message || 'Internal Server Error',
-      status,
-    }
+    return err.data ?? { error: err.message || 'Internal Server Error', status }
   }
 })

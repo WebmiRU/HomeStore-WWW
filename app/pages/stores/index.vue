@@ -119,7 +119,7 @@ async function deleteStore(id: number) {
     $notify.add('Хранилище удалено', { type: 'success' })
     await load()
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   }
 }
 

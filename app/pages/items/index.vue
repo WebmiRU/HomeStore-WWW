@@ -112,7 +112,7 @@ async function deleteItem(id: number) {
     $notify.add('Предмет удалён', { type: 'success' })
     await loadItems(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   }
 }
 

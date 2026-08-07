@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
+import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
@@ -72,7 +73,7 @@ async function save() {
     await $api.labelList.update(Number(id), { title: form.title, label_preset_id: form.label_preset_id })
     $notify.add('Набор сохранён', { type: 'success' })
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка сохранения', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

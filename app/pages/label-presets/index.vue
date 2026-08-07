@@ -63,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { formatApiError } from '~/composables/formatApiError'
 import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
 
 const { $api, $notify } = useNuxtApp()
@@ -102,7 +103,7 @@ async function deletePreset(id: number) {
     $notify.add('Шаблон удалён', { type: 'success' })
     await loadPresets(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
   }
 }
 

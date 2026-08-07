@@ -130,6 +130,14 @@ watch(() => route.query.q, () => {
   font-size: 14px;
 }
 
+.results-table th:first-child,
+.results-table td:first-child,
+.results-table th:last-child,
+.results-table td:last-child {
+  width: 1px;
+  white-space: nowrap;
+}
+
 .results-table th {
   color: #888;
   font-weight: 600;
