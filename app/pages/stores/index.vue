@@ -43,7 +43,7 @@
 import { ref, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 
-const { $api } = useNuxtApp()
+const { $api, $notify } = useNuxtApp()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -113,9 +113,10 @@ async function deleteStore(id: number) {
   if (!confirm('Удалить хранилище?')) return
   try {
     await $api.store.delete(id)
+    $notify.add('Хранилище удалено', { type: 'success' })
     await load()
   } catch (err: any) {
-    alert(err?.data?.error || err?.message || 'Ошибка удаления')
+    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
   }
 }
 

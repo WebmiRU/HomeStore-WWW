@@ -17,12 +17,16 @@
       </label>
 
       <label class="field">
-        <span class="field-label">store_id</span>
-        <input v-model.number="form.store_id" type="number" class="field-input" />
+        <span class="field-label">Хранилище</span>
+        <select v-model.number="form.store_id" class="field-select">
+          <option :value="null">[НЕТ]</option>
+          <option
+            v-for="opt in storeOptions"
+            :key="opt.id"
+            :value="opt.id"
+          >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+        </select>
       </label>
-
-      <div v-if="saveError" class="save-error">{{ saveError }}</div>
-      <div v-if="saveOk" class="save-ok">Сохранено</div>
 
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
@@ -34,18 +38,58 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import type { StoreResponse } from '~/repository/modules/store'
 
-const { $api } = useNuxtApp()
+const { $api, $notify } = useNuxtApp()
 const route = useRoute()
-const router = useRouter()
 
 const id = route.params.id as string
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
-const saveError = ref<string | null>(null)
-const saveOk = ref(false)
+
+interface StoreOption {
+  id: number
+  title: string
+  depth: number
+}
+
+const storeOptions = ref<StoreOption[]>([])
+
+interface TreeNode {
+  store: StoreResponse
+  children: TreeNode[]
+}
+
+function buildTree(stores: StoreResponse[]): TreeNode[] {
+  const map = new Map<number, TreeNode>()
+  const roots: TreeNode[] = []
+
+  for (const store of stores) {
+    map.set(store.id, { store, children: [] })
+  }
+
+  for (const store of stores) {
+    const node = map.get(store.id)!
+    if (store.parent_id && map.has(store.parent_id)) {
+      map.get(store.parent_id)!.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+
+  return roots
+}
+
+function flattenTree(nodes: TreeNode[], depth: number = 0): StoreOption[] {
+  const result: StoreOption[] = []
+  for (const node of nodes) {
+    result.push({ id: node.store.id, title: node.store.title, depth })
+    result.push(...flattenTree(node.children, depth + 1))
+  }
+  return result
+}
 
 const form = reactive({
   title: '',
@@ -57,10 +101,17 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const item = await $api.item.get(Number(id))
+    const [item, stores] = await Promise.all([
+      $api.item.get(Number(id)),
+      $api.store.list(),
+    ])
+
     form.title = item.payload.title
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id
+
+    const tree = buildTree(stores)
+    storeOptions.value = flattenTree(tree)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -70,20 +121,15 @@ async function load() {
 
 async function save() {
   saving.value = true
-  saveError.value = null
-  saveOk.value = false
   try {
     await $api.item.update(Number(id), {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
     })
-    saveOk.value = true
-    setTimeout(() => {
-      router.push('/items')
-    }, 800)
+    $notify.add('Предмет сохранён', { type: 'success' })
   } catch (err: any) {
-    saveError.value = err?.data?.error || err?.message || String(err)
+    $notify.add(err?.data?.error || err?.message || 'Ошибка сохранения', { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -137,25 +183,24 @@ onMounted(load)
   outline: none;
   box-sizing: border-box;
 }
-
-.field-input:focus {
+.field-input:focus,
+.field-select:focus {
   border-color: #666;
 }
 
-.save-error {
-  color: #f88;
-  font-size: 13px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #3a1a1a;
+.field-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
   border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
 }
 
-.save-ok {
-  color: #8f8;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
 
 .form-actions {
   display: flex;

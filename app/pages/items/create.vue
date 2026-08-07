@@ -1,6 +1,6 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление хранилища</h3>
+    <h3 class="page-title">Добавление предмета</h3>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
@@ -17,11 +17,11 @@
       </label>
 
       <label class="field">
-        <span class="field-label">Родительское хранилище</span>
-        <select v-model.number="form.parent_id" class="field-select">
+        <span class="field-label">Хранилище</span>
+        <select v-model.number="form.store_id" class="field-select">
           <option :value="null">[НЕТ]</option>
           <option
-            v-for="opt in parentOptions"
+            v-for="opt in storeOptions"
             :key="opt.id"
             :value="opt.id"
           >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
@@ -30,7 +30,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
+        <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
       </div>
     </form>
   </div>
@@ -50,16 +50,16 @@ const saving = ref(false)
 const form = reactive({
   title: '',
   title_print: '',
-  parent_id: null as number | null,
+  store_id: null as number | null,
 })
 
-interface ParentOption {
+interface StoreOption {
   id: number
   title: string
   depth: number
 }
 
-const parentOptions = ref<ParentOption[]>([])
+const storeOptions = ref<StoreOption[]>([])
 
 interface TreeNode {
   store: StoreResponse
@@ -86,8 +86,8 @@ function buildTree(stores: StoreResponse[]): TreeNode[] {
   return roots
 }
 
-function flattenTree(nodes: TreeNode[], depth: number = 0): ParentOption[] {
-  const result: ParentOption[] = []
+function flattenTree(nodes: TreeNode[], depth: number = 0): StoreOption[] {
+  const result: StoreOption[] = []
   for (const node of nodes) {
     result.push({ id: node.store.id, title: node.store.title, depth })
     result.push(...flattenTree(node.children, depth + 1))
@@ -101,7 +101,7 @@ async function load() {
   try {
     const stores = await $api.store.list()
     const tree = buildTree(stores)
-    parentOptions.value = flattenTree(tree)
+    storeOptions.value = flattenTree(tree)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -112,13 +112,13 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const created = await $api.store.create({
+    const created = await $api.item.create({
       title: form.title,
       title_print: form.title_print || null,
-      parent_id: form.parent_id,
+      store_id: form.store_id,
     })
-    $notify.add('Хранилище создано', { type: 'success' })
-    router.push(`/stores/${created.id}/edit`)
+    $notify.add('Предмет создан', { type: 'success' })
+    router.push(`/items/${created.payload.id}/edit`)
   } catch (err: any) {
     $notify.add(err?.data?.error || err?.message || 'Ошибка создания', { type: 'error', timer: 10 })
   } finally {

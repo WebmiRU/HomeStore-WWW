@@ -1,6 +1,7 @@
 import type CodeModule from '../repository/modules/code'
 import type ItemModule from '../repository/modules/item'
 import type StoreModule from '../repository/modules/store'
+import type { NotifyItem } from '../composables/useNotifyPool'
 
 declare module '#app' {
   interface NuxtApp {
@@ -8,6 +9,11 @@ declare module '#app' {
       code: CodeModule
       item: ItemModule
       store: StoreModule
+    }
+    $notify: {
+      items: Ref<NotifyItem[]>
+      add: (message: string, options?: { type?: string; timer?: number }) => number
+      remove: (id: number) => void
     }
   }
 }

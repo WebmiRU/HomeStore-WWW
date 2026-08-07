@@ -28,9 +28,6 @@
         </select>
       </label>
 
-      <div v-if="saveError" class="save-error">{{ saveError }}</div>
-      <div v-if="saveOk" class="save-ok">Сохранено</div>
-
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
@@ -43,7 +40,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 
-const { $api } = useNuxtApp()
+const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
 
@@ -52,8 +49,6 @@ const id = route.params.id as string
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
-const saveError = ref<string | null>(null)
-const saveOk = ref(false)
 
 const form = reactive({
   title: '',
@@ -129,20 +124,15 @@ async function load() {
 
 async function save() {
   saving.value = true
-  saveError.value = null
-  saveOk.value = false
   try {
     await $api.store.update(Number(id), {
       title: form.title,
       title_print: form.title_print || null,
       parent_id: form.parent_id,
     })
-    saveOk.value = true
-    setTimeout(() => {
-      router.push('/stores')
-    }, 800)
+    $notify.add('Хранилище сохранено', { type: 'success' })
   } catch (err: any) {
-    saveError.value = err?.data?.error || err?.message || String(err)
+    $notify.add(err?.data?.error || err?.message || 'Ошибка сохранения', { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

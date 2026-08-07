@@ -43,7 +43,12 @@ export default defineNuxtPlugin(() => {
           }
         }
 
-        console.warn('API validation error:', message)
+        try {
+          const nuxtApp = useNuxtApp()
+          nuxtApp.$notify.add(message, { type: 'warning', timer: 15 })
+        } catch {
+          console.warn('notify plugin not available yet:', message)
+        }
       }
     },
   }

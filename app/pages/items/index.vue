@@ -60,7 +60,7 @@
 import { ref, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
 
-const { $api } = useNuxtApp()
+const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
 
@@ -106,9 +106,10 @@ async function deleteItem(id: number) {
   if (!confirm('Удалить предмет?')) return
   try {
     await $api.item.delete(id)
+    $notify.add('Предмет удалён', { type: 'success' })
     await loadItems(meta.value.current_page)
   } catch (err: any) {
-    alert(err?.data?.error || err?.message || 'Ошибка удаления')
+    $notify.add(err?.data?.error || err?.message || 'Ошибка удаления', { type: 'error', timer: 10 })
   }
 }
 

@@ -1,5 +1,17 @@
 <template>
   <div class="page" ref="pageRef">
+    <div class="notify-pool">
+      <Notify
+        v-for="item in items"
+        :key="item.id"
+        :id="item.id"
+        :message="item.message"
+        :type="item.type"
+        :timer="item.timer"
+        @close="removeNotify"
+      />
+    </div>
+
     <SearchBar @search="doSearch" />
 
     <div v-if="searchError" class="search-error">{{ searchError }}</div>
@@ -50,7 +62,8 @@ const pageRef = ref<HTMLElement | null>(null)
 const searchResult = ref<CodeSearchResponse | null>(null)
 const searchError = ref<string | null>(null)
 
-const { $api } = useNuxtApp()
+const { $api, $notify } = useNuxtApp()
+const { items, remove: removeNotify } = $notify
 
 function formatDate(iso: string): string {
   if (!iso) return ''
@@ -111,6 +124,130 @@ body {
   background: #1a1a1a;
   color: #ccc;
   font-family: 'Ubuntu Condensed', sans-serif;
+}
+
+@keyframes progress {
+  0%   { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+.notify-pool {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+  z-index: 999;
+}
+
+.notification {
+  position: relative;
+  overflow: hidden;
+  min-height: 52px;
+  padding: 15px 48px 15px 18px;
+  border: 1px solid #333;
+  border-left: 4px solid #8b949e;
+  border-radius: 6px;
+  background-color: #1a1a2e;
+  box-shadow: 0 8px 24px rgba(1, 4, 9, 0.45);
+  color: #c9d1d9;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.notification > span {
+  display: block;
+}
+
+.notification > span + span {
+  margin-top: 6px;
+}
+
+.notification--success {
+  border-left-color: #3fb950;
+}
+.notification--success .progress {
+  background-color: #3fb950;
+}
+
+.notification--error,
+.notification--danger {
+  border-left-color: #f85149;
+}
+.notification--error .progress,
+.notification--danger .progress {
+  background-color: #f85149;
+}
+
+.notification--warning {
+  border-left-color: #d29922;
+}
+.notification--warning .progress {
+  background-color: #d29922;
+}
+
+.notification--info {
+  border-left-color: #2f81f7;
+}
+.notification--info .progress {
+  background-color: #2f81f7;
+}
+
+.notification .delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #8b949e;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.notification .delete::before,
+.notification .delete::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 7px;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background-color: currentColor;
+}
+
+.notification .delete::before {
+  transform: rotate(45deg);
+}
+
+.notification .delete::after {
+  transform: rotate(-45deg);
+}
+
+.notification .delete:hover {
+  background-color: #21262d;
+  color: #f0f6fc;
+}
+
+.notification .progress {
+  height: 3px;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform-origin: left;
+  background-color: #8b949e;
+  opacity: 0.8;
+  animation: progress linear;
+  animation-direction: reverse;
+  animation-fill-mode: forwards;
 }
 </style>
 
