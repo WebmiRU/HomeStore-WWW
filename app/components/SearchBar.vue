@@ -1,4 +1,4 @@
-<template>
+с<template>
   <div class="search-row">
     <input
       ref="searchInputRef"
@@ -19,6 +19,11 @@
       <span class="debug-menu-label">Хранилища:</span>
       <NuxtLink to="/stores" class="debug-menu-link">Список</NuxtLink>
       <NuxtLink to="/stores/create" class="debug-menu-link">Добавить</NuxtLink>
+    </nav>
+    <nav class="debug-menu">
+      <span class="debug-menu-label">Этикетки:</span>
+      <NuxtLink to="/label-presets" class="debug-menu-link">Шаблоны</NuxtLink>
+      <NuxtLink to="/label-presets/create" class="debug-menu-link">Добавить</NuxtLink>
     </nav>
   </div>
 </template>
