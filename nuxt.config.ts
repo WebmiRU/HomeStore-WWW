@@ -3,6 +3,14 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  modules: ['@nuxtjs/google-fonts'],
+
+  googleFonts: {
+    families: {
+      'Ubuntu Condensed': true,
+    },
+  },
+
   devServer: {
     host: '0.0.0.0',  // слушать все сетевые интерфейсы (доступ в локальной сети)
     port: 3000,

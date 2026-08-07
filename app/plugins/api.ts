@@ -1,9 +1,11 @@
 import { $fetch } from 'ofetch'
 import type { FetchOptions } from 'ofetch'
 import CodeModule from '~/repository/modules/code'
+import ItemModule from '~/repository/modules/item'
 
 interface IApiInstance {
   code: CodeModule
+  item: ItemModule
 }
 
 export default defineNuxtPlugin(() => {
@@ -48,6 +50,7 @@ export default defineNuxtPlugin(() => {
 
   const modules: IApiInstance = {
     code: new CodeModule(apiFetcher),
+    item: new ItemModule(apiFetcher),
   }
 
   return {

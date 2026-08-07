@@ -12,6 +12,7 @@ export type StorePayload = {
 export type ItemPayload = {
   id: number
   title: string
+  title_print: string | null
   store_id: number | null
   created_at: string
   updated_at: string
@@ -21,7 +22,6 @@ export type CodeSearchResponse = {
   code: string
   type: 'item' | 'store' | null
   payload: ItemPayload | StorePayload | null
-  parents: StorePayload[]
 }
 
 class CodeModule extends FetchFactory<CodeSearchResponse> {

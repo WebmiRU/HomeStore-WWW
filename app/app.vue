@@ -1,16 +1,6 @@
 <template>
   <div class="page" ref="pageRef">
-    <div class="search-row">
-      <input
-        ref="searchInputRef"
-        v-model="searchUuid"
-        type="text"
-        placeholder="Введите UUID..."
-        class="search-input"
-        @keydown.enter="doSearch"
-      />
-      <button class="search-btn" @click="doSearch">Поиск</button>
-    </div>
+    <SearchBar @search="doSearch" />
 
     <div v-if="searchError" class="search-error">{{ searchError }}</div>
 
@@ -22,20 +12,6 @@
         <div class="result-date">
           Обновлён: {{ formatDate((searchResult.payload as ItemPayload).updated_at) }}
         </div>
-
-        <div v-if="searchResult.parents.length" class="breadcrumbs">
-          <span class="breadcrumb-label">Цепочка хранения:</span>
-          <span
-            v-for="(parent, idx) in searchResult.parents"
-            :key="parent.id"
-            class="breadcrumb-item"
-          >
-            <span class="breadcrumb-sep" v-if="idx > 0">›</span>
-            {{ parent.title }}
-          </span>
-          <span class="breadcrumb-sep">›</span>
-          <span class="breadcrumb-item breadcrumb-current">{{ (searchResult.payload as ItemPayload).title }}</span>
-        </div>
       </div>
 
       <!-- Вариант 2: найдено хранилище -->
@@ -45,25 +21,13 @@
         <div class="result-date">
           Обновлён: {{ formatDate((searchResult.payload as StorePayload).updated_at) }}
         </div>
-
-        <div v-if="searchResult.parents.length" class="breadcrumbs">
-          <span class="breadcrumb-label">Цепочка хранения:</span>
-          <span
-            v-for="(parent, idx) in searchResult.parents"
-            :key="parent.id"
-            class="breadcrumb-item"
-          >
-            <span class="breadcrumb-sep" v-if="idx > 0">›</span>
-            {{ parent.title }}
-          </span>
-          <span class="breadcrumb-sep">›</span>
-          <span class="breadcrumb-item breadcrumb-current">{{ (searchResult.payload as StorePayload).title }}</span>
-        </div>
       </div>
 
       <!-- Вариант 3: ничего не найдено -->
       <div v-else class="result-empty">Ничего не найдено</div>
     </div>
+
+    <NuxtPage />
 
     <div class="current-input">{{ currentInput }}</div>
 
@@ -82,9 +46,7 @@ import type { CodeSearchResponse, ItemPayload, StorePayload } from '~/repository
 const currentInput = ref('')
 const savedLines = ref<string[]>([])
 const pageRef = ref<HTMLElement | null>(null)
-const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const searchUuid = ref('')
 const searchResult = ref<CodeSearchResponse | null>(null)
 const searchError = ref<string | null>(null)
 
@@ -103,9 +65,6 @@ function formatDate(iso: string): string {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  // Не перехватываем клавиши, если фокус в поле поиска
-  if (document.activeElement === searchInputRef.value) return
-
   if (e.key === 'Enter') {
     if (currentInput.value.trim()) {
       savedLines.value.push(currentInput.value)
@@ -124,10 +83,7 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-async function doSearch() {
-  const uuid = searchUuid.value.trim()
-  if (!uuid) return
-
+async function doSearch(uuid: string) {
   searchError.value = null
   searchResult.value = null
 
@@ -154,6 +110,7 @@ onUnmounted(() => {
 body {
   background: #1a1a1a;
   color: #ccc;
+  font-family: 'Ubuntu Condensed', sans-serif;
 }
 </style>
 
@@ -162,42 +119,6 @@ body {
   min-height: 100vh;
   padding: 40px;
   outline: none;
-}
-
-.search-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.search-input {
-  flex: 1;
-  max-width: 400px;
-  padding: 8px 12px;
-  font-size: 16px;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: #666;
-}
-
-.search-btn {
-  padding: 8px 20px;
-  font-size: 16px;
-  background: #333;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.search-btn:hover {
-  background: #444;
 }
 
 .search-error {
@@ -238,39 +159,6 @@ body {
 .result-date {
   font-size: 13px;
   color: #999;
-  margin-bottom: 16px;
-}
-
-.breadcrumbs {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #333;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
-
-.breadcrumb-label {
-  font-size: 12px;
-  color: #777;
-  margin-right: 8px;
-}
-
-.breadcrumb-item {
-  font-size: 14px;
-  color: #aaa;
-}
-
-.breadcrumb-sep {
-  color: #555;
-  margin: 0 4px;
-  font-size: 16px;
-}
-
-.breadcrumb-current {
-  color: #4af;
-  font-weight: 600;
 }
 
 .result-empty {
@@ -286,6 +174,7 @@ body {
 .current-input {
   font-size: 24px;
   min-height: 40px;
+  margin-top: 40px;
 }
 
 .saved-block {
