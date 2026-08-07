@@ -42,6 +42,10 @@ const props = defineProps<{
   inAnyList?: boolean
 }>()
 
+const emit = defineEmits<{
+  changed: [{ itemId?: number; storeId?: number; added: boolean }]
+}>()
+
 const { $api, $notify } = useNuxtApp()
 
 const rootEl = ref<HTMLElement | null>(null)
@@ -103,6 +107,7 @@ async function onToggle(list: LabelListResponse) {
         await $api.labelList.attachItem(list.id, props.itemId)
         list.items = [...(list.items ?? []), { type: 'item' as const, code: null, payload: { id: props.itemId, title: '', title_print: null, store_id: null, created_at: '', updated_at: '' }, store: null }]
       }
+      emit('changed', { itemId: props.itemId, added: !checked })
     } else if (props.storeId) {
       if (checked) {
         await $api.labelList.detachStore(list.id, props.storeId)
@@ -111,6 +116,7 @@ async function onToggle(list: LabelListResponse) {
         await $api.labelList.attachStore(list.id, props.storeId)
         list.stores = [...(list.stores ?? []), { id: props.storeId } as any]
       }
+      emit('changed', { storeId: props.storeId, added: !checked })
     }
   } catch {
     $notify.add('Ошибка', { type: 'error', timer: 5 })

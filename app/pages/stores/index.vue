@@ -52,7 +52,7 @@
             <td>{{ formatDate(node.store.created_at) }}</td>
             <td>{{ formatDate(node.store.updated_at) }}</td>
             <td class="actions">
-              <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" />
+              <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
               <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteStore(node.store.id)">уд.</a>
             </td>
@@ -101,6 +101,16 @@ function toggleOne(id: number) {
 
 function clearSelection() {
   selected.value = new Set()
+  loadLabelListInfo()
+}
+
+function onTogglerChanged(e: { itemId?: number; storeId?: number; added: boolean }) {
+  if (e.storeId) {
+    const next = new Set(storesInLists.value)
+    if (e.added) next.add(e.storeId)
+    else next.delete(e.storeId)
+    storesInLists.value = next
+  }
 }
 
 function formatDate(iso: string): string {

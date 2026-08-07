@@ -54,11 +54,13 @@
                 v-if="r.type === 'item'"
                 :item-id="r.payload.id"
                 :in-any-list="itemsInLists.has(r.payload.id)"
+                @changed="onTogglerChanged"
               />
               <LabelListToggler
                 v-else
                 :store-id="r.payload.id"
                 :in-any-list="storesInLists.has(r.payload.id)"
+                @changed="onTogglerChanged"
               />
               <NuxtLink
                 v-if="r.type === 'item'"
@@ -146,6 +148,22 @@ function toggleOne(r: FulltextSearchResult) {
 function clearSelection() {
   selectedItems.value = new Set()
   selectedStores.value = new Set()
+  loadLabelListInfo()
+}
+
+function onTogglerChanged(e: { itemId?: number; storeId?: number; added: boolean }) {
+  if (e.itemId) {
+    const next = new Set(itemsInLists.value)
+    if (e.added) next.add(e.itemId)
+    else next.delete(e.itemId)
+    itemsInLists.value = next
+  }
+  if (e.storeId) {
+    const next = new Set(storesInLists.value)
+    if (e.added) next.add(e.storeId)
+    else next.delete(e.storeId)
+    storesInLists.value = next
+  }
 }
 
 async function search() {
