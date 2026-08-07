@@ -18,26 +18,26 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in results" :key="`${r.type}-${r.id}`">
+          <tr v-for="r in results" :key="`${r.type}-${r.payload.id}`">
             <td>
               <span v-if="r.type === 'item'" class="type-badge type-item">Предмет</span>
               <span v-else class="type-badge type-store">Хранилище</span>
             </td>
             <td>
-              <div class="result-title">{{ r.title }}</div>
-              <div v-if="r.title_print" class="result-sub">{{ r.title_print }}</div>
+              <div class="result-title">{{ r.payload.title }}</div>
+              <div v-if="r.payload.title_print" class="result-sub">{{ r.payload.title_print }}</div>
             </td>
             <td class="actions">
               <NuxtLink
                 v-if="r.type === 'item'"
-                :to="`/items/${r.id}/edit`"
+                :to="`/items/${r.payload.id}/edit`"
                 class="action-link"
               >
                 ред.
               </NuxtLink>
               <NuxtLink
                 v-else
-                :to="`/stores/${r.id}/edit`"
+                :to="`/stores/${r.payload.id}/edit`"
                 class="action-link"
               >
                 ред.

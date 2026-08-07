@@ -26,11 +26,17 @@ export type CodeSearchResponse = {
 
 export type FulltextSearchResult = {
   type: 'item' | 'store'
-  id: number
-  title: string
-  title_print: string | null
   rank: number
   sim: number
+  payload: {
+    id: number
+    title: string
+    title_print: string | null
+    store_id?: number | null
+    parent_id?: number | null
+    created_at: string
+    updated_at: string
+  }
 }
 
 class CodeModule extends FetchFactory<CodeSearchResponse> {
