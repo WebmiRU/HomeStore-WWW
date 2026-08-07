@@ -15,6 +15,11 @@
       <NuxtLink to="/items" class="debug-menu-link">Список</NuxtLink>
       <NuxtLink to="/items/create" class="debug-menu-link">Добавить</NuxtLink>
     </nav>
+    <nav class="debug-menu">
+      <span class="debug-menu-label">Хранилища:</span>
+      <NuxtLink to="/stores" class="debug-menu-link">Список</NuxtLink>
+      <NuxtLink to="/stores/create" class="debug-menu-link">Добавить</NuxtLink>
+    </nav>
   </div>
 </template>
 
