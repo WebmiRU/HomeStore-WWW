@@ -1,7 +1,7 @@
 <template>
   <div class="toggler" ref="rootEl">
     <button class="toggler-btn" @click.stop="toggle" :title="itemId ? 'Добавить предмет в наборы' : 'Добавить хранилище в наборы'">
-      📋
+      📋<span v-if="inAnyList" class="toggler-dot" title="В наборах этикеток">●</span>
     </button>
 
     <div v-if="open" class="toggler-dropdown" @click.stop>
@@ -39,6 +39,7 @@ const { uid, activeUid } = useLabelListTogglerState()
 const props = defineProps<{
   itemId?: number
   storeId?: number
+  inAnyList?: boolean
 }>()
 
 const { $api, $notify } = useNuxtApp()
@@ -157,6 +158,13 @@ onBeforeUnmount(() => {
   background: #2a2a2a;
   border-color: #444;
   color: #ccc;
+}
+
+.toggler-dot {
+  color: #3a7a3a;
+  font-size: 8px;
+  vertical-align: super;
+  margin-left: 1px;
 }
 
 .toggler-dropdown {

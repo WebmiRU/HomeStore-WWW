@@ -2,7 +2,14 @@
   <div class="stores-page">
     <div class="page-header">
       <h3 class="page-title">Список хранилищ</h3>
-      <NuxtLink to="/stores/create" class="btn-add">Добавить</NuxtLink>
+      <div class="page-header-actions">
+        <MassLabelListButton
+          :item-ids="[]"
+          :store-ids="selectedIds"
+          @done="clearSelection"
+        />
+        <NuxtLink to="/stores/create" class="btn-add">Добавить</NuxtLink>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -12,6 +19,14 @@
       <table class="stores-table" v-if="flatList.length">
         <thead>
           <tr>
+            <th class="cb-col">
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                :indeterminate.prop="someSelected && !allSelected"
+                @change="toggleAll"
+              />
+            </th>
             <th>ID</th>
             <th>Название</th>
             <th>Создан</th>
@@ -21,6 +36,13 @@
         </thead>
         <tbody>
           <tr v-for="node in flatList" :key="node.store.id">
+            <td class="cb-col">
+              <input
+                type="checkbox"
+                :checked="selected.has(node.store.id)"
+                @change="toggleOne(node.store.id)"
+              />
+            </td>
             <td>{{ node.store.id }}</td>
             <td>
               <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
@@ -30,7 +52,7 @@
             <td>{{ formatDate(node.store.created_at) }}</td>
             <td>{{ formatDate(node.store.updated_at) }}</td>
             <td class="actions">
-              <LabelListToggler :store-id="node.store.id" />
+              <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" />
               <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteStore(node.store.id)">уд.</a>
             </td>
@@ -44,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
@@ -52,6 +74,34 @@ const { $api, $notify } = useNuxtApp()
 const loading = ref(true)
 const error = ref<string | null>(null)
 const flatList = ref<{ store: StoreResponse; depth: number }[]>([])
+const selected = ref<Set<number>>(new Set())
+const storesInLists = ref<Set<number>>(new Set())
+
+const selectedIds = computed(() => [...selected.value])
+const someSelected = computed(() => selected.value.size > 0)
+const allSelected = computed(() => flatList.value.length > 0 && flatList.value.every(n => selected.value.has(n.store.id)))
+
+function toggleAll() {
+  if (allSelected.value) {
+    selected.value = new Set()
+  } else {
+    selected.value = new Set(flatList.value.map(n => n.store.id))
+  }
+}
+
+function toggleOne(id: number) {
+  const next = new Set(selected.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  selected.value = next
+}
+
+function clearSelection() {
+  selected.value = new Set()
+}
 
 function formatDate(iso: string): string {
   if (!iso) return ''
@@ -106,10 +156,27 @@ async function load() {
     const stores = await $api.store.list()
     const tree = buildTree(stores)
     flatList.value = flattenTree(tree)
+    selected.value = new Set()
+    await loadLabelListInfo()
   } catch (err: any) {
     error.value = err?.data?.error || err?.message || String(err)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadLabelListInfo() {
+  try {
+    const lists = await $api.labelList.all()
+    const ids = new Set<number>()
+    for (const list of lists) {
+      for (const store of list.stores ?? []) {
+        ids.add(store.id)
+      }
+    }
+    storesInLists.value = ids
+  } catch {
+    // silently ignore
   }
 }
 
@@ -139,6 +206,12 @@ onMounted(load)
   margin: 0;
   font-size: 18px;
   color: #ccc;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-add {
@@ -195,6 +268,17 @@ onMounted(load)
 
 .stores-table tr:hover td {
   background: #252525;
+}
+
+.cb-col {
+  width: 1px;
+  white-space: nowrap;
+  padding-right: 0;
+}
+
+.cb-col input[type="checkbox"] {
+  accent-color: #3a7a3a;
+  cursor: pointer;
 }
 
 .tree-prefix {

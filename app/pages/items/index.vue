@@ -2,7 +2,14 @@
   <div class="items-page">
     <div class="page-header">
       <h3 class="page-title">Список предметов</h3>
-      <NuxtLink to="/items/create" class="btn-add">Добавить</NuxtLink>
+      <div class="page-header-actions">
+        <MassLabelListButton
+          :item-ids="selectedIds"
+          :store-ids="[]"
+          @done="clearSelection"
+        />
+        <NuxtLink to="/items/create" class="btn-add">Добавить</NuxtLink>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -13,6 +20,14 @@
       <table class="items-table" v-if="items.length">
         <thead>
           <tr>
+            <th class="cb-col">
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                :indeterminate.prop="someSelected && !allSelected"
+                @change="toggleAll"
+              />
+            </th>
             <th>ID</th>
             <th>Название</th>
             <th>Хранилище</th>
@@ -23,13 +38,20 @@
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.payload.id">
+            <td class="cb-col">
+              <input
+                type="checkbox"
+                :checked="selected.has(item.payload.id)"
+                @change="toggleOne(item.payload.id)"
+              />
+            </td>
             <td>{{ item.payload.id }}</td>
             <td>{{ item.payload.title }}</td>
             <td>{{ item.store?.[0]?.title ?? '—' }}</td>
             <td>{{ formatDate(item.payload.created_at) }}</td>
             <td>{{ formatDate(item.payload.updated_at) }}</td>
             <td class="actions">
-              <LabelListToggler :item-id="item.payload.id" />
+              <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" />
               <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteItem(item.payload.id)">уд.</a>
             </td>
@@ -61,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
 
 const { $api, $notify } = useNuxtApp()
@@ -72,6 +94,34 @@ const items = ref<ItemResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
+const selected = ref<Set<number>>(new Set())
+const itemsInLists = ref<Set<number>>(new Set())
+
+const selectedIds = computed(() => [...selected.value])
+const someSelected = computed(() => selected.value.size > 0)
+const allSelected = computed(() => items.value.length > 0 && items.value.every(i => selected.value.has(i.payload.id)))
+
+function toggleAll() {
+  if (allSelected.value) {
+    selected.value = new Set()
+  } else {
+    selected.value = new Set(items.value.map(i => i.payload.id))
+  }
+}
+
+function toggleOne(id: number) {
+  const next = new Set(selected.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  selected.value = next
+}
+
+function clearSelection() {
+  selected.value = new Set()
+}
 
 function formatDate(iso: string): string {
   if (!iso) return ''
@@ -95,10 +145,27 @@ async function loadItems(page?: number) {
       current_page: result.meta.current_page,
       last_page: result.meta.last_page,
     }
+    selected.value = new Set()
+    await loadLabelListInfo()
   } catch (err: any) {
     error.value = err?.data?.error || err?.message || String(err)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadLabelListInfo() {
+  try {
+    const lists = await $api.labelList.all()
+    const ids = new Set<number>()
+    for (const list of lists) {
+      for (const item of list.items ?? []) {
+        ids.add(item.payload.id)
+      }
+    }
+    itemsInLists.value = ids
+  } catch {
+    // silently ignore — indicator is optional
   }
 }
 
@@ -144,6 +211,12 @@ watch(() => route.query.page, (newPage) => {
   margin: 0;
   font-size: 18px;
   color: #ccc;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-add {
@@ -200,6 +273,17 @@ watch(() => route.query.page, (newPage) => {
 
 .items-table tr:hover td {
   background: #252525;
+}
+
+.cb-col {
+  width: 1px;
+  white-space: nowrap;
+  padding-right: 0;
+}
+
+.cb-col input[type="checkbox"] {
+  accent-color: #3a7a3a;
+  cursor: pointer;
 }
 
 .actions {
