@@ -29,6 +29,7 @@
             <td>{{ formatDate(item.payload.created_at) }}</td>
             <td>{{ formatDate(item.payload.updated_at) }}</td>
             <td class="actions">
+              <LabelListToggler :item-id="item.payload.id" />
               <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteItem(item.payload.id)">уд.</a>
             </td>

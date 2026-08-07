@@ -73,6 +73,28 @@ class LabelListModule extends FetchFactory<any> {
   async delete(id: number): Promise<void> {
     await this.call('DELETE', `${this.baseUrl}/${id}`)
   }
+
+  async all(): Promise<LabelListResponse[]> {
+    const result = await this.call('GET', `${this.baseUrl}/all`)
+    const data = (result as any)?.data ?? result
+    return (Array.isArray(data) ? data : []) as LabelListResponse[]
+  }
+
+  async attachItem(labelListId: number, itemId: number): Promise<void> {
+    await this.call('POST', `${this.baseUrl}/${labelListId}/item/${itemId}`)
+  }
+
+  async detachItem(labelListId: number, itemId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/${labelListId}/item/${itemId}`)
+  }
+
+  async attachStore(labelListId: number, storeId: number): Promise<void> {
+    await this.call('POST', `${this.baseUrl}/${labelListId}/store/${storeId}`)
+  }
+
+  async detachStore(labelListId: number, storeId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/${labelListId}/store/${storeId}`)
+  }
 }
 
 export default LabelListModule

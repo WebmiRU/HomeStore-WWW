@@ -28,6 +28,14 @@
               <div v-if="r.payload.title_print" class="result-sub">{{ r.payload.title_print }}</div>
             </td>
             <td class="actions">
+              <LabelListToggler
+                v-if="r.type === 'item'"
+                :item-id="r.payload.id"
+              />
+              <LabelListToggler
+                v-else
+                :store-id="r.payload.id"
+              />
               <NuxtLink
                 v-if="r.type === 'item'"
                 :to="`/items/${r.payload.id}/edit`"
