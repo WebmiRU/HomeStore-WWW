@@ -1,5 +1,5 @@
 <template>
-  <div class="page" ref="pageRef">
+  <div class="page">
     <div class="notify-pool">
       <Notify
         v-for="item in items"
@@ -214,7 +214,6 @@ body {
 .page {
   min-height: 100vh;
   padding: 40px;
-  outline: none;
 }
 
 .search-error {
