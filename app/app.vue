@@ -40,24 +40,12 @@
     </div>
 
     <NuxtPage />
-
-    <div class="current-input">{{ currentInput }}</div>
-
-    <div v-if="savedLines.length" class="saved-block">
-      <div v-for="(line, idx) in savedLines" :key="idx" class="saved-line">
-        {{ line }}
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref } from 'vue'
 import type { CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
-
-const currentInput = ref('')
-const savedLines = ref<string[]>([])
-const pageRef = ref<HTMLElement | null>(null)
 
 const searchResult = ref<CodeSearchResponse | null>(null)
 const searchError = ref<string | null>(null)
@@ -77,25 +65,6 @@ function formatDate(iso: string): string {
   })
 }
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') {
-    if (currentInput.value.trim()) {
-      savedLines.value.push(currentInput.value)
-      currentInput.value = ''
-    }
-    return
-  }
-
-  if (e.key === 'Backspace') {
-    currentInput.value = currentInput.value.slice(0, -1)
-    return
-  }
-
-  if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-    currentInput.value += e.key
-  }
-}
-
 async function doSearch(uuid: string) {
   searchError.value = null
   searchResult.value = null
@@ -107,16 +76,6 @@ async function doSearch(uuid: string) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-  nextTick(() => {
-    pageRef.value?.focus()
-  })
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-})
 </script>
 
 <style>
@@ -308,18 +267,4 @@ body {
   font-size: 15px;
 }
 
-.current-input {
-  font-size: 24px;
-  min-height: 40px;
-  margin-top: 40px;
-}
-
-.saved-block {
-  margin-top: 40px;
-}
-
-.saved-line {
-  font-size: 16px;
-  padding: 4px 0;
-}
 </style>
