@@ -77,6 +77,9 @@
       <div v-if="foundTitlePrint" class="found-card__print">
         {{ foundTitlePrint }}
       </div>
+      <div v-if="foundQuantity !== null" class="found-card__quantity">
+        Количество: {{ foundQuantity }}
+      </div>
       <div class="found-card__code">Код: {{ found.code }}</div>
       <div class="found-card__meta">Создано: {{ formatDate(found.payload.created_at) }}</div>
     </div>
@@ -125,6 +128,12 @@ const editLink = computed(() => {
 const foundTitlePrint = computed(() =>
   found.value?.type === 'item' ? (found.value.payload as ItemPayload).title_print : '',
 )
+
+const foundQuantity = computed<string | null>(() => {
+  if (found.value?.type !== 'item') return null
+  const quantity = (found.value.payload as ItemPayload).quantity
+  return quantity != null ? String(quantity) : '—'
+})
 
 let buffer = ''
 let scanTimer: ReturnType<typeof setTimeout> | null = null
@@ -356,6 +365,12 @@ onBeforeUnmount(() => {
   margin-top: 6px;
   font-size: 14px;
   color: #999;
+}
+
+.found-card__quantity {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #bbb;
 }
 
 .found-card__code {

@@ -42,6 +42,17 @@
         </div>
       </label>
 
+      <label class="field">
+        <span class="field-label">Количество</span>
+        <input
+          v-model="quantityInput"
+          type="number"
+          class="field-input"
+          step="1"
+          placeholder="без количества"
+        />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
@@ -52,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import type { ItemPayload } from '~/repository/modules/code'
 import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
@@ -63,6 +75,7 @@ const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
 const originalCode = ref('')
+const quantityInput = ref('')
 
 interface StoreOption {
   id: number
@@ -133,6 +146,7 @@ async function load() {
     form.store_id = item.payload.store_id
     form.code = item.code ?? ''
     originalCode.value = item.code ?? ''
+    quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
 
     const tree = buildTree(stores)
     storeOptions.value = flattenTree(tree)
@@ -146,12 +160,17 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    await $api.item.update(Number(id), {
+    const payload: Partial<ItemPayload> & { code?: string | null } = {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
       code: form.code.trim() || null,
-    })
+    }
+    const qty = String(quantityInput.value).trim()
+    if (qty !== '') {
+      payload.quantity = Number(qty)
+    }
+    await $api.item.update(Number(id), payload)
     $notify.add('Предмет сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })

@@ -14,6 +14,7 @@ export type ItemPayload = {
   title: string
   title_print: string | null
   store_id: number | null
+  quantity: number | null
   created_at: string
   updated_at: string
 }

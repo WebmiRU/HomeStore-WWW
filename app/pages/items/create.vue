@@ -33,6 +33,17 @@
         <input v-model="form.code" type="text" class="field-input" maxlength="256" />
       </label>
 
+      <label class="field">
+        <span class="field-label">Количество</span>
+        <input
+          v-model="quantityInput"
+          type="number"
+          class="field-input"
+          step="1"
+          placeholder="без количества"
+        />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
@@ -61,6 +72,8 @@ const form = reactive({
   store_id: null as number | null,
   code: scannedCode,
 })
+
+const quantityInput = ref('')
 
 interface StoreOption {
   id: number
@@ -125,7 +138,8 @@ async function save() {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
-       code: form.code.trim() || null,
+      code: form.code.trim() || null,
+      quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     })
     $notify.add('Предмет создан', { type: 'success' })
     router.push(`/items/${created.payload.id}/edit`)

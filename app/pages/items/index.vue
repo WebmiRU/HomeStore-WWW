@@ -31,6 +31,7 @@
             <th>ID</th>
             <th>Название</th>
             <th>Хранилище</th>
+            <th>Количество</th>
             <th>Создан</th>
             <th>Обновлён</th>
             <th></th>
@@ -48,6 +49,7 @@
             <td>{{ item.payload.id }}</td>
             <td>{{ item.payload.title }}</td>
             <td>{{ item.store?.[0]?.title ?? '—' }}</td>
+            <td>{{ item.payload.quantity ?? '—' }}</td>
             <td>{{ formatDate(item.payload.created_at) }}</td>
             <td>{{ formatDate(item.payload.updated_at) }}</td>
             <td class="actions">
