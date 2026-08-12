@@ -1,7 +1,12 @@
 <template>
   <div class="home">
     <div class="mode-buttons">
-      <NuxtLink to="/search" class="mode-btn mode-btn--search">
+      <button
+        type="button"
+        class="mode-btn mode-btn--search"
+        :class="{ 'mode-btn--active': activeMode === 'search' }"
+        @click="activeMode = 'search'"
+      >
         <svg
           class="mode-icon"
           viewBox="0 0 24 24"
@@ -15,9 +20,14 @@
           <line x1="16.5" y1="16.5" x2="21" y2="21" />
         </svg>
         <span class="mode-label">Поиск</span>
-      </NuxtLink>
+      </button>
 
-      <NuxtLink to="/items/create" class="mode-btn mode-btn--add">
+      <button
+        type="button"
+        class="mode-btn mode-btn--add"
+        :class="{ 'mode-btn--active': activeMode === 'add' }"
+        @click="activeMode = 'add'"
+      >
         <svg
           class="mode-icon"
           viewBox="0 0 24 24"
@@ -31,9 +41,14 @@
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
         <span class="mode-label">Добавить</span>
-      </NuxtLink>
+      </button>
 
-      <button class="mode-btn mode-btn--writeoff" @click="onWriteOff">
+      <button
+        type="button"
+        class="mode-btn mode-btn--writeoff"
+        :class="{ 'mode-btn--active': activeMode === 'writeoff' }"
+        @click="activeMode = 'writeoff'"
+      >
         <svg
           class="mode-icon"
           viewBox="0 0 24 24"
@@ -54,11 +69,11 @@
 </template>
 
 <script setup lang="ts">
-const { $notify } = useNuxtApp()
+import { ref } from 'vue'
 
-function onWriteOff() {
-  $notify.add('Раздел «Списание» в разработке', { type: 'info', timer: 5 })
-}
+type Mode = 'search' | 'add' | 'writeoff'
+
+const activeMode = ref<Mode>('search')
 </script>
 
 <style scoped>
@@ -87,7 +102,7 @@ function onWriteOff() {
   cursor: pointer;
   text-decoration: none;
   font-family: inherit;
-  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .mode-btn:hover {
@@ -133,5 +148,30 @@ function onWriteOff() {
 }
 .mode-btn--writeoff:hover {
   border-color: #d29922;
+}
+
+.mode-btn--active {
+  transform: translateY(-3px);
+}
+
+.mode-btn--search.mode-btn--active {
+  background: #1b2b45;
+  border-color: #4d94f7;
+  color: #d7e6ff;
+  box-shadow: 0 0 0 1px #4d94f7, 0 0 24px rgba(77, 148, 247, 0.3);
+}
+
+.mode-btn--add.mode-btn--active {
+  background: #1b3525;
+  border-color: #3fb950;
+  color: #d8f5dc;
+  box-shadow: 0 0 0 1px #3fb950, 0 0 24px rgba(63, 185, 80, 0.3);
+}
+
+.mode-btn--writeoff.mode-btn--active {
+  background: #3a2e1a;
+  border-color: #d29922;
+  color: #f7e6c2;
+  box-shadow: 0 0 0 1px #d29922, 0 0 24px rgba(210, 153, 34, 0.3);
 }
 </style>
