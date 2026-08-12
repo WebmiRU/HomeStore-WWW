@@ -10,7 +10,8 @@
         <svg
           class="mode-icon"
           viewBox="0 0 24 24"
-          fill="none"
+          fill="none"47457589
+ректн
           stroke="currentColor"
           stroke-width="2"
           stroke-linecap="round"
@@ -178,6 +179,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
+import type { OperationRow, OperationType } from '~/repository/modules/operation'
 
 type Mode = 'search' | 'replenish' | 'writeoff'
 type FoundResult =
@@ -241,6 +243,16 @@ function setMode(mode: Mode) {
 
   if (mode === 'search') {
     // Пополнить/Списать -> Поиск.
+    // Определяем код, который нужно обновить повторным запросом:
+    // единственный предмет в списке, либо найденный предмет при пустом списке
+    // (после успешной операции список очищается, а found остаётся со старым количеством).
+    const refreshCode =
+      scanList.value.length === 1
+        ? scanList.value[0]!.code
+        : scanList.value.length === 0 && found.value?.type === 'item'
+          ? found.value.code
+          : null
+
     if (scanList.value.length === 1) {
       const entry = scanList.value[0]!
       found.value = { type: 'item', payload: entry.payload, code: entry.code }
@@ -249,8 +261,14 @@ function setMode(mode: Mode) {
       found.value = null
     }
     // 0 предметов: оставляем found как есть (например, ранее найденное хранилище).
+
     scanList.value = []
     activeMode.value = mode
+
+    if (refreshCode) {
+      // Повторный запрос, чтобы обновить количество после списания/пополнения.
+      void refreshFoundItem(refreshCode)
+    }
     return
   }
 
@@ -258,12 +276,26 @@ function setMode(mode: Mode) {
   activeMode.value = mode
 }
 
+async function refreshFoundItem(code: string) {
+  try {
+    const result = await $api.code.search(code)
+    if (activeMode.value !== 'search') return
+    if (result.type === 'item' && result.payload) {
+      found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
+    } else if (result.type === 'store' && result.payload) {
+      found.value = { type: 'store', payload: result.payload as StorePayload, code: result.code }
+    }
+  } catch {
+    // Фоновое обновление: ошибки игнорируем, оставляем текущий результат.
+  }
+}
+
 let buffer = ''
 let scanTimer: ReturnType<typeof setTimeout> | null = null
 
 const MIN_CODE_LEN = 8
 const MAX_CODE_LEN = 256
-const SCAN_DEBOUNCE_MS = 300
+const SCAN_DEBOUNCE_MS = 100
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -311,6 +343,8 @@ async function handleScan(code: string) {
       }
     } else if (result.type === 'item' && result.payload) {
       addToScanList(result.code, result.payload as ItemPayload)
+    } else if (result.type === 'store' && result.payload) {
+      notifyStoreBlocked(result.payload as StorePayload)
     } else {
       notifyNotFound(code)
     }
@@ -348,9 +382,32 @@ function notifyNotFound(code: string) {
   $notify.add(`Код "${code}" не найден`, { type: 'warning', timer: 10 })
 }
 
-function submitList() {
-  // TODO: операция пополнения/списания будет реализована на бэкенде
-  $notify.add(`Операция «${listTitle.value}» пока не реализована`, { type: 'info', timer: 5 })
+function notifyStoreBlocked(store: StorePayload) {
+  const action = activeMode.value === 'replenish' ? 'пополнить' : 'списать'
+  $notify.add(`Хранилище "${store.title}" нельзя ${action}`, { type: 'warning', timer: 10 })
+}
+
+async function submitList() {
+  const rows: OperationRow[] = scanList.value
+    .filter((entry) => entry.payload.quantity != null)
+    .map((entry) => ({ code: entry.code, quantity: entry.count }))
+
+  if (rows.length === 0) {
+    $notify.add('Нет предметов для операции', { type: 'warning', timer: 5 })
+    return
+  }
+
+  const type: OperationType =
+    activeMode.value === 'replenish' ? 'operation.replenish' : 'operation.writeoff'
+
+  try {
+    await $api.operation.store({ type, payload: rows })
+    const message = activeMode.value === 'replenish' ? 'Пополнение прошло успешно' : 'Списание прошло успешно'
+    $notify.add(message, { type: 'success', timer: 5 })
+    scanList.value = []
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка операции'), { type: 'error', timer: 10 })
+  }
 }
 
 function formatDate(iso: string): string {

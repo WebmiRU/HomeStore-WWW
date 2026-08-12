@@ -4,6 +4,7 @@ import CodeModule from '~/repository/modules/code'
 import ItemModule from '~/repository/modules/item'
 import LabelListModule from '~/repository/modules/labelList'
 import LabelPresetModule from '~/repository/modules/labelPreset'
+import OperationModule from '~/repository/modules/operation'
 import StoreModule from '~/repository/modules/store'
 
 interface IApiInstance {
@@ -11,6 +12,7 @@ interface IApiInstance {
   item: ItemModule
   labelList: LabelListModule
   labelPreset: LabelPresetModule
+  operation: OperationModule
   store: StoreModule
 }
 
@@ -30,6 +32,7 @@ export default defineNuxtPlugin(() => {
     item: new ItemModule(apiFetcher),
     labelList: new LabelListModule(apiFetcher),
     labelPreset: new LabelPresetModule(apiFetcher),
+    operation: new OperationModule(apiFetcher),
     store: new StoreModule(apiFetcher),
   }
 

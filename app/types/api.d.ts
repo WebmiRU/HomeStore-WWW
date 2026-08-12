@@ -1,7 +1,8 @@
-import type CodeModule from '../repository/modules/code'
+пешimport type CodeModule from '../repository/modules/code'
 import type ItemModule from '../repository/modules/item'
 import type LabelListModule from '../repository/modules/labelList'
 import type LabelPresetModule from '../repository/modules/labelPreset'
+import type OperationModule from '../repository/modules/operation'
 import type StoreModule from '../repository/modules/store'
 import type { NotifyItem } from '../composables/useNotifyPool'
 
@@ -12,6 +13,7 @@ declare module '#app' {
       item: ItemModule
       labelList: LabelListModule
       labelPreset: LabelPresetModule
+      operation: OperationModule
       store: StoreModule
     }
     $notify: {
@@ -29,6 +31,7 @@ declare module 'vue' {
       item: ItemModule
       labelList: LabelListModule
       labelPreset: LabelPresetModule
+      operation: OperationModule
       store: StoreModule
     }
   }
