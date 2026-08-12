@@ -276,6 +276,30 @@
   color: #ccc
   white-space: nowrap
 
+.scan-row__remove
+  flex-shrink: 0
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 36px
+  height: 36px
+  padding: 0
+  background: #2a1a1a
+  border: 1px solid #6b3a3a
+  border-radius: 8px
+  color: #f2b8b8
+  cursor: pointer
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease
+
+.scan-row__remove:hover
+  background: #3a2020
+  border-color: #d29922
+  color: #ffc76e
+
+.scan-row__remove svg
+  width: 18px
+  height: 18px
+
 .scan-submit
   margin-top: 16px
   width: 100%

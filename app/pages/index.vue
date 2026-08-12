@@ -141,6 +141,26 @@
           />
           <span v-else class="scan-row__whole">1 шт.</span>
         </div>
+
+        <button
+          type="button"
+          class="scan-row__remove"
+          :aria-label="`Удалить ${entry.payload.title}`"
+          title="Удалить"
+          @click="removeFromScanList(entry.code)"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
+        </button>
       </div>
 
       <button
@@ -204,10 +224,38 @@ const foundQuantity = computed<number | null>(() => {
 })
 
 function setMode(mode: Mode) {
-  activeMode.value = mode
-  scanList.value = []
-  found.value = null
+  const prev = activeMode.value
+  if (prev === mode) return
+
   notFoundCode.value = ''
+
+  if (prev === 'search') {
+    // Поиск -> Пополнить/Списать: найденный предмет переносим в список,
+    // чтобы он остался в результатах во всех режимах.
+    if (found.value?.type === 'item') {
+      addToScanList(found.value.code, found.value.payload)
+    }
+    activeMode.value = mode
+    return
+  }
+
+  if (mode === 'search') {
+    // Пополнить/Списать -> Поиск.
+    if (scanList.value.length === 1) {
+      const entry = scanList.value[0]!
+      found.value = { type: 'item', payload: entry.payload, code: entry.code }
+    } else if (scanList.value.length > 1) {
+      // Более одного предмета — сбрасываем поиск к состоянию по умолчанию.
+      found.value = null
+    }
+    // 0 предметов: оставляем found как есть (например, ранее найденное хранилище).
+    scanList.value = []
+    activeMode.value = mode
+    return
+  }
+
+  // Пополнить <-> Списать: список сохраняем без изменений.
+  activeMode.value = mode
 }
 
 let buffer = ''
@@ -254,15 +302,15 @@ async function handleScan(code: string) {
 
     if (activeMode.value === 'search') {
       if (result.type === 'item' && result.payload) {
-        found.value = { type: 'item', payload: result.payload as ItemPayload, code }
+        found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
       } else if (result.type === 'store' && result.payload) {
-        found.value = { type: 'store', payload: result.payload as StorePayload, code }
+        found.value = { type: 'store', payload: result.payload as StorePayload, code: result.code }
       } else {
         // Код существует, но ни к чему не привязан — считаем «не найден»
         notFoundCode.value = code
       }
     } else if (result.type === 'item' && result.payload) {
-      addToScanList(code, result.payload as ItemPayload)
+      addToScanList(result.code, result.payload as ItemPayload)
     } else {
       notifyNotFound(code)
     }
@@ -290,6 +338,10 @@ function addToScanList(code: string, payload: ItemPayload) {
     return
   }
   scanList.value.push({ code, payload, count: 1 })
+}
+
+function removeFromScanList(code: string) {
+  scanList.value = scanList.value.filter((entry) => entry.code !== code)
 }
 
 function notifyNotFound(code: string) {
