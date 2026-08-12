@@ -47,6 +47,9 @@ import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
 const router = useRouter()
+const route = useRoute()
+
+const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -56,7 +59,7 @@ const form = reactive({
   title: '',
   title_print: '',
   parent_id: null as number | null,
-  code: '',
+  code: scannedCode,
 })
 
 interface ParentOption {

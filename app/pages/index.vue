@@ -66,40 +66,72 @@
       </button>
     </div>
 
-    <div v-if="foundItem" class="found-item">
-      <div class="found-item__header">
-        <span class="found-item__title">{{ foundItem.title }}</span>
-        <NuxtLink :to="`/items/${foundItem.id}/edit`" class="found-item__link">Открыть</NuxtLink>
+    <div v-if="found" class="found-card">
+      <div class="found-card__header">
+        <span class="found-card__badge" :class="`found-card__badge--${found.type}`">
+          {{ found.type === 'item' ? 'Предмет' : 'Хранилище' }}
+        </span>
+        <NuxtLink :to="editLink" class="found-card__link">Открыть</NuxtLink>
       </div>
-      <div v-if="foundItem.title_print" class="found-item__print">{{ foundItem.title_print }}</div>
-      <div class="found-item__code">Код: {{ foundCode }}</div>
+      <div class="found-card__title">{{ found.payload.title }}</div>
+      <div v-if="foundTitlePrint" class="found-card__print">
+        {{ foundTitlePrint }}
+      </div>
+      <div class="found-card__code">Код: {{ found.code }}</div>
+      <div class="found-card__meta">Создано: {{ formatDate(found.payload.created_at) }}</div>
+    </div>
+
+    <div v-else-if="notFoundCode" class="not-found">
+      <div class="not-found__text">Код не найден в Базе.</div>
+      <div class="not-found__ask">
+        Добавить
+        <NuxtLink :to="{ path: '/items/create', query: { code: notFoundCode } }" class="not-found__link">
+          предмет
+        </NuxtLink>
+        или
+        <NuxtLink :to="{ path: '/stores/create', query: { code: notFoundCode } }" class="not-found__link">
+          хранилище
+        </NuxtLink>
+        ?
+      </div>
+      <div class="not-found__code">Код: {{ notFoundCode }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import type { ItemPayload } from '~/repository/modules/code'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 
 type Mode = 'search' | 'add' | 'writeoff'
+type FoundResult =
+  | { type: 'item'; payload: ItemPayload; code: string }
+  | { type: 'store'; payload: StorePayload; code: string }
 
 const { $api, $notify } = useNuxtApp()
-const router = useRouter()
 
 const activeMode = ref<Mode>('search')
 
-const foundItem = ref<ItemPayload | null>(null)
-const foundCode = ref('')
+const found = ref<FoundResult | null>(null)
+const notFoundCode = ref('')
+
+const editLink = computed(() => {
+  if (!found.value) return ''
+  return found.value.type === 'item'
+    ? `/items/${found.value.payload.id}/edit`
+    : `/stores/${found.value.payload.id}/edit`
+})
+
+const foundTitlePrint = computed(() =>
+  found.value?.type === 'item' ? (found.value.payload as ItemPayload).title_print : '',
+)
 
 let buffer = ''
-let lastKeyTime = 0
 let scanTimer: ReturnType<typeof setTimeout> | null = null
 
-const SCAN_KEY_RE = /^[0-9A-Za-zА-Яа-яЁё]$/
 const MIN_CODE_LEN = 8
 const MAX_CODE_LEN = 256
-const SCAN_INTERVAL_MS = 200
-const SCAN_DEBOUNCE_MS = 250
+const SCAN_DEBOUNCE_MS = 300
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -110,18 +142,9 @@ function isEditableTarget(target: EventTarget | null): boolean {
 function onKeydown(e: KeyboardEvent) {
   if (isEditableTarget(e.target)) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.key.length !== 1) return
 
-  const key = e.key
-  if (!SCAN_KEY_RE.test(key)) return
-
-  const now = performance.now()
-  if (now - lastKeyTime > SCAN_INTERVAL_MS) {
-    // Пауза между вводом — начинаем новый код
-    buffer = ''
-  }
-  lastKeyTime = now
-  buffer += key
-
+  buffer += e.key
   if (buffer.length > MAX_CODE_LEN) {
     buffer = buffer.slice(0, MAX_CODE_LEN)
   }
@@ -130,32 +153,38 @@ function onKeydown(e: KeyboardEvent) {
   scanTimer = setTimeout(() => {
     const code = buffer
     buffer = ''
-    if (code.length >= MIN_CODE_LEN && code.length <= MAX_CODE_LEN) {
+    if (code.length >= MIN_CODE_LEN) {
       handleScan(code)
     }
   }, SCAN_DEBOUNCE_MS)
 }
 
 async function handleScan(code: string) {
-  foundItem.value = null
+  found.value = null
+  notFoundCode.value = ''
   try {
     const result = await $api.code.search(code)
 
     if (result.type === 'item' && result.payload) {
-      foundItem.value = result.payload as ItemPayload
-      foundCode.value = code
+      found.value = { type: 'item', payload: result.payload as ItemPayload, code }
+    } else if (result.type === 'store' && result.payload) {
+      found.value = { type: 'store', payload: result.payload as StorePayload, code }
     } else {
-      // Код существует, но не связан с товаром (хранилище или ни к чему)
-      router.push({ path: '/items/create', query: { code } })
+      // Код существует, но ни к чему не привязан — считаем «не найден»
+      notFoundCode.value = code
     }
   } catch (err: any) {
-    if (err?.statusCode === 404 || err?.status === 404) {
-      // Код не найден в базе — ведём на создание товара с этим кодом
-      router.push({ path: '/items/create', query: { code } })
+    if (err?.statusCode === 404 || err?.status === 404 || err?.statusCode === 400 || err?.status === 400) {
+      notFoundCode.value = code
     } else {
       $notify.add(formatApiError(err, 'Ошибка поиска кода'), { type: 'error', timer: 10 })
     }
   }
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ru-RU')
 }
 
 onMounted(() => {
@@ -267,7 +296,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1px #d29922, 0 0 24px rgba(210, 153, 34, 0.3);
 }
 
-.found-item {
+.found-card {
   margin-top: 20px;
   padding: 16px 18px;
   background: #1e1e1e;
@@ -275,20 +304,33 @@ onBeforeUnmount(() => {
   border-radius: 10px;
 }
 
-.found-item__header {
+.found-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.found-item__title {
-  font-size: 18px;
-  color: #e6e6e6;
-  word-break: break-word;
+.found-card__badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #555;
+  color: #aaa;
 }
 
-.found-item__link {
+.found-card__badge--item {
+  color: #7db3ff;
+  border-color: #4d94f7;
+}
+
+.found-card__badge--store {
+  color: #8fd69a;
+  border-color: #3fb950;
+}
+
+.found-card__link {
   flex-shrink: 0;
   padding: 6px 14px;
   font-size: 14px;
@@ -299,20 +341,70 @@ onBeforeUnmount(() => {
   transition: background-color 0.15s ease;
 }
 
-.found-item__link:hover {
+.found-card__link:hover {
   background: #1b2b45;
 }
 
-.found-item__print {
+.found-card__title {
+  margin-top: 12px;
+  font-size: 18px;
+  color: #e6e6e6;
+  word-break: break-word;
+}
+
+.found-card__print {
   margin-top: 6px;
   font-size: 14px;
   color: #999;
 }
 
-.found-item__code {
+.found-card__code {
   margin-top: 8px;
   font-size: 13px;
   color: #888;
+  word-break: break-all;
+}
+
+.found-card__meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.not-found {
+  margin-top: 20px;
+  padding: 20px 18px;
+  background: #2a1a1a;
+  border: 1px solid #6b3a3a;
+  border-radius: 10px;
+}
+
+.not-found__text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f2b8b8;
+}
+
+.not-found__ask {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #ddd;
+}
+
+.not-found__link {
+  color: #f0b45c;
+  text-decoration: underline;
+  margin: 0 4px;
+}
+
+.not-found__link:hover {
+  color: #ffc76e;
+}
+
+.not-found__code {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #a88;
   word-break: break-all;
 }
 </style>
