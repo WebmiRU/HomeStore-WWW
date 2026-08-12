@@ -1,0 +1,304 @@
+.home
+  padding-top: 8px
+
+.mode-buttons
+  display: flex
+  gap: 20px
+  width: 100%
+
+.mode-btn
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  gap: 6px
+  flex: 1
+  padding: 12px 20px
+  border-radius: 10px
+  border: 1px solid #333
+  background: #222
+  color: #ccc
+  cursor: pointer
+  text-decoration: none
+  font-family: inherit
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease
+
+.mode-btn:hover
+  transform: translateY(-2px)
+  background: #2a2a2a
+
+.mode-icon
+  width: 28px
+  height: 28px
+
+.mode-label
+  font-size: 16px
+  letter-spacing: 0.5px
+
+.mode-btn--search
+  border-color: #3a4a6a
+
+.mode-btn--search .mode-icon
+  color: #4d94f7
+
+.mode-btn--search:hover
+  border-color: #4d94f7
+
+.mode-btn--replenish
+  border-color: #3a5a3a
+
+.mode-btn--replenish .mode-icon
+  color: #3fb950
+
+.mode-btn--replenish:hover
+  border-color: #3fb950
+
+.mode-btn--writeoff
+  border-color: #5a4a3a
+
+.mode-btn--writeoff .mode-icon
+  color: #d29922
+
+.mode-btn--writeoff:hover
+  border-color: #d29922
+
+.mode-btn--active
+  transform: translateY(-2px)
+
+.mode-btn--search.mode-btn--active
+  background: #1b2b45
+  border-color: #4d94f7
+  color: #d7e6ff
+  box-shadow: 0 0 0 1px #4d94f7, 0 0 24px rgba(77, 148, 247, 0.3)
+
+.mode-btn--replenish.mode-btn--active
+  background: #1b3525
+  border-color: #3fb950
+  color: #d8f5dc
+  box-shadow: 0 0 0 1px #3fb950, 0 0 24px rgba(63, 185, 80, 0.3)
+
+.mode-btn--writeoff.mode-btn--active
+  background: #3a2e1a
+  border-color: #d29922
+  color: #f7e6c2
+  box-shadow: 0 0 0 1px #d29922, 0 0 24px rgba(210, 153, 34, 0.3)
+
+.found-card
+  margin-top: 20px
+  padding: 16px 18px
+  background: #1e1e1e
+  border: 1px solid #3a3a3a
+  border-radius: 10px
+
+.found-card__header
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+
+.found-card__badge
+  flex-shrink: 0
+  padding: 3px 10px
+  font-size: 12px
+  border-radius: 999px
+  border: 1px solid #555
+  color: #aaa
+
+.found-card__badge--item
+  color: #7db3ff
+  border-color: #4d94f7
+
+.found-card__badge--store
+  color: #8fd69a
+  border-color: #3fb950
+
+.found-card__link
+  flex-shrink: 0
+  padding: 6px 14px
+  font-size: 14px
+  color: #4d94f7
+  text-decoration: none
+  border: 1px solid #4d94f7
+  border-radius: 6px
+  transition: background-color 0.15s ease
+
+.found-card__link:hover
+  background: #1b2b45
+
+.found-card__body
+  margin-top: 16px
+  display: flex
+  align-items: center
+  gap: 14px
+
+.found-card__info
+  flex: 1
+  min-width: 0
+
+.found-card__title
+  font-size: 18px
+  color: #e6e6e6
+  word-break: break-word
+
+.found-card__print
+  margin-top: 6px
+  font-size: 14px
+  color: #999
+
+.found-card__code
+  margin-top: 8px
+  font-size: 13px
+  color: #888
+  word-break: break-all
+
+.found-card__meta
+  margin-top: 6px
+  font-size: 12px
+  color: #777
+
+.found-card__action
+  flex-shrink: 0
+  display: flex
+  align-items: center
+  justify-content: center
+  min-width: 72px
+
+.found-card__quantity
+  font-size: 15px
+  color: #ccc
+  white-space: nowrap
+
+.found-card__whole
+  font-size: 15px
+  color: #ccc
+  white-space: nowrap
+
+.not-found
+  margin-top: 20px
+  padding: 20px 18px
+  background: #2a1a1a
+  border: 1px solid #6b3a3a
+  border-radius: 10px
+
+.not-found__text
+  font-size: 20px
+  font-weight: 700
+  color: #f2b8b8
+
+.not-found__ask
+  margin-top: 10px
+  font-size: 16px
+  color: #ddd
+
+.not-found__link
+  color: #f0b45c
+  text-decoration: underline
+  margin: 0 4px
+
+.not-found__link:hover
+  color: #ffc76e
+
+.not-found__code
+  margin-top: 10px
+  font-size: 13px
+  color: #a88
+  word-break: break-all
+
+.scan-list
+  margin-top: 20px
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.scan-list__title
+  font-size: 16px
+  font-weight: 700
+  color: #e6e6e6
+
+.scan-row
+  display: flex
+  align-items: center
+  gap: 14px
+  padding: 12px 14px
+  background: #1e1e1e
+  border: 1px solid #3a3a3a
+  border-radius: 10px
+
+.scan-row__info
+  flex: 1
+  min-width: 0
+
+.scan-row__title
+  font-size: 16px
+  color: #e6e6e6
+  word-break: break-word
+
+.scan-row__print
+  margin-top: 4px
+  font-size: 13px
+  color: #999
+
+.scan-row__code
+  margin-top: 6px
+  font-size: 12px
+  color: #888
+  word-break: break-all
+
+.scan-row__stock
+  margin-top: 4px
+  font-size: 13px
+  color: #bbb
+
+.scan-row__meta
+  margin-top: 4px
+  font-size: 12px
+  color: #777
+
+.scan-row__action
+  flex-shrink: 0
+  display: flex
+  align-items: center
+  justify-content: center
+  min-width: 72px
+
+.scan-row__count
+  width: 72px
+  padding: 8px 10px
+  font-size: 16px
+  text-align: center
+  background: #141414
+  border: 1px solid #444
+  border-radius: 6px
+  color: #e6e6e6
+
+.scan-row__whole
+  font-size: 15px
+  color: #ccc
+  white-space: nowrap
+
+.scan-submit
+  margin-top: 16px
+  width: 100%
+  padding: 14px 20px
+  font-size: 18px
+  font-weight: 700
+  letter-spacing: 0.5px
+  font-family: inherit
+  border-radius: 10px
+  border: 1px solid transparent
+  cursor: pointer
+  transition: filter 0.15s ease, transform 0.15s ease
+
+.scan-submit:hover
+  filter: brightness(1.12)
+  transform: translateY(-1px)
+
+.scan-submit--replenish
+  background: #1b3525
+  color: #d8f5dc
+  border-color: #3fb950
+
+.scan-submit--writeoff
+  background: #3a2e1a
+  color: #f7e6c2
+  border-color: #d29922
