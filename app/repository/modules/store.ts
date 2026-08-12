@@ -16,7 +16,8 @@ export type StoreResponse = {
   parent_id: number | null
   created_at: string
   updated_at: string
-  parents: StoreParent[]code?: string | null
+  parents: StoreParent[]
+  code?: string | null
 }
 
 class StoreModule extends FetchFactory<any> {
