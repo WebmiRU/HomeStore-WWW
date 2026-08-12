@@ -28,6 +28,11 @@
         </select>
       </label>
 
+      <label class="field">
+        <span class="field-label">Код</span>
+        <input v-model="form.code" type="text" class="field-input" maxlength="256" />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
@@ -42,6 +47,9 @@ import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
 const router = useRouter()
+const route = useRoute()
+
+const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -51,6 +59,7 @@ const form = reactive({
   title: '',
   title_print: '',
   store_id: null as number | null,
+  code: scannedCode,
 })
 
 interface StoreOption {
@@ -116,6 +125,7 @@ async function save() {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
+       code: form.code.trim() || null,
     })
     $notify.add('Предмет создан', { type: 'success' })
     router.push(`/items/${created.payload.id}/edit`)

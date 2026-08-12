@@ -47,13 +47,13 @@ class ItemModule extends FetchFactory<any> {
     return unwrapped as ItemResponse
   }
 
-  async create(data: Partial<ItemPayload>): Promise<ItemResponse> {
+  async create(data: Partial<ItemPayload> & { code?: string | null }): Promise<ItemResponse> {
     const result = await this.call('POST', this.baseUrl, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as ItemResponse
   }
 
-  async update(id: number, data: Partial<ItemPayload>): Promise<ItemResponse> {
+  async update(id: number, data: Partial<ItemPayload> & { code?: string | null }): Promise<ItemResponse> {
     const result = await this.call('PUT', `${this.baseUrl}/${id}`, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as ItemResponse

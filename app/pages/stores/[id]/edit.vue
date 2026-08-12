@@ -28,6 +28,11 @@
         </select>
       </label>
 
+      <label class="field">
+        <span class="field-label">Код</span>
+        <input v-model="form.code" type="text" class="field-input" maxlength="256" />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
@@ -54,6 +59,7 @@ const form = reactive({
   title: '',
   title_print: '',
   parent_id: null as number | null,
+  code: '',
 })
 
 interface ParentOption {
@@ -110,6 +116,7 @@ async function load() {
     form.title = store.title
     form.title_print = store.title_print ?? ''
     form.parent_id = store.parent_id
+    form.code = store.code ?? ''
 
     // Строим дерево для селекта, исключая текущее хранилище
     const filtered = stores.filter(s => s.id !== store.id)
@@ -129,6 +136,7 @@ async function save() {
       title: form.title,
       title_print: form.title_print || null,
       parent_id: form.parent_id,
+      code: form.code.trim() || null,
     })
     $notify.add('Хранилище сохранено', { type: 'success' })
   } catch (err: any) {

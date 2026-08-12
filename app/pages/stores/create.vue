@@ -28,6 +28,11 @@
         </select>
       </label>
 
+      <label class="field">
+        <span class="field-label">Код</span>
+        <input v-model="form.code" type="text" class="field-input" maxlength="256" />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
@@ -51,6 +56,7 @@ const form = reactive({
   title: '',
   title_print: '',
   parent_id: null as number | null,
+  code: '',
 })
 
 interface ParentOption {
@@ -116,6 +122,7 @@ async function save() {
       title: form.title,
       title_print: form.title_print || null,
       parent_id: form.parent_id,
+      code: form.code.trim() || null,
     })
     $notify.add('Хранилище создано', { type: 'success' })
     router.push(`/stores/${created.id}/edit`)

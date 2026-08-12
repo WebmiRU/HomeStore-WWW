@@ -39,13 +39,13 @@ class StoreModule extends FetchFactory<any> {
     return unwrapped as StoreResponse
   }
 
-  async create(data: { title: string; title_print?: string | null; parent_id?: number | null }): Promise<StoreResponse> {
+  async create(data: { title: string; title_print?: string | null; parent_id?: number | null; code?: string | null }): Promise<StoreResponse> {
     const result = await this.call('POST', this.baseUrl, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as StoreResponse
   }
 
-  async update(id: number, data: { title?: string; title_print?: string | null; parent_id?: number | null }): Promise<StoreResponse> {
+  async update(id: number, data: { title?: string; title_print?: string | null; parent_id?: number | null; code?: string | null }): Promise<StoreResponse> {
     const result = await this.call('PUT', `${this.baseUrl}/${id}`, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as StoreResponse

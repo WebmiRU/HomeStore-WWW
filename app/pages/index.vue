@@ -65,15 +65,107 @@
         <span class="mode-label">Списать</span>
       </button>
     </div>
+
+    <div v-if="foundItem" class="found-item">
+      <div class="found-item__header">
+        <span class="found-item__title">{{ foundItem.title }}</span>
+        <NuxtLink :to="`/items/${foundItem.id}/edit`" class="found-item__link">Открыть</NuxtLink>
+      </div>
+      <div v-if="foundItem.title_print" class="found-item__print">{{ foundItem.title_print }}</div>
+      <div class="found-item__code">Код: {{ foundCode }}</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import type { ItemPayload } from '~/repository/modules/code'
 
 type Mode = 'search' | 'add' | 'writeoff'
 
+const { $api, $notify } = useNuxtApp()
+const router = useRouter()
+
 const activeMode = ref<Mode>('search')
+
+const foundItem = ref<ItemPayload | null>(null)
+const foundCode = ref('')
+
+let buffer = ''
+let lastKeyTime = 0
+let scanTimer: ReturnType<typeof setTimeout> | null = null
+
+const SCAN_KEY_RE = /^[0-9A-Za-zА-Яа-яЁё]$/
+const MIN_CODE_LEN = 8
+const MAX_CODE_LEN = 256
+const SCAN_INTERVAL_MS = 200
+const SCAN_DEBOUNCE_MS = 250
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName.toLowerCase()
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (isEditableTarget(e.target)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+
+  const key = e.key
+  if (!SCAN_KEY_RE.test(key)) return
+
+  const now = performance.now()
+  if (now - lastKeyTime > SCAN_INTERVAL_MS) {
+    // Пауза между вводом — начинаем новый код
+    buffer = ''
+  }
+  lastKeyTime = now
+  buffer += key
+
+  if (buffer.length > MAX_CODE_LEN) {
+    buffer = buffer.slice(0, MAX_CODE_LEN)
+  }
+
+  if (scanTimer) clearTimeout(scanTimer)
+  scanTimer = setTimeout(() => {
+    const code = buffer
+    buffer = ''
+    if (code.length >= MIN_CODE_LEN && code.length <= MAX_CODE_LEN) {
+      handleScan(code)
+    }
+  }, SCAN_DEBOUNCE_MS)
+}
+
+async function handleScan(code: string) {
+  foundItem.value = null
+  try {
+    const result = await $api.code.search(code)
+
+    if (result.type === 'item' && result.payload) {
+      foundItem.value = result.payload as ItemPayload
+      foundCode.value = code
+    } else {
+      // Код существует, но не связан с товаром (хранилище или ни к чему)
+      router.push({ path: '/items/create', query: { code } })
+    }
+  } catch (err: any) {
+    if (err?.statusCode === 404 || err?.status === 404) {
+      // Код не найден в базе — ведём на создание товара с этим кодом
+      router.push({ path: '/items/create', query: { code } })
+    } else {
+      $notify.add(formatApiError(err, 'Ошибка поиска кода'), { type: 'error', timer: 10 })
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (scanTimer) clearTimeout(scanTimer)
+})
 </script>
 
 <style scoped>
@@ -92,9 +184,9 @@ const activeMode = ref<Mode>('search')
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 6px;
   flex: 1;
-  padding: 28px 32px;
+  padding: 12px 20px;
   border-radius: 10px;
   border: 1px solid #333;
   background: #222;
@@ -106,17 +198,17 @@ const activeMode = ref<Mode>('search')
 }
 
 .mode-btn:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   background: #2a2a2a;
 }
 
 .mode-icon {
-  width: 56px;
-  height: 56px;
+  width: 28px;
+  height: 28px;
 }
 
 .mode-label {
-  font-size: 20px;
+  font-size: 16px;
   letter-spacing: 0.5px;
 }
 
@@ -151,7 +243,7 @@ const activeMode = ref<Mode>('search')
 }
 
 .mode-btn--active {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .mode-btn--search.mode-btn--active {
@@ -173,5 +265,54 @@ const activeMode = ref<Mode>('search')
   border-color: #d29922;
   color: #f7e6c2;
   box-shadow: 0 0 0 1px #d29922, 0 0 24px rgba(210, 153, 34, 0.3);
+}
+
+.found-item {
+  margin-top: 20px;
+  padding: 16px 18px;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+}
+
+.found-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.found-item__title {
+  font-size: 18px;
+  color: #e6e6e6;
+  word-break: break-word;
+}
+
+.found-item__link {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  font-size: 14px;
+  color: #4d94f7;
+  text-decoration: none;
+  border: 1px solid #4d94f7;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.found-item__link:hover {
+  background: #1b2b45;
+}
+
+.found-item__print {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #999;
+}
+
+.found-item__code {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #888;
+  word-break: break-all;
 }
 </style>

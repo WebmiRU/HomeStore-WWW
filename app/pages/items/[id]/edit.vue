@@ -28,6 +28,20 @@
         </select>
       </label>
 
+      <label class="field">
+        <span class="field-label">Код</span>
+        <div class="code-field">
+          <input
+            v-model="form.code"
+            type="text"
+            class="field-input"
+            :class="{ 'field-input--changed': codeChanged }"
+            maxlength="256"
+          />
+          <button v-if="codeChanged" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
+        </div>
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
@@ -37,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
@@ -48,6 +62,7 @@ const id = route.params.id as string
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
+const originalCode = ref('')
 
 interface StoreOption {
   id: number
@@ -95,7 +110,14 @@ const form = reactive({
   title: '',
   title_print: '',
   store_id: null as number | null,
+  code: '',
 })
+
+const codeChanged = computed(() => originalCode.value !== '' && form.code !== originalCode.value)
+
+function resetCode() {
+  form.code = originalCode.value
+}
 
 async function load() {
   loading.value = true
@@ -109,6 +131,8 @@ async function load() {
     form.title = item.payload.title
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id
+    form.code = item.code ?? ''
+    originalCode.value = item.code ?? ''
 
     const tree = buildTree(stores)
     storeOptions.value = flattenTree(tree)
@@ -126,6 +150,7 @@ async function save() {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
+      code: form.code.trim() || null,
     })
     $notify.add('Предмет сохранён', { type: 'success' })
   } catch (err: any) {
@@ -199,6 +224,33 @@ onMounted(load)
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
+}
+
+.code-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-input--changed {
+  border-color: #e8a33d;
+  box-shadow: 0 0 0 1px #e8a33d;
+}
+
+.btn-reset-code {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #f0b45c;
+  background: #2e2414;
+  border: 1px solid #e8a33d;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-reset-code:hover {
+  background: #3a2e1a;
 }
 
 
