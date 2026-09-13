@@ -1,0 +1,9 @@
+.git
+node_modules
+.dist
+.output
+.env
+*.log
+.DS_Store
+.gigacode
+.gigacode/
