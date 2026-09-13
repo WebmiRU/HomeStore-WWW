@@ -35,6 +35,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+        <button type="button" @click="saveAndCopy" class="btn-save-copy" :disabled="saving">Сохранить и создать копию</button>
         <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
       </div>
     </form>
@@ -139,6 +140,31 @@ async function save() {
   }
 }
 
+async function saveAndCopy() {
+  saving.value = true
+  try {
+    const created = await $api.store.create({
+      title: form.title,
+      title_print: form.title_print || null,
+      parent_id: form.parent_id,
+      code: form.code.trim() || null,
+    })
+    $notify.add('Хранилище создано', { type: 'success' })
+    router.push({
+      path: '/stores/create',
+      query: {
+        copy_title: form.title,
+        copy_title_print: form.title_print,
+        copy_parent_id: form.parent_id,
+      },
+    })
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -227,9 +253,25 @@ onMounted(load)
   background: #3a7a3a;
 }
 
-.btn-save:disabled {
+.btn-save:disabled,
+.btn-save-copy:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.btn-save-copy {
+  padding: 8px 24px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #2a5a4a;
+  color: #cfc;
+  border: 1px solid #3a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-save-copy:hover:not(:disabled) {
+  background: #3a7a6a;
 }
 
 .btn-cancel {
