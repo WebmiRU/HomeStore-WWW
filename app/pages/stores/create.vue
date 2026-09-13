@@ -50,15 +50,18 @@ const router = useRouter()
 const route = useRoute()
 
 const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
+const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
+const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
+const copyParentId = typeof route.query.copy_parent_id === 'string' ? Number(route.query.copy_parent_id) : null
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
 
 const form = reactive({
-  title: '',
-  title_print: '',
-  parent_id: null as number | null,
+  title: copyTitle,
+  title_print: copyTitlePrint,
+  parent_id: copyParentId,
   code: scannedCode,
 })
 

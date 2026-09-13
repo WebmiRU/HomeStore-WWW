@@ -35,6 +35,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+        <NuxtLink :to="{ path: '/stores/create', query: { copy_title: form.title, copy_title_print: form.title_print, copy_parent_id: form.parent_id } }" class="btn-copy">Создать копию</NuxtLink>
         <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
       </div>
     </form>
@@ -266,6 +267,23 @@ onMounted(load)
 }
 
 .btn-cancel:hover {
+  color: #ddd;
+  background: #333;
+  border-style: solid;
+}
+
+.btn-copy {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #aaa;
+  text-decoration: none;
+  border: 1px dashed #555;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-copy:hover {
   color: #ddd;
   background: #333;
   border-style: solid;
