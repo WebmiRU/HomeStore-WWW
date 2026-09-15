@@ -31,8 +31,12 @@
             <td data-label="Штрих-код">{{ p.barcode_position }}</td>
             <td data-label="Шрифт">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
             <td class="actions">
-              <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link">ред.</NuxtLink>
-              <a href="#" class="action-link action-del" @click.prevent="deletePreset(p.id)">уд.</a>
+              <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deletePreset(p.id)">
+                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+              </a>
             </td>
           </tr>
         </tbody>
@@ -197,6 +201,15 @@ watch(() => route.query.page, (newPage) => {
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.action-link img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-link:hover {

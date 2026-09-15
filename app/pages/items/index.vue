@@ -54,8 +54,12 @@
             <td data-label="Обновлён">{{ formatDate(item.payload.updated_at) }}</td>
             <td class="actions">
               <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
-              <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link">ред.</NuxtLink>
-              <a href="#" class="action-link action-del" @click.prevent="deleteItem(item.payload.id)">уд.</a>
+              <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteItem(item.payload.id)">
+                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+              </a>
             </td>
           </tr>
         </tbody>
@@ -307,6 +311,15 @@ watch(() => route.query.page, (newPage) => {
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.action-link img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-link:hover {

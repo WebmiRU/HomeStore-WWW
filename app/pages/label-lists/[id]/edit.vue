@@ -55,9 +55,12 @@
                   href="#"
                   class="action-link action-del"
                   :class="{ disabled: removingItem === item.payload.id }"
+                  title="Удалить"
+                  aria-label="Удалить"
                   @click.prevent="removeItem(item.payload.id)"
                 >
-                  {{ removingItem === item.payload.id ? '...' : 'уд.' }}
+                  <img v-if="removingItem === item.payload.id" src="/img/icon/add.svg" class="action-icon" alt="" />
+                  <img v-else src="/img/icon/delete.svg" class="action-icon" alt="" />
                 </a>
               </td>
             </tr>
@@ -85,9 +88,12 @@
                   href="#"
                   class="action-link action-del"
                   :class="{ disabled: removingStore === store.id }"
+                  title="Удалить"
+                  aria-label="Удалить"
                   @click.prevent="removeStore(store.id)"
                 >
-                  {{ removingStore === store.id ? '...' : 'уд.' }}
+                  <img v-if="removingStore === store.id" src="/img/icon/add.svg" class="action-icon" alt="" />
+                  <img v-else src="/img/icon/delete.svg" class="action-icon" alt="" />
                 </a>
               </td>
             </tr>
@@ -409,6 +415,15 @@ onMounted(load)
   color: #88a;
   text-decoration: none;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.action-link img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-link:hover {

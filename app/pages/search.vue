@@ -65,16 +65,20 @@
               <NuxtLink
                 v-if="r.type === 'item'"
                 :to="`/items/${r.payload.id}/edit`"
-                class="action-link"
+                class="action-link action-edit"
+                title="Редактировать"
+                aria-label="Редактировать"
               >
-                ред.
+                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <NuxtLink
                 v-else
                 :to="`/stores/${r.payload.id}/edit`"
-                class="action-link"
+                class="action-link action-edit"
+                title="Редактировать"
+                aria-label="Редактировать"
               >
-                ред.
+                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
             </td>
           </tr>
@@ -337,6 +341,15 @@ watch(() => route.query.q, () => {
   color: #88a;
   text-decoration: none;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.action-link img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-link:hover {

@@ -53,8 +53,12 @@
             <td data-label="Обновлён">{{ formatDate(node.store.updated_at) }}</td>
             <td class="actions">
               <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
-              <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link">ред.</NuxtLink>
-              <a href="#" class="action-link action-del" @click.prevent="deleteStore(node.store.id)">уд.</a>
+              <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteStore(node.store.id)">
+                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+              </a>
             </td>
           </tr>
         </tbody>
@@ -308,6 +312,15 @@ onMounted(load)
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.action-link img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-link:hover {
