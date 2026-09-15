@@ -23,11 +23,11 @@
         </thead>
         <tbody>
           <tr v-for="list in lists" :key="list.id">
-            <td>{{ list.id }}</td>
-            <td>{{ list.title }}</td>
-            <td>{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
-            <td>{{ formatDate(list.created_at) }}</td>
-            <td>{{ formatDate(list.updated_at) }}</td>
+            <td data-label="ID">{{ list.id }}</td>
+            <td data-label="Название">{{ list.title }}</td>
+            <td data-label="Шаблон">{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
+            <td data-label="Создан">{{ formatDate(list.created_at) }}</td>
+            <td data-label="Обновлён">{{ formatDate(list.updated_at) }}</td>
             <td class="actions">
               <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deleteList(list.id)">уд.</a>
@@ -294,5 +294,79 @@ watch(() => route.query.page, (newPage) => {
 .page-info {
   font-size: 13px;
   color: #888;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .lists-table,
+  .lists-table tbody,
+  .lists-table tr,
+  .lists-table td {
+    display: block;
+  }
+
+  .lists-table thead {
+    display: none;
+  }
+
+  .lists-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .lists-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+  }
+
+  .lists-table td.cb-col {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .lists-table td.cb-col input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .lists-table td.actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .lists-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .lists-table tr:hover td {
+    background: transparent;
+  }
 }
 </style>

@@ -176,4 +176,10 @@ onMounted(loadPresets)
   background: #333;
   border-style: solid;
 }
+
+@media (max-width: 768px) {
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
 </style>

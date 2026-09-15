@@ -43,14 +43,14 @@
                 @change="toggleOne(node.store.id)"
               />
             </td>
-            <td>{{ node.store.id }}</td>
-            <td>
+            <td data-label="ID">{{ node.store.id }}</td>
+            <td data-label="Название">
               <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
               <span v-if="node.depth > 0" class="tree-space"> </span>
               {{ node.store.title }}
             </td>
-            <td>{{ formatDate(node.store.created_at) }}</td>
-            <td>{{ formatDate(node.store.updated_at) }}</td>
+            <td data-label="Создан">{{ formatDate(node.store.created_at) }}</td>
+            <td data-label="Обновлён">{{ formatDate(node.store.updated_at) }}</td>
             <td class="actions">
               <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
               <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link">ред.</NuxtLink>
@@ -320,5 +320,79 @@ onMounted(load)
 
 .action-del:hover {
   color: #f88;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stores-table,
+  .stores-table tbody,
+  .stores-table tr,
+  .stores-table td {
+    display: block;
+  }
+
+  .stores-table thead {
+    display: none;
+  }
+
+  .stores-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .stores-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+  }
+
+  .stores-table td.cb-col {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .stores-table td.cb-col input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stores-table td.actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .stores-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .stores-table tr:hover td {
+    background: transparent;
+  }
 }
 </style>

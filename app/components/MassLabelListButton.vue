@@ -137,6 +137,7 @@ onBeforeUnmount(() => {
   right: 0;
   margin-top: 4px;
   min-width: 220px;
+  max-width: calc(100vw - 40px);
   max-height: 280px;
   overflow-y: auto;
   background: #1e1e1e;

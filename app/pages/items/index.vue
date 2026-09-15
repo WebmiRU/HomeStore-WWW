@@ -46,12 +46,12 @@
                 @change="toggleOne(item.payload.id)"
               />
             </td>
-            <td>{{ item.payload.id }}</td>
-            <td>{{ item.payload.title }}</td>
-            <td>{{ item.store?.[0]?.title ?? '—' }}</td>
-            <td>{{ item.payload.quantity ?? '—' }}</td>
-            <td>{{ formatDate(item.payload.created_at) }}</td>
-            <td>{{ formatDate(item.payload.updated_at) }}</td>
+            <td data-label="ID">{{ item.payload.id }}</td>
+            <td data-label="Название">{{ item.payload.title }}</td>
+            <td data-label="Хранилище">{{ item.store?.[0]?.title ?? '—' }}</td>
+            <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>
+            <td data-label="Создан">{{ formatDate(item.payload.created_at) }}</td>
+            <td data-label="Обновлён">{{ formatDate(item.payload.updated_at) }}</td>
             <td class="actions">
               <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
               <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link">ред.</NuxtLink>
@@ -351,5 +351,79 @@ watch(() => route.query.page, (newPage) => {
 .page-info {
   font-size: 13px;
   color: #888;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .items-table,
+  .items-table tbody,
+  .items-table tr,
+  .items-table td {
+    display: block;
+  }
+
+  .items-table thead {
+    display: none;
+  }
+
+  .items-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .items-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+  }
+
+  .items-table td.cb-col {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .items-table td.cb-col input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .items-table td.actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .items-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .items-table tr:hover td {
+    background: transparent;
+  }
 }
 </style>

@@ -11,6 +11,7 @@
     <button class="search-btn" @click="doSearch">Поиск</button>
 
     <nav class="entity-nav">
+      <NuxtLink to="/" class="entity-link">Главная</NuxtLink>
       <NuxtLink to="/items" class="entity-link">Предметы</NuxtLink>
       <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
       <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
@@ -101,5 +102,32 @@ function doSearch() {
   color: #aaf;
   background: #2a2a3a;
   border-color: #3a3a5a;
+}
+
+@media (max-width: 768px) {
+  .search-input {
+    flex: 1;
+    flex-basis: 0;
+    min-width: 0;
+    max-width: none;
+    font-size: 16px;
+  }
+
+  .search-btn {
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .entity-nav {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-bottom: 2px;
+  }
+
+  .entity-link {
+    white-space: nowrap;
+  }
 }
 </style>

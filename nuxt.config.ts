@@ -13,6 +13,12 @@ export default defineNuxtConfig({
     },
   },
 
+  app: {
+    head: {
+      title: 'HomeStore',
+    },
+  },
+
   devServer: {
     host: '0.0.0.0',  // слушать все сетевые интерфейсы (доступ в локальной сети)
     port: 3000,

@@ -56,4 +56,11 @@
   flex-shrink: 0;
   color: #777;
 }
+
+@media (max-width: 768px) {
+  .item-photo-placeholder {
+    width: 56px;
+    height: 56px;
+  }
+}
 </style>

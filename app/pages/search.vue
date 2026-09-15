@@ -41,11 +41,11 @@
                 @change="toggleOne(r)"
               />
             </td>
-            <td>
+            <td data-label="Тип">
               <span v-if="r.type === 'item'" class="type-badge type-item">Предмет</span>
               <span v-else class="type-badge type-store">Хранилище</span>
             </td>
-            <td>
+            <td data-label="Название">
               <div class="result-title">{{ r.payload.title }}</div>
               <div v-if="r.payload.title_print" class="result-sub">{{ r.payload.title_print }}</div>
             </td>
@@ -341,5 +341,79 @@ watch(() => route.query.q, () => {
 
 .action-link:hover {
   color: #aaf;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .results-table,
+  .results-table tbody,
+  .results-table tr,
+  .results-table td {
+    display: block;
+  }
+
+  .results-table thead {
+    display: none;
+  }
+
+  .results-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .results-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+  }
+
+  .results-table td.cb-col {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .results-table td.cb-col input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .results-table td.actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .results-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .results-table tr:hover td {
+    background: transparent;
+  }
 }
 </style>

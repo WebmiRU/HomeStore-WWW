@@ -197,6 +197,39 @@ body {
   animation-direction: reverse;
   animation-fill-mode: forwards;
 }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px !important;
+  }
+
+  .uuid-search {
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .uuid-label {
+    flex: 1 1 100%;
+  }
+
+  .uuid-input {
+    flex: 1 1 140px;
+    width: auto;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .uuid-btn {
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
 </style>
 
 <style scoped>

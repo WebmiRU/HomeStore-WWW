@@ -24,12 +24,12 @@
         </thead>
         <tbody>
           <tr v-for="p in presets" :key="p.id">
-            <td>{{ p.id }}</td>
-            <td>{{ p.title }}</td>
-            <td>{{ p.page_width }}×{{ p.page_height }}</td>
-            <td>{{ p.cell_width }}×{{ p.cell_height }}</td>
-            <td>{{ p.barcode_position }}</td>
-            <td>{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
+            <td data-label="ID">{{ p.id }}</td>
+            <td data-label="Название">{{ p.title }}</td>
+            <td data-label="Страница">{{ p.page_width }}×{{ p.page_height }}</td>
+            <td data-label="Ячейка">{{ p.cell_width }}×{{ p.cell_height }}</td>
+            <td data-label="Штрих-код">{{ p.barcode_position }}</td>
+            <td data-label="Шрифт">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
             <td class="actions">
               <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link">ред.</NuxtLink>
               <a href="#" class="action-link action-del" @click.prevent="deletePreset(p.id)">уд.</a>
@@ -241,5 +241,79 @@ watch(() => route.query.page, (newPage) => {
 .page-info {
   font-size: 13px;
   color: #888;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .presets-table,
+  .presets-table tbody,
+  .presets-table tr,
+  .presets-table td {
+    display: block;
+  }
+
+  .presets-table thead {
+    display: none;
+  }
+
+  .presets-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .presets-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+  }
+
+  .presets-table td.cb-col {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .presets-table td.cb-col input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .presets-table td.actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .presets-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .presets-table tr:hover td {
+    background: transparent;
+  }
 }
 </style>

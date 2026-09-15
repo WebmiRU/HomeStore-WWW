@@ -359,4 +359,18 @@ onMounted(load)
   background: #333;
   border-style: solid;
 }
+
+@media (max-width: 768px) {
+  .field-row {
+    flex-wrap: wrap;
+  }
+
+  .field-half {
+    flex: 1 1 100%;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
 </style>
