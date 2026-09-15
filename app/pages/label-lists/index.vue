@@ -41,7 +41,8 @@
                 :class="{ disabled: downloading === list.id }"
                 @click.prevent="downloadPdf(list.id)"
               >
-                {{ downloading === list.id ? '...' : 'скач.' }}
+                <img v-if="downloading !== list.id" src="/img/icon/download.svg" class="action-icon" alt="" />
+                <span v-else class="download-spinner">...</span>
               </a>
             </td>
           </tr>
