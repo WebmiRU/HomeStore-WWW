@@ -1,7 +1,12 @@
 <template>
   <div class="toggler" ref="rootEl">
-    <button class="toggler-btn" @click.stop="toggle" :title="itemId ? 'Добавить предмет в этикетки' : 'Добавить хранилище в этикетки'">
-      📋<span v-if="inAnyList" class="toggler-dot" title="В списках этикеток">●</span>
+    <button
+      class="toggler-btn"
+      :class="{ 'toggler-btn--active': inAnyList }"
+      @click.stop="toggle"
+      :title="itemId ? 'Добавить предмет в этикетки' : 'Добавить хранилище в этикетки'"
+    >
+      <span class="toggler-icon" :class="{ 'toggler-icon--active': inAnyList }"></span>
     </button>
 
     <div v-if="open" class="toggler-dropdown" @click.stop>
@@ -166,11 +171,19 @@ onBeforeUnmount(() => {
   color: #ccc;
 }
 
-.toggler-dot {
-  color: #3a7a3a;
-  font-size: 8px;
-  vertical-align: super;
-  margin-left: 1px;
+.toggler-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  background-color: #cfcfcf;
+  -webkit-mask: url('/img/icon/clipboard.svg') no-repeat center / contain;
+  mask: url('/img/icon/clipboard.svg') no-repeat center / contain;
+  transition: background-color 0.15s;
+}
+
+.toggler-icon--active {
+  background-color: #3fb950;
 }
 
 .toggler-dropdown {
