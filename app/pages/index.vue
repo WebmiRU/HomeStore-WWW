@@ -303,12 +303,31 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
 }
 
+function keyToLatin(e: KeyboardEvent): string {
+  const key = e.key
+  if (key.length !== 1) return key
+
+  // Уже латиница или цифра — раскладка не важна, возвращаем как есть.
+  if (/[a-zA-Z0-9]/.test(key)) return key
+
+  // Кириллица с буквенной клавиши: e.code не зависит от раскладки,
+  // по нему достаём соответствующую латинскую букву.
+  if (e.code.startsWith('Key')) {
+    const latin = e.code.slice(3) // 'A'..'Z'
+    return e.shiftKey ? latin : latin.toLowerCase()
+  }
+
+  return key
+}
+
 function onKeydown(e: KeyboardEvent) {
   if (isEditableTarget(e.target)) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
-  if (e.key.length !== 1) return
 
-  buffer += e.key
+  const key = keyToLatin(e)
+  if (key.length !== 1) return
+
+  buffer += key
   if (buffer.length > MAX_CODE_LEN) {
     buffer = buffer.slice(0, MAX_CODE_LEN)
   }
