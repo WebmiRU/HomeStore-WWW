@@ -1,5 +1,6 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
+import type { ImageResponse } from './image'
 
 export type StoreParent = {
   id: number
@@ -18,6 +19,7 @@ export type StoreResponse = {
   updated_at: string
   parents: StoreParent[]
   code?: string | null
+  images?: ImageResponse[] | null
 }
 
 class StoreModule extends FetchFactory<any> {

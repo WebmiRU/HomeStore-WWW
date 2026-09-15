@@ -1,5 +1,6 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
+import type { ImageResponse } from './image'
 import type { ItemPayload, StorePayload } from './code'
 
 export type ItemResponse = {
@@ -7,6 +8,7 @@ export type ItemResponse = {
   code: string | null
   payload: ItemPayload
   store: StorePayload[] | null
+  images: ImageResponse[] | null
 }
 
 type PaginatedResponse<T> = {

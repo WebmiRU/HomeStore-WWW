@@ -33,6 +33,11 @@
         <input v-model="form.code" type="text" class="field-input" maxlength="256" />
       </label>
 
+      <div class="field">
+        <span class="field-label">Изображения</span>
+        <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" />
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink :to="{ path: '/stores/create', query: { copy_title: form.title, copy_title_print: form.title_print, copy_parent_id: form.parent_id } }" class="btn-copy">Создать копию</NuxtLink>
@@ -44,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
@@ -55,6 +61,7 @@ const id = route.params.id as string
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
+const images = ref<ImageResponse[]>([])
 
 const form = reactive({
   title: '',
@@ -118,6 +125,7 @@ async function load() {
     form.title_print = store.title_print ?? ''
     form.parent_id = store.parent_id
     form.code = store.code ?? ''
+    images.value = store.images ?? []
 
     // Строим дерево для селекта, исключая текущее хранилище
     const filtered = stores.filter(s => s.id !== store.id)

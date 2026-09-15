@@ -53,6 +53,11 @@
         />
       </label>
 
+      <div class="field">
+        <span class="field-label">Изображения</span>
+        <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" />
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
@@ -64,6 +69,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
+import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 
 const { $api, $notify } = useNuxtApp()
@@ -76,6 +82,7 @@ const loadError = ref<string | null>(null)
 const saving = ref(false)
 const originalCode = ref('')
 const quantityInput = ref('')
+const images = ref<ImageResponse[]>([])
 
 interface StoreOption {
   id: number
@@ -147,6 +154,7 @@ async function load() {
     form.code = item.code ?? ''
     originalCode.value = item.code ?? ''
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
+    images.value = item.images ?? []
 
     const tree = buildTree(stores)
     storeOptions.value = flattenTree(tree)
