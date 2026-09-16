@@ -14,6 +14,8 @@
 
     <SearchBar @search="doSearch" />
 
+    <hr class="page-divider" />
+
     <NuxtPage />
 
     <footer class="page-footer">
@@ -235,9 +237,20 @@ body {
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 40px;
+  padding: 24px 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+.page-divider {
+  border: none;
+  height: 1px;
+  margin: 18px 0 8px;
+  background: linear-gradient(to right, #444, #2a2a2a 30%, #444);
 }
 
 .page-footer {

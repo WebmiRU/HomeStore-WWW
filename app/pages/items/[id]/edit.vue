@@ -191,9 +191,14 @@ onMounted(load)
 </script>
 
 <style scoped>
+.edit-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .page-title {
-  margin: 0 0 20px;
-  font-size: 18px;
+  margin: 24px 0 8px;
+  font-size: 20px;
   color: #ccc;
 }
 
@@ -208,7 +213,8 @@ onMounted(load)
 }
 
 .edit-form {
-  max-width: 500px;
+  max-width: none;
+  width: 100%;
 }
 
 .field {

@@ -1,6 +1,7 @@
 <template>
   <div class="images-manager">
-    <div class="images-upload">
+    <div class="images-toolbar">
+      <span class="images-toolbar__title">Изображения&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}</span>
       <input
         ref="fileInput"
         type="file"
@@ -19,8 +20,8 @@
           <tr>
             <th class="col-order">Порядок</th>
             <th class="col-id">ID</th>
-            <th>Изображение</th>
-            <th>Alt</th>
+            <th class="col-thumb">Изображение</th>
+            <th class="col-alt">Alt</th>
             <th class="col-actions"></th>
           </tr>
         </thead>
@@ -290,13 +291,27 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   cursor: default;
 }
 
+.images-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.images-toolbar__title {
+  font-size: 14px;
+  color: #ccc;
+}
+
 .images-table-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .images-table {
   border-collapse: collapse;
-  min-width: 620px;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .images-table th,
@@ -325,16 +340,28 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   font-size: 13px;
 }
 
+.col-thumb {
+  width: 80px;
+  min-width: 80px;
+}
+
+.col-alt {
+  width: auto;
+}
+
+.col-actions {
+  width: 70px;
+  text-align: center;
+}
+
 .col-thumb img {
   display: block;
+  width: 80px;
+  height: 60px;
   border: 1px solid #444;
   border-radius: 4px;
   background: #222;
   object-fit: cover;
-}
-
-.col-actions {
-  width: 90px;
 }
 
 .order-controls {
