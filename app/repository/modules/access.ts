@@ -2,7 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { UserBrief } from '~/composables/useCurrentUser'
 
-export type AccessRight = 'view' | 'edit' | 'delete'
+export type AccessRight = 'view' | 'create' | 'edit' | 'delete'
 
 export type AccessGrantResponse = {
   id: number

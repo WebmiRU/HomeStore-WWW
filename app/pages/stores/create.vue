@@ -20,8 +20,8 @@
         <span class="field-label">Склад</span>
         <select v-model.number="form.warehouse_id" class="field-select">
           <option :value="null">[НЕТ]</option>
-          <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id">
-            {{ opt.title }}
+          <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id" :disabled="!opt.can_create">
+            {{ opt.title }}<template v-if="!opt.can_create"> — только просмотр</template>
           </option>
         </select>
       </label>
@@ -132,7 +132,11 @@ async function load() {
       $api.warehouse.all(),
     ])
     warehouseOptions.value = warehouses
-    const tree = buildTree(stores)
+    const canCreateIn = (s: StoreResponse): boolean => {
+      if (!s.warehouse_id) return true
+      return warehouses.some((w) => w.can_create && w.id === s.warehouse_id)
+    }
+    const tree = buildTree(stores.filter(canCreateIn))
     parentOptions.value = flattenTree(tree)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)

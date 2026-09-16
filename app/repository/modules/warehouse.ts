@@ -6,6 +6,7 @@ export type WarehouseResponse = {
   id: number
   title: string
   user_id: number
+  can_create: boolean
   user?: UserProfileResponse | null
   created_at: string
   updated_at: string

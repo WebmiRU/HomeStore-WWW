@@ -102,6 +102,7 @@ const { currentUserId } = useCurrentUser()
 
 const rightOptions: { key: AccessRight; label: string }[] = [
   { key: 'view', label: 'Просмотр' },
+  { key: 'create', label: 'Создание' },
   { key: 'edit', label: 'Изменение' },
   { key: 'delete', label: 'Удаление' },
 ]
@@ -146,7 +147,7 @@ function toggleFormRight(right: AccessRight) {
 
 function normalizeRights(rights: AccessRight[]): AccessRight[] {
   const clean = Array.from(new Set(rights))
-  if ((clean.includes('edit') || clean.includes('delete')) && !clean.includes('view')) {
+  if ((clean.includes('create') || clean.includes('edit') || clean.includes('delete')) && !clean.includes('view')) {
     clean.unshift('view')
   }
   return clean
