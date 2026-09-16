@@ -522,6 +522,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   .images-table td.col-thumb img {
     width: 120px;
     height: 90px;
+    margin: 0 auto;
   }
 
   .images-table td.col-alt {
