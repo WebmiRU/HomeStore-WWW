@@ -223,7 +223,9 @@ async function onFileChange(event: Event) {
 async function removeImage(imageId: number) {
   removingId.value = imageId
   try {
-    await $api.image.delete(imageId)
+    await (props.entity === 'item'
+      ? $api.image.deleteForItem(props.entityId, imageId)
+      : $api.image.deleteForStore(props.entityId, imageId))
     items.value = items.value.filter((img) => img.id !== imageId)
     emitItems()
     $notify.add('Изображение удалено', { type: 'success' })
@@ -350,7 +352,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 }
 
 .col-actions {
-  width: 70px;
+  width: 68px;
   text-align: center;
 }
 

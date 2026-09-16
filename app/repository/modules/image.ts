@@ -4,6 +4,7 @@ import type { $Fetch } from 'ofetch'
 export type ImageResponse = {
   id: number
   url: string
+  sha256: string | null
   original_name: string | null
   mime: string | null
   alt: string | null
@@ -54,8 +55,12 @@ class ImageModule extends FetchFactory<any> {
     await this.call('POST', `${this.baseUrl}/store/${storeId}/image/reorder`, { ids })
   }
 
-  async delete(id: number): Promise<void> {
-    await this.call('DELETE', `${this.baseUrl}/${id}`)
+  async deleteForItem(itemId: number, imageId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/item/${itemId}/image/${imageId}`)
+  }
+
+  async deleteForStore(storeId: number, imageId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/store/${storeId}/image/${imageId}`)
   }
 }
 
