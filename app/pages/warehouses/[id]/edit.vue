@@ -5,33 +5,46 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="edit-form">
-      <label class="field">
-        <span class="field-label">Название</span>
-        <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-      </label>
+    <template v-else>
+      <TabBar :tabs="tabs" class="edit-tabs" />
 
-      <label class="field">
-        <span class="field-label">Пользователь</span>
-        <select v-model.number="form.user_id" class="field-select" required>
-          <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
-        </select>
-      </label>
+      <form @submit.prevent="save" class="edit-form">
+        <section v-if="activeTab === 'main'" class="tab-section">
+          <label class="field">
+            <span class="field-label">Название</span>
+            <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+          </label>
 
-      <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/warehouses" class="btn-cancel">Отмена</NuxtLink>
-      </div>
-    </form>
+          <label class="field">
+            <span class="field-label">Пользователь</span>
+            <select v-model.number="form.user_id" class="field-select" required>
+              <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
+            </select>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+            <NuxtLink to="/warehouses" class="btn-cancel">Отмена</NuxtLink>
+          </div>
+        </section>
+
+        <section v-if="activeTab === 'rights'" class="tab-section">
+          <AccessGrants :scoped-warehouse="warehouse" />
+        </section>
+      </form>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
+import type { WarehouseResponse } from '~/repository/modules/warehouse'
 
 const { $api, $notify } = useNuxtApp()
+const { currentUserId } = useCurrentUser()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -40,22 +53,41 @@ const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
 const users = ref<UserProfileResponse[]>([])
+const warehouse = ref<WarehouseResponse | null>(null)
 
 const form = reactive({
   title: '',
   user_id: null as number | null,
 })
 
+const tabs = computed(() => {
+  const base = [{ key: 'main', label: 'Основные параметры' }]
+  const isOwner = currentUserId.value !== null && warehouse.value?.user_id === currentUserId.value
+  if (isOwner) {
+    base.push({ key: 'rights', label: 'Права' })
+  }
+  return base
+})
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
+
 async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [warehouse, usersList] = await Promise.all([
+    const [warehouseResult, usersList] = await Promise.all([
       $api.warehouse.get(Number(id)),
       $api.userProfile.all(),
     ])
-    form.title = warehouse.title
-    form.user_id = warehouse.user_id
+    warehouse.value = warehouseResult
+    form.title = warehouseResult.title
+    form.user_id = warehouseResult.user_id
     users.value = usersList
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
@@ -83,10 +115,25 @@ onMounted(load)
 </script>
 
 <style scoped>
+.edit-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .page-title {
-  margin: 0 0 20px;
-  font-size: 18px;
+  margin: 24px 0 8px;
+  font-size: 20px;
   color: #ccc;
+}
+
+.edit-tabs {
+  margin: 14px 0 20px;
+}
+
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .loading,
@@ -100,12 +147,17 @@ onMounted(load)
 }
 
 .edit-form {
-  max-width: 500px;
+  max-width: none;
+  width: 100%;
 }
 
 .field {
   display: block;
   margin-bottom: 14px;
+}
+
+.tab-section .field {
+  margin-bottom: 0;
 }
 
 .field-label {
@@ -137,7 +189,7 @@ onMounted(load)
 .form-actions {
   display: flex;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 24px;
 }
 
 .btn-save {

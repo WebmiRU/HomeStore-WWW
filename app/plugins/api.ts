@@ -1,5 +1,6 @@
 import { $fetch } from 'ofetch'
 import type { FetchOptions } from 'ofetch'
+import AccessModule from '~/repository/modules/access'
 import AuthModule from '~/repository/modules/auth'
 import CodeModule from '~/repository/modules/code'
 import ImageModule from '~/repository/modules/image'
@@ -12,6 +13,7 @@ import UserProfileModule from '~/repository/modules/userProfile'
 import WarehouseModule from '~/repository/modules/warehouse'
 
 interface IApiInstance {
+  access: AccessModule
   auth: AuthModule
   code: CodeModule
   item: ItemModule
@@ -66,6 +68,7 @@ export default defineNuxtPlugin(() => {
   const apiFetcher = $fetch.create(fetchOptions)
 
   const modules: IApiInstance = {
+    access: new AccessModule(apiFetcher),
     auth: new AuthModule(apiFetcher),
     code: new CodeModule(apiFetcher),
     item: new ItemModule(apiFetcher),
