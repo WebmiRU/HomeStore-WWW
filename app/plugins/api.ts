@@ -37,6 +37,9 @@ export default defineNuxtPlugin(() => {
       if (isLoginRequest(String(request))) {
         return
       }
+      if (!import.meta.client) {
+        return
+      }
       const token = localStorage.getItem('home-store-token')
       if (token) {
         options.headers = {
@@ -46,12 +49,16 @@ export default defineNuxtPlugin(() => {
       }
     },
     onResponseError({ response, request }) {
-      if (response?.status === 401 && !isLoginRequest(String(request))) {
-        localStorage.removeItem('home-store-token')
-        localStorage.removeItem('home-store-user-id')
-        if (window.location.pathname !== '/login') {
-          navigateTo('/login')
-        }
+      if (!import.meta.client || !response || response.status !== 401) {
+        return
+      }
+      if (isLoginRequest(String(request))) {
+        return
+      }
+      localStorage.removeItem('home-store-token')
+      localStorage.removeItem('home-store-user-id')
+      if (window.location.pathname !== '/login') {
+        navigateTo('/login')
       }
     },
   }

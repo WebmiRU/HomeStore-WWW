@@ -8,11 +8,15 @@ export default defineEventHandler(async (event) => {
 
   const url = `${apiBaseUrl}/${path}`
 
+  const authorization = getHeader(event, 'authorization')
+  const authHeaders = authorization ? { authorization } : {}
+
   try {
     if (event.method === 'GET' || event.method === 'HEAD') {
       return await $fetch(url, {
         method: event.method,
         query,
+        headers: authHeaders,
       })
     }
 
@@ -25,7 +29,7 @@ export default defineEventHandler(async (event) => {
         method: event.method,
         query,
         body: rawBody,
-        headers: { 'content-type': contentType },
+        headers: { 'content-type': contentType, ...authHeaders },
       }).then((r) => r._data)
     }
 
@@ -35,6 +39,7 @@ export default defineEventHandler(async (event) => {
       method: event.method,
       query,
       body,
+      headers: authHeaders,
     })
   } catch (err: any) {
     const status = err.status || 500
