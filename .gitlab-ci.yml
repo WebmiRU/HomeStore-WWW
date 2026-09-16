@@ -48,10 +48,11 @@ deploy:
     - echo "$KUBE_CONFIG" > /root/.kube/config
   script:
     - echo "Deploying $IMAGE_NAME:$CI_COMMIT_SHORT_SHA to $KUBE_NAMESPACE"
-    - kubectl set image deployment/$KUBE_DEPLOYMENT \
+    - |
+      kubectl set image deployment/$KUBE_DEPLOYMENT \
         $KUBE_DEPLOYMENT=$IMAGE_NAME:$CI_COMMIT_SHORT_SHA \
         -n $KUBE_NAMESPACE
-    - kubectl rollout status deployment/$KUBE_DEPLOYMENT \
+      kubectl rollout status deployment/$KUBE_DEPLOYMENT \
         -n $KUBE_NAMESPACE --timeout=300s
   rules:
     - if: $CI_COMMIT_BRANCH == "dev"
