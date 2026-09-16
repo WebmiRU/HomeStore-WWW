@@ -40,6 +40,7 @@ async function submit() {
   try {
     const result = await $api.auth.login({ ...form })
     localStorage.setItem('home-store-token', result.token)
+    localStorage.setItem('home-store-user-id', String(result.user.id))
     $notify.add(`Добро пожаловать, ${result.user.name}`, { type: 'success' })
     router.push('/')
   } catch (err: any) {

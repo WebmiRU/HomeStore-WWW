@@ -3,9 +3,12 @@ import type { $Fetch } from 'ofetch'
 import type { LabelPresetResponse } from './labelPreset'
 import type { ItemResponse } from './item'
 import type { StoreResponse } from './store'
+import type { UserBrief } from './code'
 
 export type LabelListResponse = {
   id: number
+  user_id?: number | null
+  user?: UserBrief | null
   title: string
   label_preset_id: number
   created_at: string

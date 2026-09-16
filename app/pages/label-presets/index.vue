@@ -20,6 +20,7 @@
             <th>Этикеток/лист</th>
             <th>Штрих-код</th>
             <th>Шрифт</th>
+            <th v-if="showOwnerColumn">Владелец</th>
             <th></th>
           </tr>
         </thead>
@@ -32,6 +33,14 @@
             <td data-label="Этикеток/лист">{{ p.labels_per_sheet }}</td>
             <td data-label="Штрих-код">{{ p.barcode_position }}</td>
             <td data-label="Шрифт">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
+            <td v-if="showOwnerColumn" data-label="Владелец">
+              <span
+                v-if="p.user"
+                class="owner-name"
+                :class="isOwner(p.user) ? 'owner--me' : 'owner--other'"
+              >{{ p.user.name }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="actions">
               <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
@@ -68,11 +77,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
 
@@ -80,6 +91,8 @@ const presets = ref<LabelPresetResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
+
+const showOwnerColumn = computed(() => presets.value.some(p => p.user && p.user.id))
 
 async function loadPresets(page?: number) {
   loading.value = true

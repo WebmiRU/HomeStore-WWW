@@ -1,8 +1,11 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
+import type { UserBrief } from './code'
 
 export type LabelPresetResponse = {
   id: number
+  user_id?: number | null
+  user?: UserBrief | null
   title: string
   page_width: number
   page_height: number

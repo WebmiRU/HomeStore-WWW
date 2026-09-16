@@ -1,8 +1,16 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 
+export type UserBrief = {
+  id: number
+  name: string
+  email: string
+}
+
 export type StorePayload = {
   id: number
+  user_id?: number | null
+  user?: UserBrief | null
   title: string
   parent_id: number | null
   created_at: string
@@ -11,6 +19,8 @@ export type StorePayload = {
 
 export type ItemPayload = {
   id: number
+  user_id?: number | null
+  user?: UserBrief | null
   title: string
   title_print: string | null
   store_id: number | null

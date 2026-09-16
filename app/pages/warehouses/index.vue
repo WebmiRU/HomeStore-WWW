@@ -14,8 +14,8 @@
           <tr>
             <th>ID</th>
             <th>Название</th>
-            <th>Пользователь</th>
             <th>Создан</th>
+            <th v-if="showOwnerColumn">Владелец</th>
             <th></th>
           </tr>
         </thead>
@@ -23,8 +23,15 @@
           <tr v-for="w in warehouses" :key="w.id">
             <td data-label="ID">{{ w.id }}</td>
             <td data-label="Название">{{ w.title }}</td>
-            <td data-label="Пользователь">{{ w.user?.name ?? (w.user_id ? '#' + w.user_id : '—') }}</td>
             <td data-label="Создан">{{ formatDate(w.created_at) }}</td>
+            <td v-if="showOwnerColumn" data-label="Владелец">
+              <span
+                v-if="w.user"
+                class="owner-name"
+                :class="isOwner(w.user) ? 'owner--me' : 'owner--other'"
+              >{{ w.user.name }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="actions">
               <NuxtLink :to="`/warehouses/${w.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
@@ -61,11 +68,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
 
@@ -73,6 +82,8 @@ const warehouses = ref<WarehouseResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
+
+const showOwnerColumn = computed(() => warehouses.value.some(w => w.user && w.user.id))
 
 async function loadWarehouses(page?: number) {
   loading.value = true

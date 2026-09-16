@@ -34,6 +34,7 @@
             <th>Количество</th>
             <th>Создан</th>
             <th>Обновлён</th>
+            <th v-if="showOwnerColumn">Владелец</th>
             <th></th>
           </tr>
         </thead>
@@ -52,6 +53,14 @@
             <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>
             <td data-label="Создан">{{ formatDate(item.payload.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(item.payload.updated_at) }}</td>
+            <td v-if="showOwnerColumn" data-label="Владелец">
+              <span
+                v-if="item.payload.user"
+                class="owner-name"
+                :class="isOwner(item.payload.user) ? 'owner--me' : 'owner--other'"
+              >{{ item.payload.user.name }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="actions">
               <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
               <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
@@ -91,8 +100,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
 
@@ -106,6 +117,7 @@ const itemsInLists = ref<Set<number>>(new Set())
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => items.value.length > 0 && items.value.every(i => selected.value.has(i.payload.id)))
+const showOwnerColumn = computed(() => items.value.some(i => i.payload.user && i.payload.user.id))
 
 function toggleAll() {
   if (allSelected.value) {

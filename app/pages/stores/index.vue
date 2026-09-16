@@ -31,6 +31,7 @@
             <th>Название</th>
             <th>Создан</th>
             <th>Обновлён</th>
+            <th v-if="showOwnerColumn">Владелец</th>
             <th></th>
           </tr>
         </thead>
@@ -51,6 +52,14 @@
             </td>
             <td data-label="Создан">{{ formatDate(node.store.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(node.store.updated_at) }}</td>
+            <td v-if="showOwnerColumn" data-label="Владелец">
+              <span
+                v-if="node.store.user"
+                class="owner-name"
+                :class="isOwner(node.store.user) ? 'owner--me' : 'owner--other'"
+              >{{ node.store.user.name }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="actions">
               <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
               <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
@@ -72,8 +81,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { isOwner } = useCurrentUser()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -84,6 +95,7 @@ const storesInLists = ref<Set<number>>(new Set())
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => flatList.value.length > 0 && flatList.value.every(n => selected.value.has(n.store.id)))
+const showOwnerColumn = computed(() => flatList.value.some(n => n.store.user && n.store.user.id))
 
 function toggleAll() {
   if (allSelected.value) {

@@ -18,6 +18,7 @@
             <th>Шаблон</th>
             <th>Создан</th>
             <th>Обновлён</th>
+            <th v-if="showOwnerColumn">Владелец</th>
             <th></th>
           </tr>
         </thead>
@@ -28,6 +29,14 @@
             <td data-label="Шаблон">{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
             <td data-label="Создан">{{ formatDate(list.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(list.updated_at) }}</td>
+            <td v-if="showOwnerColumn" data-label="Владелец">
+              <span
+                v-if="list.user"
+                class="owner-name"
+                :class="isOwner(list.user) ? 'owner--me' : 'owner--other'"
+              >{{ list.user.name }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="actions">
               <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
@@ -73,11 +82,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { LabelListResponse } from '~/repository/modules/labelList'
 import { formatApiError } from '~/composables/formatApiError'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
 
@@ -85,6 +96,8 @@ const lists = ref<LabelListResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
+
+const showOwnerColumn = computed(() => lists.value.some(l => l.user && l.user.id))
 const downloading = ref<number | null>(null)
 
 function formatDate(iso: string): string {
