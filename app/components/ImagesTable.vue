@@ -351,7 +351,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   width: auto;
 }
 
-.col-actions {
+.images-table .col-actions {
   width: 68px;
   text-align: center;
 }
