@@ -24,6 +24,9 @@ export type LabelPresetResponse = {
   font_size_max: number
   font_size_step: number
   line_height_factor: number
+  columns: number
+  rows: number
+  labels_per_sheet: number
   created_at: string
   updated_at: string
   font?: {

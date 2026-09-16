@@ -17,6 +17,7 @@
             <th>Название</th>
             <th>Страница</th>
             <th>Ячейка</th>
+            <th>Этикеток/лист</th>
             <th>Штрих-код</th>
             <th>Шрифт</th>
             <th></th>
@@ -28,6 +29,7 @@
             <td data-label="Название">{{ p.title }}</td>
             <td data-label="Страница">{{ p.page_width }}×{{ p.page_height }}</td>
             <td data-label="Ячейка">{{ p.cell_width }}×{{ p.cell_height }}</td>
+            <td data-label="Этикеток/лист">{{ p.labels_per_sheet }}</td>
             <td data-label="Штрих-код">{{ p.barcode_position }}</td>
             <td data-label="Шрифт">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
             <td class="actions">
