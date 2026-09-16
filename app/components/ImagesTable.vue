@@ -482,6 +482,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   }
 
   .images-table td {
+    width: auto;
     display: block;
     padding: 0;
     border: 0;
