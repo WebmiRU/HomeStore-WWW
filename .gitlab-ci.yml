@@ -6,7 +6,7 @@ variables:
   PROJECT_NAME: www
   IMAGE_NAME: $CI_REGISTRY_IMAGE
   KUBE_NAMESPACE: home-store
-  KUBE_DEPLOYMENT: www-app
+  KUBE_DEPLOYMENT: www
 
 workflow:
   rules:
