@@ -37,7 +37,7 @@
             @drop.prevent="onDrop($event, idx)"
             @dragend="onDragEnd"
           >
-            <td class="col-order" data-label="">
+            <td class="col-order">
               <div class="order-controls">
                 <span class="drag-handle" title="Перетащить">⠿</span>
                 <button
@@ -56,11 +56,11 @@
                 >↓</button>
               </div>
             </td>
-            <td class="col-id" data-label="ID">{{ img.id }}</td>
-            <td class="col-thumb" data-label="Изображение">
+            <td class="col-id" >{{ img.id }}</td>
+            <td class="col-thumb" >
               <img :src="img.url" :width="80" :height="60" :alt="img.alt ?? ''" loading="lazy" />
             </td>
-            <td class="col-alt" data-label="Alt">
+            <td class="col-alt" >
               <input
                 type="text"
                 class="field-input alt-input"
@@ -71,7 +71,7 @@
                 @blur="onAltBlur($event, img)"
               />
             </td>
-            <td class="col-actions" data-label="">
+            <td class="col-actions">
               <button
                 type="button"
                 class="btn-remove"
@@ -456,9 +456,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   }
 
   .images-table,
-  .images-table tbody,
-  .images-table tr,
-  .images-table td {
+  .images-table tbody {
     display: block;
   }
 
@@ -467,9 +465,16 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   }
 
   .images-table tr {
-    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "order id actions"
+      "thumb thumb thumb"
+      "alt   alt   alt";
+    gap: 10px;
+    align-items: center;
     margin-bottom: 14px;
-    padding: 44px 14px 14px;
+    padding: 12px;
     background: #1e1e1e;
     border: 1px solid #2b2b2b;
     border-radius: 10px;
@@ -477,10 +482,9 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   }
 
   .images-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
+    display: block;
+    padding: 0;
+    border: 0;
     color: #ddd;
     font-size: 15px;
     white-space: normal;
@@ -488,21 +492,31 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   }
 
   .images-table td.col-order {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: auto;
-    padding: 0;
+    grid-area: order;
+    justify-self: start;
+  }
+
+  .images-table td.col-id {
+    grid-area: id;
+    justify-self: center;
+    align-self: center;
+    color: #888;
+    text-align: center;
+  }
+
+  .images-table td.col-id::before {
+    content: 'ID ';
   }
 
   .images-table td.col-actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
+    grid-area: actions;
+    justify-self: end;
     text-align: right;
+  }
+
+  .images-table td.col-thumb {
+    grid-area: thumb;
+    text-align: center;
   }
 
   .images-table td.col-thumb img {
@@ -510,18 +524,21 @@ async function onAltBlur(event: Event, img: ImageResponse) {
     height: 90px;
   }
 
-  .images-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: #666;
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
+  .images-table td.col-alt {
+    grid-area: alt;
   }
 
   .images-table tr:hover td {
     background: transparent;
+  }
+
+  .order-controls .drag-handle {
+    display: none;
+  }
+
+  .btn-order {
+    padding: 6px 12px;
+    font-size: 15px;
   }
 
   .alt-input {
