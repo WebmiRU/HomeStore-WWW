@@ -15,7 +15,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'HomeStore',
+      title: 'HomeStore v1',
     },
   },
 
