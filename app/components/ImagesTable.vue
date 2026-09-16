@@ -37,7 +37,7 @@
             @drop.prevent="onDrop($event, idx)"
             @dragend="onDragEnd"
           >
-            <td class="col-order">
+            <td class="col-order" data-label="">
               <div class="order-controls">
                 <span class="drag-handle" title="Перетащить">⠿</span>
                 <button
@@ -56,11 +56,11 @@
                 >↓</button>
               </div>
             </td>
-            <td class="col-id">{{ img.id }}</td>
-            <td class="col-thumb">
+            <td class="col-id" data-label="ID">{{ img.id }}</td>
+            <td class="col-thumb" data-label="Изображение">
               <img :src="img.url" :width="80" :height="60" :alt="img.alt ?? ''" loading="lazy" />
             </td>
-            <td class="col-alt">
+            <td class="col-alt" data-label="Alt">
               <input
                 type="text"
                 class="field-input alt-input"
@@ -71,7 +71,7 @@
                 @blur="onAltBlur($event, img)"
               />
             </td>
-            <td class="col-actions">
+            <td class="col-actions" data-label="">
               <button
                 type="button"
                 class="btn-remove"
@@ -447,5 +447,85 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 .btn-remove:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+@media (max-width: 768px) {
+  .images-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .images-table,
+  .images-table tbody,
+  .images-table tr,
+  .images-table td {
+    display: block;
+  }
+
+  .images-table thead {
+    display: none;
+  }
+
+  .images-table tr {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 44px 14px 14px;
+    background: #1e1e1e;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .images-table td {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 0;
+    border-bottom: 0;
+    color: #ddd;
+    font-size: 15px;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .images-table td.col-order {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: auto;
+    padding: 0;
+  }
+
+  .images-table td.col-actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: auto;
+    padding: 0;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .images-table td.col-thumb img {
+    width: 120px;
+    height: 90px;
+  }
+
+  .images-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .images-table tr:hover td {
+    background: transparent;
+  }
+
+  .alt-input {
+    width: 100%;
+  }
 }
 </style>
