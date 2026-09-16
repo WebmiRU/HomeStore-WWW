@@ -1,11 +1,28 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование пользователя #{{ id }}</h3>
+    <h3 class="page-title">Пользователь #{{ id }}</h3>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <form v-else @submit.prevent="save" class="edit-form">
+      <div class="avatar-block">
+        <UserAvatar :user="previewUser" :size="120" />
+
+        <div class="avatar-actions">
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/avif"
+            class="avatar-file"
+            @change="onAvatarChange"
+          />
+          <button type="button" class="btn-avatar" :disabled="uploading" @click="avatarInput?.click()">
+            {{ uploading ? 'Загрузка...' : 'Загрузить аватар' }}
+          </button>
+        </div>
+      </div>
+
       <label class="field">
         <span class="field-label">Имя</span>
         <input v-model="form.name" type="text" class="field-input" maxlength="255" required />
@@ -19,36 +36,59 @@
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
+        <button v-if="isMe" type="button" class="btn-logout" :disabled="loggingOut" @click="logout">
+          {{ loggingOut ? 'Выход...' : 'Выйти' }}
+        </button>
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import type { UserProfileResponse } from '~/repository/modules/userProfile'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
+const router = useRouter()
 
-const id = route.params.id as string
+const id = Number(route.params.id)
+const { currentUserId } = useCurrentUser()
+const { profile, setProfile, clear: clearProfile } = useUserProfile()
+
+const isMe = computed(() => currentUserId.value !== null && currentUserId.value === id)
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
+const uploading = ref(false)
+const loggingOut = ref(false)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const currentAvatarUrl = ref<string | null>(null)
 
 const form = reactive({
   name: '',
   email: '',
 })
 
+const previewUser = computed<UserProfileResponse>(() => ({
+  id,
+  name: form.name || 'Пользователь',
+  email: form.email,
+  avatar_url: currentAvatarUrl.value,
+  created_at: '',
+  updated_at: '',
+}))
+
 async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const user = await $api.userProfile.get(Number(id))
+    const user = await $api.userProfile.get(id)
     form.name = user.name
     form.email = user.email
+    currentAvatarUrl.value = user.avatar_url ?? null
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -59,12 +99,52 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    await $api.userProfile.update(Number(id), { ...form })
+    const updated = await $api.userProfile.update(id, { ...form })
+    currentAvatarUrl.value = updated.avatar_url ?? null
+    if (isMe.value) {
+      setProfile(updated)
+    }
     $notify.add('Пользователь сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
+  }
+}
+
+async function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploading.value = true
+  try {
+    const updated = await $api.userProfile.updateAvatar(id, file)
+    currentAvatarUrl.value = updated.avatar_url ?? null
+    if (isMe.value) {
+      setProfile(updated)
+    }
+    $notify.add('Аватар обновлён', { type: 'success' })
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка загрузки аватара'), { type: 'error', timer: 10 })
+  } finally {
+    uploading.value = false
+    input.value = ''
+  }
+}
+
+async function logout() {
+  loggingOut.value = true
+  try {
+    await $api.auth.logout()
+  } catch {
+    // Даже если сервер недоступен — выходим на клиенте
+  } finally {
+    localStorage.removeItem('home-store-token')
+    localStorage.removeItem('home-store-user-id')
+    clearProfile()
+    $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
+    router.push('/login')
   }
 }
 
@@ -90,6 +170,43 @@ onMounted(load)
 
 .edit-form {
   max-width: 500px;
+}
+
+.avatar-block {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.avatar-file {
+  display: none;
+}
+
+.btn-avatar {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #9fd8a6;
+  background: #1f3a24;
+  border: 1px solid #3a7a3a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-avatar:hover:not(:disabled) {
+  background: #2a4d2e;
+}
+
+.btn-avatar:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .field {
@@ -147,6 +264,27 @@ onMounted(load)
   cursor: default;
 }
 
+.btn-logout {
+  margin-left: auto;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #3a1f1f;
+  color: #f8a8a8;
+  border: 1px solid #7a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-logout:hover:not(:disabled) {
+  background: #4d2a2a;
+}
+
+.btn-logout:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .btn-cancel {
   padding: 8px 16px;
   font-size: 14px;
@@ -165,8 +303,17 @@ onMounted(load)
 }
 
 @media (max-width: 768px) {
+  .avatar-block {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .form-actions {
     flex-wrap: wrap;
+  }
+
+  .btn-logout {
+    margin-left: 0;
   }
 }
 </style>

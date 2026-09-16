@@ -22,13 +22,19 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+
+const redirect = computed(() => {
+  const value = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  return value && value.startsWith('/') ? value : '/'
+})
 
 const form = reactive({
   email: '',
@@ -41,8 +47,10 @@ async function submit() {
     const result = await $api.auth.login({ ...form })
     localStorage.setItem('home-store-token', result.token)
     localStorage.setItem('home-store-user-id', String(result.user.id))
+    const { setProfile } = useUserProfile()
+    setProfile(result.user)
     $notify.add(`Добро пожаловать, ${result.user.name}`, { type: 'success' })
-    router.push('/')
+    router.push(redirect.value)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Не удалось войти'), { type: 'error', timer: 10 })
   } finally {

@@ -12,7 +12,7 @@
       />
     </div>
 
-    <SearchBar @search="doSearch" />
+    <AppHeader @search="doSearch" />
 
     <hr class="page-divider" />
 

@@ -5,56 +5,82 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="edit-form">
-      <label class="field">
-        <span class="field-label">Название</span>
-        <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-      </label>
+    <template v-else>
+      <TabBar :tabs="tabs" class="edit-tabs" />
 
-      <label class="field">
-        <span class="field-label">Название для печати</span>
-        <input v-model="form.title_print" type="text" class="field-input" maxlength="500" />
-      </label>
+      <form @submit.prevent="save" class="edit-form">
+        <section v-if="activeTab === 'main'" class="tab-section">
+          <label class="field">
+            <span class="field-label">Название</span>
+            <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+          </label>
 
-      <label class="field">
-        <span class="field-label">Родительское хранилище</span>
-        <select v-model.number="form.parent_id" class="field-select">
-          <option :value="null">[НЕТ]</option>
-          <option
-            v-for="opt in parentOptions"
-            :key="opt.id"
-            :value="opt.id"
-          >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
-        </select>
-      </label>
+          <label class="field">
+            <span class="field-label">Название для печати</span>
+            <input v-model="form.title_print" type="text" class="field-input" maxlength="500" />
+          </label>
 
-      <label class="field">
-        <span class="field-label">Код</span>
-        <input v-model="form.code" type="text" class="field-input" maxlength="256" />
-      </label>
+          <label class="field">
+            <span class="field-label">Склад</span>
+            <select v-model.number="form.warehouse_id" class="field-select">
+              <option :value="null">[НЕТ]</option>
+              <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id">
+                {{ opt.title }}
+              </option>
+            </select>
+          </label>
 
-      <div class="field">
-        <span class="field-label">Изображения</span>
-        <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" />
-      </div>
+          <label class="field">
+            <span class="field-label">Родительское хранилище</span>
+            <select v-model.number="form.parent_id" class="field-select">
+              <option :value="null">[НЕТ]</option>
+              <option
+                v-for="opt in parentOptions"
+                :key="opt.id"
+                :value="opt.id"
+              >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+            </select>
+          </label>
 
-      <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink :to="{ path: '/stores/create', query: { copy_title: form.title, copy_title_print: form.title_print, copy_parent_id: form.parent_id } }" class="btn-copy">Создать копию</NuxtLink>
-        <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
-      </div>
-    </form>
+          <label class="field">
+            <span class="field-label">Код</span>
+            <input v-model="form.code" type="text" class="field-input" maxlength="256" />
+          </label>
+        </section>
+
+        <section v-if="activeTab === 'images'" class="tab-section">
+          <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" />
+        </section>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <NuxtLink
+            :to="{
+              path: '/stores/create',
+              query: {
+                copy_title: form.title,
+                copy_title_print: form.title_print,
+                copy_parent_id: form.parent_id,
+                copy_warehouse_id: form.warehouse_id,
+              },
+            }"
+            class="btn-copy"
+          >Создать копию</NuxtLink>
+          <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
+        </div>
+      </form>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
+import type { WarehouseResponse } from '~/repository/modules/warehouse'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
-const router = useRouter()
 
 const id = route.params.id as string
 
@@ -63,12 +89,28 @@ const loadError = ref<string | null>(null)
 const saving = ref(false)
 const images = ref<ImageResponse[]>([])
 
+const tabs = [
+  { key: 'main', label: 'Основные параметры' },
+  { key: 'images', label: 'Картинки' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
+
 const form = reactive({
   title: '',
   title_print: '',
+  warehouse_id: null as number | null,
   parent_id: null as number | null,
   code: '',
 })
+
+const warehouseOptions = ref<WarehouseResponse[]>([])
 
 interface ParentOption {
   id: number
@@ -116,16 +158,19 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [store, stores] = await Promise.all([
+    const [store, stores, warehouses] = await Promise.all([
       $api.store.get(Number(id)),
       $api.store.list(),
+      $api.warehouse.all(),
     ])
 
     form.title = store.title
     form.title_print = store.title_print ?? ''
+    form.warehouse_id = store.warehouse_id ?? null
     form.parent_id = store.parent_id
     form.code = store.code ?? ''
     images.value = store.images ?? []
+    warehouseOptions.value = warehouses
 
     // Строим дерево для селекта, исключая текущее хранилище
     const filtered = stores.filter(s => s.id !== store.id)
@@ -144,6 +189,7 @@ async function save() {
     await $api.store.update(Number(id), {
       title: form.title,
       title_print: form.title_print || null,
+      warehouse_id: form.warehouse_id,
       parent_id: form.parent_id,
       code: form.code.trim() || null,
     })
@@ -159,10 +205,25 @@ onMounted(load)
 </script>
 
 <style scoped>
+.edit-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .page-title {
-  margin: 0 0 20px;
-  font-size: 18px;
+  margin: 24px 0 8px;
+  font-size: 20px;
   color: #ccc;
+}
+
+.edit-tabs {
+  margin: 14px 0 20px;
+}
+
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .loading,
@@ -176,12 +237,17 @@ onMounted(load)
 }
 
 .edit-form {
-  max-width: 500px;
+  max-width: none;
+  width: 100%;
 }
 
 .field {
   display: block;
   margin-bottom: 14px;
+}
+
+.tab-section .field {
+  margin-bottom: 0;
 }
 
 .field-label {
@@ -191,7 +257,8 @@ onMounted(load)
   margin-bottom: 4px;
 }
 
-.field-input {
+.field-input,
+.field-select {
   width: 100%;
   padding: 8px 10px;
   font-size: 15px;
@@ -209,38 +276,10 @@ onMounted(load)
   border-color: #666;
 }
 
-.field-select {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 15px;
-  font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.save-error {
-  color: #f88;
-  font-size: 13px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #3a1a1a;
-  border-radius: 4px;
-}
-
-.save-ok {
-  color: #8f8;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
 .form-actions {
   display: flex;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 24px;
 }
 
 .btn-save {
@@ -263,23 +302,7 @@ onMounted(load)
   cursor: default;
 }
 
-.btn-cancel {
-  padding: 8px 16px;
-  font-size: 14px;
-  color: #aaa;
-  text-decoration: none;
-  border: 1px dashed #555;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.btn-cancel:hover {
-  color: #ddd;
-  background: #333;
-  border-style: solid;
-}
-
+.btn-cancel,
 .btn-copy {
   padding: 8px 16px;
   font-size: 14px;
@@ -291,6 +314,7 @@ onMounted(load)
   align-items: center;
 }
 
+.btn-cancel:hover,
 .btn-copy:hover {
   color: #ddd;
   background: #333;

@@ -17,6 +17,16 @@
       </label>
 
       <label class="field">
+        <span class="field-label">Склад</span>
+        <select v-model.number="form.warehouse_id" class="field-select">
+          <option :value="null">[НЕТ]</option>
+          <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id">
+            {{ opt.title }}
+          </option>
+        </select>
+      </label>
+
+      <label class="field">
         <span class="field-label">Родительское хранилище</span>
         <select v-model.number="form.parent_id" class="field-select">
           <option :value="null">[НЕТ]</option>
@@ -45,6 +55,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
+import type { WarehouseResponse } from '~/repository/modules/warehouse'
 
 const { $api, $notify } = useNuxtApp()
 const router = useRouter()
@@ -54,6 +65,7 @@ const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
 const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
 const copyParentId = typeof route.query.copy_parent_id === 'string' ? Number(route.query.copy_parent_id) : null
+const copyWarehouseId = typeof route.query.copy_warehouse_id === 'string' ? Number(route.query.copy_warehouse_id) : null
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -62,9 +74,12 @@ const saving = ref(false)
 const form = reactive({
   title: copyTitle,
   title_print: copyTitlePrint,
+  warehouse_id: copyWarehouseId,
   parent_id: copyParentId,
   code: scannedCode,
 })
+
+const warehouseOptions = ref<WarehouseResponse[]>([])
 
 interface ParentOption {
   id: number
@@ -112,7 +127,11 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const stores = await $api.store.list()
+    const [stores, warehouses] = await Promise.all([
+      $api.store.list(),
+      $api.warehouse.all(),
+    ])
+    warehouseOptions.value = warehouses
     const tree = buildTree(stores)
     parentOptions.value = flattenTree(tree)
   } catch (err: any) {
@@ -128,6 +147,7 @@ async function save() {
     const created = await $api.store.create({
       title: form.title,
       title_print: form.title_print || null,
+      warehouse_id: form.warehouse_id,
       parent_id: form.parent_id,
       code: form.code.trim() || null,
     })
@@ -146,6 +166,7 @@ async function saveAndCopy() {
     const created = await $api.store.create({
       title: form.title,
       title_print: form.title_print || null,
+      warehouse_id: form.warehouse_id,
       parent_id: form.parent_id,
       code: form.code.trim() || null,
     })
@@ -156,6 +177,7 @@ async function saveAndCopy() {
         copy_title: form.title,
         copy_title_print: form.title_print,
         copy_parent_id: form.parent_id,
+        copy_warehouse_id: form.warehouse_id,
       },
     })
   } catch (err: any) {

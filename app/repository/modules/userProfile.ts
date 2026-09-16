@@ -5,6 +5,7 @@ export type UserProfileResponse = {
   id: number
   name: string
   email: string
+  avatar_url: string | null
   created_at: string
   updated_at: string
 }
@@ -60,6 +61,14 @@ class UserProfileModule extends FetchFactory<any> {
 
   async update(id: number, data: { name?: string; email?: string }): Promise<UserProfileResponse> {
     const result = await this.call('PUT', `${this.baseUrl}/${id}`, data)
+    const unwrapped = (result as any)?.data ?? result
+    return unwrapped as UserProfileResponse
+  }
+
+  async updateAvatar(id: number, file: File): Promise<UserProfileResponse> {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await this.call('POST', `${this.baseUrl}/${id}/avatar`, form)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as UserProfileResponse
   }
