@@ -27,7 +27,8 @@
                   <input
                     type="checkbox"
                     :checked="grantRights(grant, opt.key)"
-                    :disabled="savingRow === grant.id"
+                    :disabled="savingRow === grant.id || (opt.key === 'view' && hasOtherRight(grant))"
+                    :title="opt.key === 'view' && hasOtherRight(grant) ? 'Просмотр подразумевается другими правами' : undefined"
                     @change="toggleRight(grant, opt.key)"
                   />
                   <span>{{ opt.label }}</span>
@@ -137,6 +138,10 @@ function grantRights(grant: AccessGrantResponse, right: AccessRight): boolean {
   return grant.rights.includes(right)
 }
 
+function hasOtherRight(grant: AccessGrantResponse): boolean {
+  return grant.rights.some((r) => r !== 'view')
+}
+
 function toggleFormRight(right: AccessRight) {
   if (form.rights.includes(right)) {
     form.rights = form.rights.filter((r) => r !== right)
@@ -179,7 +184,10 @@ async function load() {
 async function addGrant() {
   if (!form.warehouse_id || !form.user_id) return
   const rights = normalizeRights(form.rights)
-  if (!rights.length) return
+  if (!rights.length) {
+    $notify.add('Выберите хотя бы одно право', { type: 'warning', timer: 5 })
+    return
+  }
 
   sending.value = true
   try {
@@ -203,7 +211,17 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
   const rights = normalizeRights(
     grant.rights.includes(right) ? grant.rights.filter((r) => r !== right) : [...grant.rights, right]
   )
-  if (!rights.length) return
+  if (!rights.length) {
+    $notify.add('Нужно хотя бы одно право. Чтобы убрать доступ полностью — удалите его', {
+      type: 'warning',
+      timer: 5,
+    })
+    return
+  }
+
+  if (rights.join(',') === grant.rights.join(',')) {
+    return
+  }
 
   savingRow.value = grant.id
   try {
