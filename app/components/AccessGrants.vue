@@ -26,9 +26,9 @@
                 <label class="grant-check" v-for="opt in rightOptions" :key="opt.key">
                   <input
                     type="checkbox"
-                    :checked="grantRights(grant, opt.key)"
-                    :disabled="savingRow === grant.id || (opt.key === 'view' && hasOtherRight(grant))"
-                    :title="opt.key === 'view' && hasOtherRight(grant) ? 'Просмотр подразумевается другими правами' : undefined"
+                    :checked="effectiveRightsFor(grant).includes(opt.key)"
+                    :disabled="savingRow === grant.id || (opt.key === 'view' && hasOtherRightFor(grant))"
+                    :title="opt.key === 'view' && hasOtherRightFor(grant) ? 'Просмотр подразумевается другими правами' : undefined"
                     @change="toggleRight(grant, opt.key)"
                   />
                   <span>{{ opt.label }}</span>
@@ -72,7 +72,9 @@
             <label class="grant-check" v-for="opt in rightOptions" :key="opt.key">
               <input
                 type="checkbox"
-                :checked="form.rights.includes(opt.key)"
+                :checked="effectiveFormRights().includes(opt.key)"
+                :disabled="opt.key === 'view' && hasOtherFormRight()"
+                :title="opt.key === 'view' && hasOtherFormRight() ? 'Просмотр подразумевается другими правами' : undefined"
                 @change="toggleFormRight(opt.key)"
               />
               <span>{{ opt.label }}</span>
@@ -134,15 +136,24 @@ const grantableUsers = computed(() =>
   users.value.filter((u) => currentUserId.value === null || u.id !== currentUserId.value)
 )
 
-function grantRights(grant: AccessGrantResponse, right: AccessRight): boolean {
-  return grant.rights.includes(right)
+function effectiveRightsFor(grant: AccessGrantResponse): AccessRight[] {
+  return normalizeRights(grant.rights)
 }
 
-function hasOtherRight(grant: AccessGrantResponse): boolean {
-  return grant.rights.some((r) => r !== 'view')
+function hasOtherRightFor(grant: AccessGrantResponse): boolean {
+  return effectiveRightsFor(grant).some((r) => r !== 'view')
+}
+
+function effectiveFormRights(): AccessRight[] {
+  return normalizeRights(form.rights)
+}
+
+function hasOtherFormRight(): boolean {
+  return effectiveFormRights().some((r) => r !== 'view')
 }
 
 function toggleFormRight(right: AccessRight) {
+  if (right === 'view' && hasOtherFormRight()) return
   if (form.rights.includes(right)) {
     form.rights = form.rights.filter((r) => r !== right)
   } else {
