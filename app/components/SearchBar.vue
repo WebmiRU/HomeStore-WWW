@@ -18,6 +18,7 @@
       <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
       <NuxtLink to="/label-lists" class="entity-link">Этикетки</NuxtLink>
       <NuxtLink to="/users" class="entity-link">Пользователи</NuxtLink>
+      <NuxtLink to="/login" class="entity-link">Вход</NuxtLink>
     </nav>
   </div>
 </template>
