@@ -29,8 +29,31 @@ export default defineNuxtPlugin(() => {
   // в production — напрямую к API (если настроен reverse proxy на том же домене)
   const apiBaseUrl = '/api'
 
+  const isLoginRequest = (url?: string) => Boolean(url && url.endsWith('/login'))
+
   const fetchOptions: FetchOptions = {
     baseURL: apiBaseUrl,
+    onRequest({ options, request }) {
+      if (isLoginRequest(String(request))) {
+        return
+      }
+      const token = localStorage.getItem('home-store-token')
+      if (token) {
+        options.headers = {
+          ...(options.headers as Record<string, string>),
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    },
+    onResponseError({ response, request }) {
+      if (response?.status === 401 && !isLoginRequest(String(request))) {
+        localStorage.removeItem('home-store-token')
+        localStorage.removeItem('home-store-user-id')
+        if (window.location.pathname !== '/login') {
+          navigateTo('/login')
+        }
+      }
+    },
   }
 
   const apiFetcher = $fetch.create(fetchOptions)
