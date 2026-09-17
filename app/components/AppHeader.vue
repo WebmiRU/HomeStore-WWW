@@ -22,6 +22,16 @@
         />
         <button type="submit" class="header-search__btn">Поиск</button>
       </form>
+
+      <button
+        v-if="currentUserId !== null"
+        type="button"
+        class="header-logout"
+        :disabled="loggingOut"
+        @click="logout"
+      >
+        {{ loggingOut ? 'Выход...' : 'Выйти' }}
+      </button>
     </div>
 
     <nav class="entity-nav">
@@ -44,10 +54,13 @@ const emit = defineEmits<{
   search: [query: string]
 }>()
 
-const { currentUserId } = useCurrentUser()
-const { profile, load: loadProfile } = useUserProfile()
+const { $api, $notify } = useNuxtApp()
+const router = useRouter()
+const { currentUserId, setCurrentUserId } = useCurrentUser()
+const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
 
 const searchQuery = ref('')
+const loggingOut = ref(false)
 
 const profileHref = computed<string | null>(() =>
   currentUserId.value !== null ? `/users/${currentUserId.value}/edit` : null
@@ -57,6 +70,23 @@ function doSearch() {
   const q = searchQuery.value.trim()
   if (!q) return
   emit('search', q)
+}
+
+async function logout() {
+  loggingOut.value = true
+  try {
+    await $api.auth.logout()
+  } catch {
+    // Даже если сервер недоступен — выходим на клиенте
+  } finally {
+    localStorage.removeItem('home-store-token')
+    localStorage.removeItem('home-store-user-id')
+    setCurrentUserId(null)
+    clearProfile()
+    $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
+    router.push('/login')
+    loggingOut.value = false
+  }
 }
 
 onMounted(() => {
@@ -126,6 +156,27 @@ a.header-avatar:hover {
 
 .header-search__btn:hover {
   background: #444;
+}
+
+.header-logout {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #3a1f1f;
+  color: #f8a8a8;
+  border: 1px solid #7a3a3a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.header-logout:hover:not(:disabled) {
+  background: #4d2a2a;
+}
+
+.header-logout:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .entity-nav {

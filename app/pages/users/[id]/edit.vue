@@ -67,7 +67,7 @@ const route = useRoute()
 const router = useRouter()
 
 const id = Number(route.params.id)
-const { currentUserId } = useCurrentUser()
+const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, setProfile, clear: clearProfile } = useUserProfile()
 
 const isMe = computed(() => currentUserId.value !== null && currentUserId.value === id)
@@ -161,6 +161,7 @@ async function logout() {
   } finally {
     localStorage.removeItem('home-store-token')
     localStorage.removeItem('home-store-user-id')
+    setCurrentUserId(null)
     clearProfile()
     $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
     router.push('/login')

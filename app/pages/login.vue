@@ -28,6 +28,7 @@ import { formatApiError } from '~/composables/formatApiError'
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
+const { setCurrentUserId } = useCurrentUser()
 
 const loading = ref(false)
 
@@ -47,6 +48,7 @@ async function submit() {
     const result = await $api.auth.login({ ...form })
     localStorage.setItem('home-store-token', result.token)
     localStorage.setItem('home-store-user-id', String(result.user.id))
+    setCurrentUserId(result.user.id)
     const { setProfile } = useUserProfile()
     setProfile(result.user)
     $notify.add(`Добро пожаловать, ${result.user.name}`, { type: 'success' })
