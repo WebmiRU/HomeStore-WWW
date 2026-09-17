@@ -10,8 +10,7 @@
         <svg
           class="mode-icon"
           viewBox="0 0 24 24"
-          fill="none"47457589
-ректн
+          fill="none"
           stroke="currentColor"
           stroke-width="2"
           stroke-linecap="round"
@@ -177,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 
@@ -193,6 +192,8 @@ interface ScanEntry {
 }
 
 const { $api, $notify } = useNuxtApp()
+const route = useRoute()
+const router = useRouter()
 
 const activeMode = ref<Mode>('search')
 
@@ -433,6 +434,21 @@ function formatDate(iso: string): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ru-RU')
 }
+
+// Поле «КОД» в футере эмулирует сканер: код из ?scan= обрабатываем так же,
+// как если бы он пришёл с устройства ввода.
+watch(
+  () => route.query.scan,
+  (value) => {
+    if (!import.meta.client) return
+    if (typeof value !== 'string' || !value) return
+    const rest = { ...route.query }
+    delete rest.scan
+    void router.replace({ query: rest })
+    void handleScan(value)
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)

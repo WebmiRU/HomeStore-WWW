@@ -20,7 +20,7 @@
 
     <footer class="page-footer">
       <div class="uuid-search">
-        <span class="uuid-label">Поиск по UUID:</span>
+        <span class="uuid-label">КОД:</span>
         <input
           v-model="uuidQuery"
           type="text"
@@ -57,15 +57,12 @@ async function doSearch(q: string) {
   }
 }
 
-async function doUuidSearch() {
+function doUuidSearch() {
   const q = uuidQuery.value.trim()
   if (!q) return
-  try {
-    await $api.code.search(q)
-    router.push({ path: '/search', query: { q } })
-  } catch {
-    $notify.add('Ничего не найдено', { type: 'info', timer: 5 })
-  }
+  // Эмулируем сканер: код обрабатывается на главной тем же сценарием,
+  // что и ввод с устройства (режим, найденное/список, «код не найден»).
+  router.push({ path: '/', query: { scan: q } })
 }
 </script>
 
