@@ -58,7 +58,7 @@
             </td>
             <td class="col-id" >{{ img.id }}</td>
             <td class="col-thumb" >
-              <img :src="img.url" :width="80" :height="60" :alt="img.alt ?? ''" loading="lazy" />
+              <img :src="thumbSrc(img)" :width="80" :height="60" :alt="img.alt ?? ''" loading="lazy" @error="onThumbError($event, img)" />
             </td>
             <td class="col-alt" >
               <input
@@ -103,6 +103,20 @@ const emit = defineEmits<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { thumbUrl } = useThumbnail()
+
+const THUMB_KEY = '100x100_contain'
+
+function thumbSrc(img: ImageResponse): string {
+  return thumbUrl(img.sha256, THUMB_KEY) ?? img.url
+}
+
+function onThumbError(event: Event, img: ImageResponse) {
+  const el = event.target as HTMLImageElement
+  if (el.dataset.fallback === '1') return
+  el.dataset.fallback = '1'
+  el.src = img.url
+}
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)

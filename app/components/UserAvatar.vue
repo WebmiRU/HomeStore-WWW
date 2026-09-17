@@ -1,25 +1,55 @@
 <template>
   <div class="avatar" :style="{ width: px, height: px }">
     <img
-      v-if="user?.avatar_url"
-      :src="user.avatar_url"
+      v-if="src"
+      :src="src"
       :alt="user.name ?? 'Пользователь'"
       class="avatar__img"
+      @error="onError"
     />
     <span v-else class="avatar__fallback" :style="fallbackStyle">{{ initial }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    user?: { id?: number; name?: string | null; avatar_url?: string | null } | null
+    user?: {
+      id?: number
+      name?: string | null
+      avatar_url?: string | null
+      avatar_sha?: string | null
+    } | null
     size?: number
+    thumbKey?: string
   }>(),
-  { size: 56 }
+  { size: 56, thumbKey: '100x100_cover' }
 )
+
+const { thumbUrl } = useThumbnail()
+
+const failed = ref(false)
+
+watch(
+  () => props.user?.avatar_sha,
+  () => {
+    failed.value = false
+  }
+)
+
+const src = computed(() => {
+  if (!failed.value) {
+    const thumb = thumbUrl(props.user?.avatar_sha, props.thumbKey)
+    if (thumb) return thumb
+  }
+  return props.user?.avatar_url ?? ''
+})
+
+function onError() {
+  failed.value = true
+}
 
 const px = computed(() => `${props.size}px`)
 
