@@ -29,7 +29,7 @@
                     :checked="effectiveRightsFor(grant).includes(opt.key)"
                     :disabled="savingRow === grant.id || (opt.key === 'view' && hasOtherRightFor(grant))"
                     :title="opt.key === 'view' && hasOtherRightFor(grant) ? 'Просмотр подразумевается другими правами' : undefined"
-                    @change="toggleRight(grant, opt.key)"
+                    @click.prevent="toggleRight(grant, opt.key)"
                   />
                   <span>{{ opt.label }}</span>
                 </label>
@@ -75,7 +75,7 @@
                 :checked="effectiveFormRights().includes(opt.key)"
                 :disabled="opt.key === 'view' && hasOtherFormRight()"
                 :title="opt.key === 'view' && hasOtherFormRight() ? 'Просмотр подразумевается другими правами' : undefined"
-                @change="toggleFormRight(opt.key)"
+                @click.prevent="toggleFormRight(opt.key)"
               />
               <span>{{ opt.label }}</span>
             </label>
@@ -159,6 +159,7 @@ function toggleFormRight(right: AccessRight) {
   } else {
     form.rights = [...form.rights, right]
   }
+  form.rights = [...normalizeRights(form.rights)]
 }
 
 function normalizeRights(rights: AccessRight[]): AccessRight[] {
@@ -179,7 +180,7 @@ async function load() {
       $api.userProfile.all(),
       hasScope ? Promise.resolve([]) : $api.warehouse.all(),
     ])
-    grants.value = grantsResult
+    grants.value = grantsResult.map((g) => ({ ...g, rights: normalizeRights(g.rights) }))
     users.value = usersResult
     warehouses.value = warehousesResult
 
@@ -219,9 +220,13 @@ async function addGrant() {
 }
 
 async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
-  const rights = normalizeRights(
-    grant.rights.includes(right) ? grant.rights.filter((r) => r !== right) : [...grant.rights, right]
-  )
+  if (right === 'view' && hasOtherRightFor(grant)) return
+
+  const updatedRights = grant.rights.includes(right)
+    ? grant.rights.filter((r) => r !== right)
+    : [...grant.rights, right]
+
+  const rights = normalizeRights(updatedRights)
   if (!rights.length) {
     $notify.add('Нужно хотя бы одно право. Чтобы убрать доступ полностью — удалите его', {
       type: 'warning',
@@ -230,14 +235,16 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
     return
   }
 
-  if (rights.join(',') === grant.rights.join(',')) {
+  const currentRights = normalizeRights(grant.rights)
+  if (rights.join(',') === currentRights.join(',')) {
     return
   }
 
   savingRow.value = grant.id
   try {
     const updated = await $api.access.update(grant.id, { rights })
-    grant.rights = updated.rights
+    const newRights = normalizeRights(updated.rights)
+    grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: newRights } : g))
     $notify.add('Права обновлены', { type: 'success', timer: 3 })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка обновления прав'), { type: 'error', timer: 10 })
