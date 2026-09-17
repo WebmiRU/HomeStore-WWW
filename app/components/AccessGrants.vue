@@ -23,12 +23,15 @@
             </td>
             <td data-label="Доступ">
               <div class="grant-rights">
-                <label class="grant-check" v-for="opt in rightOptions" :key="`${grant.id}-${effectiveRightsFor(grant).join(',')}-${opt.key}`">
+                <label class="grant-check grant-check--readonly">
+                  <input type="checkbox" checked readonly @click.prevent @keydown.space.prevent @keydown.enter.prevent />
+                  <span>{{ rightOptions[0].label }}</span>
+                </label>
+                <label class="grant-check" v-for="opt in rightOptions.slice(1)" :key="`${grant.id}-${opt.key}`">
                   <input
                     type="checkbox"
                     :checked="effectiveRightsFor(grant).includes(opt.key)"
-                    :disabled="savingRow === grant.id || (opt.key === 'view' && hasOtherRightFor(grant))"
-                    :title="opt.key === 'view' && hasOtherRightFor(grant) ? 'Просмотр подразумевается другими правами' : undefined"
+                    :disabled="savingRow === grant.id"
                     @click.prevent="toggleRight(grant, opt.key)"
                   />
                   <span>{{ opt.label }}</span>
@@ -69,12 +72,15 @@
         <div class="field">
           <span class="field-label">Права</span>
           <div class="grant-rights">
-            <label class="grant-check" v-for="opt in rightOptions" :key="opt.key">
+            <label class="grant-check grant-check--readonly">
+              <input type="checkbox" checked readonly @click.prevent @keydown.space.prevent @keydown.enter.prevent />
+              <span>{{ rightOptions[0].label }}</span>
+            </label>
+            <label class="grant-check" v-for="opt in rightOptions.slice(1)" :key="`form-${opt.key}-${effectiveFormRights().join(',')}`">
               <input
                 type="checkbox"
                 :checked="effectiveFormRights().includes(opt.key)"
-                :disabled="opt.key === 'view' && hasOtherFormRight()"
-                :title="opt.key === 'view' && hasOtherFormRight() ? 'Просмотр подразумевается другими правами' : undefined"
+                :disabled="savingRow"
                 @click.prevent="toggleFormRight(opt.key)"
               />
               <span>{{ opt.label }}</span>
@@ -137,37 +143,23 @@ const grantableUsers = computed(() =>
 )
 
 function effectiveRightsFor(grant: AccessGrantResponse): AccessRight[] {
-  return normalizeRights(grant.rights)
-}
-
-function hasOtherRightFor(grant: AccessGrantResponse): boolean {
-  return effectiveRightsFor(grant).some((r) => r !== 'view')
+  return grant.rights
 }
 
 function effectiveFormRights(): AccessRight[] {
-  return normalizeRights(form.rights)
-}
-
-function hasOtherFormRight(): boolean {
-  return effectiveFormRights().some((r) => r !== 'view')
+  return form.rights
 }
 
 function toggleFormRight(right: AccessRight) {
-  if (right === 'view' && hasOtherFormRight()) return
   if (form.rights.includes(right)) {
     form.rights = form.rights.filter((r) => r !== right)
   } else {
     form.rights = [...form.rights, right]
   }
-  form.rights = [...normalizeRights(form.rights)]
 }
 
 function normalizeRights(rights: AccessRight[]): AccessRight[] {
-  const clean = Array.from(new Set(rights))
-  if ((clean.includes('create') || clean.includes('edit') || clean.includes('delete')) && !clean.includes('view')) {
-    clean.unshift('view')
-  }
-  return clean
+  return Array.from(new Set(rights))
 }
 
 async function load() {
@@ -195,18 +187,13 @@ async function load() {
 
 async function addGrant() {
   if (!form.warehouse_id || !form.user_id) return
-  const rights = normalizeRights(form.rights)
-  if (!rights.length) {
-    $notify.add('Выберите хотя бы одно право', { type: 'warning', timer: 5 })
-    return
-  }
 
   sending.value = true
   try {
     await $api.access.create({
       warehouse_id: form.warehouse_id,
       user_id: form.user_id,
-      rights,
+      rights: ['view', ...form.rights],
     })
     $notify.add('Права выданы', { type: 'success' })
     form.user_id = null
@@ -220,8 +207,6 @@ async function addGrant() {
 }
 
 async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
-  if (right === 'view' && hasOtherRightFor(grant)) return
-
   const updatedRights = grant.rights.includes(right)
     ? grant.rights.filter((r) => r !== right)
     : [...grant.rights, right]
@@ -243,7 +228,7 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
   savingRow.value = grant.id
   try {
     const updated = await $api.access.update(grant.id, { rights })
-    grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: updated.rights } : g))
+    grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: normalizeRights(updated.rights) } : g))
     $notify.add('Права обновлены', { type: 'success', timer: 3 })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка обновления прав'), { type: 'error', timer: 10 })
@@ -359,6 +344,14 @@ onMounted(load)
 
 .grant-check input:disabled {
   opacity: 0.5;
+  cursor: default;
+}
+
+.grant-check--readonly {
+  cursor: default;
+}
+
+.grant-check--readonly input {
   cursor: default;
 }
 
