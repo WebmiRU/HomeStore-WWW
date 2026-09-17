@@ -136,7 +136,7 @@ function goToPage(page: number) {
 async function downloadPdf(id: number) {
   downloading.value = id
   try {
-    const blob = await $fetch<Blob>(`/api/label-list/${id}/generate`, { responseType: 'blob' })
+    const blob = await $api.labelList.generate(id)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

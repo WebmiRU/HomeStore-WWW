@@ -83,6 +83,13 @@ class LabelListModule extends FetchFactory<any> {
     return (Array.isArray(data) ? data : []) as LabelListResponse[]
   }
 
+  async generate(id: number): Promise<Blob> {
+    const blob = await this.call('GET', `${this.baseUrl}/${id}/generate`, undefined, {
+      responseType: 'blob',
+    })
+    return blob as unknown as Blob
+  }
+
   async attachItem(labelListId: number, itemId: number): Promise<void> {
     await this.call('POST', `${this.baseUrl}/${labelListId}/item/${itemId}`)
   }

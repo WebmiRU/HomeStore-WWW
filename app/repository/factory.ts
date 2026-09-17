@@ -11,7 +11,7 @@ class FetchFactory<T> {
     method: string,
     url: string,
     data?: object,
-    fetchOptions?: FetchOptions<'json'>
+    fetchOptions?: FetchOptions<'json' | 'blob'>
   ): Promise<T> {
     return this.$fetch<T>(url, { method, body: data, ...fetchOptions })
   }

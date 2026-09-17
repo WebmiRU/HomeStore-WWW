@@ -192,7 +192,7 @@ async function removeStore(storeId: number) {
 async function downloadPdf() {
   downloading.value = true
   try {
-    const blob = await $fetch<Blob>(`/api/label-list/${id}/generate`, { responseType: 'blob' })
+    const blob = await $api.labelList.generate(Number(id))
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
