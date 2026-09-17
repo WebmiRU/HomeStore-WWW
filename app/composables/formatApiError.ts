@@ -5,21 +5,19 @@
 export function formatApiError(err: any, fallback: string): string {
   const data = err?.data ?? err?.response?._data
 
+  const text = (value: unknown): string | null =>
+    typeof value === 'string' && value.trim().length > 0 ? value : null
+
   if (data?.errors && typeof data.errors === 'object') {
     const lines: string[] = []
-    if (typeof data.message === 'string') {
-      lines.push(data.message)
-    }
+    const message = text(data.message)
+    if (message) lines.push(message)
     for (const [field, messages] of Object.entries(data.errors)) {
       const msgs = Array.isArray(messages) ? messages : [messages]
       lines.push(`${field}: ${msgs.join(', ')}`)
     }
-    return lines.join('\n')
+    return lines.length ? lines.join('\n') : fallback
   }
 
-  if (typeof data?.error === 'string') return data.error
-  if (typeof data?.message === 'string') return data.message
-  if (typeof err?.message === 'string') return err.message
-
-  return fallback
+  return text(data?.error) ?? text(data?.message) ?? text(err?.message) ?? fallback
 }

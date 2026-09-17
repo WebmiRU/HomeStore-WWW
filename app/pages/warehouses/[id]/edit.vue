@@ -12,18 +12,18 @@
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
             <span class="field-label">Название</span>
-            <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+            <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
           </label>
 
           <label class="field">
             <span class="field-label">Пользователь</span>
-            <select v-model.number="form.user_id" class="field-select" required>
+            <select v-model.number="form.user_id" class="field-select" required :disabled="!canEdit">
               <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
             </select>
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+            <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
             <NuxtLink to="/warehouses" class="btn-cancel">Отмена</NuxtLink>
           </div>
         </section>
@@ -68,6 +68,8 @@ const tabs = computed(() => {
   }
   return base
 })
+
+const canEdit = computed(() => warehouse.value?.rights?.includes('edit') ?? false)
 
 const activeTab = computed(() => {
   const q = route.query.tab
@@ -209,6 +211,12 @@ onMounted(load)
 
 .btn-save:disabled {
   opacity: 0.5;
+  cursor: default;
+}
+
+.field-input[readonly],
+.field-select:disabled {
+  opacity: 0.7;
   cursor: default;
 }
 

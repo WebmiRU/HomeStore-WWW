@@ -1,11 +1,14 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
+import type { AccessRight } from './access'
 import type { UserProfileResponse } from './userProfile'
 
 export type WarehouseResponse = {
   id: number
   title: string
   user_id: number
+  rights: AccessRight[]
+  is_owner: boolean
   can_create: boolean
   user?: UserProfileResponse | null
   created_at: string

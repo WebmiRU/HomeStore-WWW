@@ -33,10 +33,32 @@
               <span v-else>—</span>
             </td>
             <td class="actions">
-              <NuxtLink :to="`/warehouses/${w.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink
+                v-if="canEdit(w)"
+                :to="`/warehouses/${w.id}/edit`"
+                class="action-link action-edit"
+                title="Редактировать"
+                aria-label="Редактировать"
+              >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteWarehouse(w.id)">
+              <NuxtLink
+                v-else
+                :to="`/warehouses/${w.id}/edit`"
+                class="action-link action-view"
+                title="Открыть"
+                aria-label="Открыть"
+              >
+                <img src="/img/icon/view.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a
+                href="#"
+                class="action-link action-del"
+                :class="{ 'action-del--forbidden': !canDelete(w) }"
+                :title="canDelete(w) ? 'Удалить' : 'Нельзя удалить'"
+                :aria-label="canDelete(w) ? 'Удалить' : 'Нельзя удалить'"
+                @click.prevent="deleteWarehouse(w)"
+              >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
             </td>
@@ -70,6 +92,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import type { AccessRight } from '~/repository/modules/access'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
@@ -84,6 +107,10 @@ const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
 const showOwnerColumn = computed(() => warehouses.value.some(w => w.user && w.user.id))
+
+const rightsOf = (w: WarehouseResponse): AccessRight[] => w.rights ?? []
+const canEdit = (w: WarehouseResponse): boolean => rightsOf(w).includes('edit')
+const canDelete = (w: WarehouseResponse): boolean => rightsOf(w).includes('delete')
 
 async function loadWarehouses(page?: number) {
   loading.value = true
@@ -118,10 +145,11 @@ function formatDate(iso: string): string {
   })
 }
 
-async function deleteWarehouse(id: number) {
-  if (!confirm('Удалить склад?')) return
+async function deleteWarehouse(w: WarehouseResponse) {
+  if (!canDelete(w)) return
+  if (!confirm(`Удалить склад «${w.title}»?`)) return
   try {
-    await $api.warehouse.delete(id)
+    await $api.warehouse.delete(w.id)
     $notify.add('Склад удалён', { type: 'success' })
     await loadWarehouses(meta.value.current_page)
   } catch (err: any) {
@@ -240,6 +268,24 @@ watch(() => route.query.page, (newPage) => {
 
 .action-del:hover {
   color: #f88;
+}
+
+.action-view {
+  color: #88a;
+}
+
+.action-del--forbidden {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.action-del--forbidden:hover {
+  color: #666;
+}
+
+.action-del--forbidden .action-icon {
+  filter: grayscale(1);
+  opacity: 0.55;
 }
 
 .pagination {
