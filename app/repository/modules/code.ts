@@ -1,5 +1,6 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
+import type { ImageResponse } from './image'
 
 export type UserBrief = {
   id: number
@@ -15,6 +16,7 @@ export type StorePayload = {
   parent_id: number | null
   created_at: string
   updated_at: string
+  images?: ImageResponse[]
 }
 
 export type ItemPayload = {
@@ -27,6 +29,7 @@ export type ItemPayload = {
   quantity: number | null
   created_at: string
   updated_at: string
+  images?: ImageResponse[]
 }
 
 export type CodeSearchResponse = {

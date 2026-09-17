@@ -76,7 +76,7 @@
       </div>
 
       <div class="found-card__body">
-        <ItemPhotoPlaceholder />
+        <ItemPhoto :images="found.payload.images" :alt="foundTitlePrint || found.payload.title" />
 
         <div class="found-card__info">
           <div class="found-card__title">{{ found.payload.title }}</div>
@@ -116,7 +116,7 @@
     <div v-if="isListMode && scanList.length" class="scan-list">
       <div class="scan-list__title">{{ listTitle }}</div>
       <div v-for="entry in scanList" :key="entry.code" class="scan-row">
-        <ItemPhotoPlaceholder />
+        <ItemPhoto :images="entry.payload.images" :alt="entry.payload.title_print || entry.payload.title" />
 
         <div class="scan-row__info">
           <div class="scan-row__title">{{ entry.payload.title }}</div>
