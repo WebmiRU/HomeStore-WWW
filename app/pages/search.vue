@@ -63,22 +63,13 @@
                 @changed="onTogglerChanged"
               />
               <NuxtLink
-                v-if="r.type === 'item'"
-                :to="`/items/${r.payload.id}/edit`"
-                class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :to="r.type === 'item' ? `/items/${r.payload.id}/edit` : `/stores/${r.payload.id}/edit`"
+                class="action-link"
+                :class="canEdit(r) ? 'action-edit' : 'action-view'"
+                :title="canEdit(r) ? 'Редактировать' : 'Открыть'"
+                :aria-label="canEdit(r) ? 'Редактировать' : 'Открыть'"
               >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                v-else
-                :to="`/stores/${r.payload.id}/edit`"
-                class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+                <img :src="canEdit(r) ? '/img/icon/edit.svg' : '/img/icon/view.svg'" class="action-icon" alt="" />
               </NuxtLink>
             </td>
           </tr>
@@ -108,6 +99,10 @@ const selectedItemIds = computed(() => [...selectedItems.value])
 const selectedStoreIds = computed(() => [...selectedStores.value])
 const someSelected = computed(() => selectedItems.value.size > 0 || selectedStores.value.size > 0)
 const allSelected = computed(() => results.value.length > 0 && results.value.every(r => isSelected(r)))
+
+function canEdit(r: FulltextSearchResult): boolean {
+  return r.payload.rights?.includes('edit') ?? false
+}
 
 function isSelected(r: FulltextSearchResult): boolean {
   if (r.type === 'item') return selectedItems.value.has(r.payload.id)
@@ -354,6 +349,10 @@ watch(() => route.query.q, () => {
 
 .action-link:hover {
   color: #aaf;
+}
+
+.action-view {
+  color: #88a;
 }
 
 @media (max-width: 768px) {

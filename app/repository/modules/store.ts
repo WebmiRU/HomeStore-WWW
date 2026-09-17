@@ -2,6 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { ImageResponse } from './image'
 import type { UserBrief } from './code'
+import type { AccessRight } from './access'
 
 export type StoreParent = {
   id: number
@@ -15,6 +16,11 @@ export type StoreResponse = {
   id: number
   user_id?: number | null
   user?: UserBrief | null
+  rights?: AccessRight[]
+  is_owner?: boolean
+  can_create?: boolean
+  can_edit?: boolean
+  can_delete?: boolean
   title: string
   title_print: string | null
   parent_id: number | null

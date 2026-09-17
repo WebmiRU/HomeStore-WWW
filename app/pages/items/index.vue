@@ -63,10 +63,32 @@
             </td>
             <td class="actions">
               <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
-              <NuxtLink :to="`/items/${item.payload.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink
+                v-if="canEdit(item)"
+                :to="`/items/${item.payload.id}/edit`"
+                class="action-link action-edit"
+                title="Редактировать"
+                aria-label="Редактировать"
+              >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteItem(item.payload.id)">
+              <NuxtLink
+                v-else
+                :to="`/items/${item.payload.id}/edit`"
+                class="action-link action-view"
+                title="Открыть"
+                aria-label="Открыть"
+              >
+                <img src="/img/icon/view.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a
+                href="#"
+                class="action-link action-del"
+                :class="{ 'action-del--forbidden': !canDelete(item) }"
+                :title="canDelete(item) ? 'Удалить' : 'Нельзя удалить'"
+                :aria-label="canDelete(item) ? 'Удалить' : 'Нельзя удалить'"
+                @click.prevent="deleteItem(item.payload.id)"
+              >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
             </td>
@@ -100,6 +122,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
+import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
@@ -118,6 +141,10 @@ const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => items.value.length > 0 && items.value.every(i => selected.value.has(i.payload.id)))
 const showOwnerColumn = computed(() => items.value.some(i => i.payload.user && i.payload.user.id))
+
+const rightsOf = (item: ItemResponse): AccessRight[] => item.rights ?? []
+const canEdit = (item: ItemResponse): boolean => rightsOf(item).includes('edit')
+const canDelete = (item: ItemResponse): boolean => rightsOf(item).includes('delete')
 
 function toggleAll() {
   if (allSelected.value) {
@@ -202,6 +229,8 @@ function goToPage(page: number) {
 }
 
 async function deleteItem(id: number) {
+  const item = items.value.find(i => i.payload.id === id)
+  if (item && !canDelete(item)) return
   if (!confirm('Удалить предмет?')) return
   try {
     await $api.item.delete(id)
@@ -344,6 +373,24 @@ watch(() => route.query.page, (newPage) => {
 
 .action-del:hover {
   color: #f88;
+}
+
+.action-view {
+  color: #88a;
+}
+
+.action-del--forbidden {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.action-del--forbidden:hover {
+  color: #666;
+}
+
+.action-del--forbidden .action-icon {
+  filter: grayscale(1);
+  opacity: 0.55;
 }
 
 .pagination {

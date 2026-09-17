@@ -3,13 +3,14 @@
     <div class="images-toolbar">
       <span class="images-toolbar__title">Изображения&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}</span>
       <input
+        v-if="!readonly"
         ref="fileInput"
         type="file"
         accept="image/png,image/jpeg,image/webp,image/avif"
         class="file-input"
         @change="onFileChange"
       />
-      <button type="button" class="btn-upload" :disabled="uploading" @click="fileInput?.click()">
+      <button v-if="!readonly" type="button" class="btn-upload" :disabled="uploading" @click="fileInput?.click()">
         {{ uploading ? 'Загрузка...' : 'Загрузить' }}
       </button>
     </div>
@@ -31,7 +32,7 @@
             :key="img.id"
             class="images-table__row"
             :class="{ 'images-table__row--dragging': draggingId === img.id }"
-            draggable="true"
+            :draggable="!readonly"
             @dragstart="onDragStart($event, img.id)"
             @dragover.prevent="onDragOver"
             @drop.prevent="onDrop($event, idx)"
@@ -44,28 +45,39 @@
                   type="button"
                   class="btn-order"
                   title="Выше"
-                  :disabled="idx === 0 || reordering"
+                  :disabled="readonly || idx === 0 || reordering"
                   @click="moveUp(idx)"
                 >↑</button>
                 <button
                   type="button"
                   class="btn-order"
                   title="Ниже"
-                  :disabled="idx === sortedImages.length - 1 || reordering"
+                  :disabled="readonly || idx === sortedImages.length - 1 || reordering"
                   @click="moveDown(idx)"
                 >↓</button>
               </div>
             </td>
             <td class="col-id" >{{ img.id }}</td>
             <td class="col-thumb" >
-              <img :src="thumbSrc(img)" :width="80" :height="60" :alt="img.alt ?? ''" loading="lazy" @error="onThumbError($event, img)" />
+              <div class="thumb-wrap">
+                <span v-if="!loadedIds.has(img.id)" class="thumb-spinner" aria-hidden="true" />
+                <img
+                  :src="thumbSrc(img)"
+                  :class="{ 'thumb--loading': !loadedIds.has(img.id) }"
+                  :alt="img.alt ?? ''"
+                  loading="lazy"
+                  @load="onThumbLoad(img)"
+                  @error="onThumbError($event, img)"
+                />
+              </div>
             </td>
             <td class="col-alt" >
               <input
                 type="text"
                 class="field-input alt-input"
                 :value="img.alt ?? ''"
-                :disabled="savingAltId === img.id"
+                :disabled="readonly || savingAltId === img.id"
+                :readonly="readonly"
                 maxlength="255"
                 placeholder="описание изображения"
                 @blur="onAltBlur($event, img)"
@@ -73,6 +85,7 @@
             </td>
             <td class="col-actions">
               <button
+                v-if="!readonly"
                 type="button"
                 class="btn-remove"
                 :disabled="removingId === img.id"
@@ -92,11 +105,14 @@
 import { ref, computed, watch } from 'vue'
 import type { ImageResponse } from '~/repository/modules/image'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   entity: 'item' | 'store'
   entityId: number
   modelValue: ImageResponse[]
-}>()
+  readonly?: boolean
+}>(), {
+  readonly: false,
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: ImageResponse[]): void
@@ -111,9 +127,23 @@ function thumbSrc(img: ImageResponse): string {
   return thumbUrl(img.sha256, THUMB_KEY) ?? img.url
 }
 
+const loadedIds = ref<Set<number>>(new Set())
+
+function markLoaded(img: ImageResponse) {
+  if (loadedIds.value.has(img.id)) return
+  loadedIds.value = new Set(loadedIds.value).add(img.id)
+}
+
+function onThumbLoad(img: ImageResponse) {
+  markLoaded(img)
+}
+
 function onThumbError(event: Event, img: ImageResponse) {
   const el = event.target as HTMLImageElement
-  if (el.dataset.fallback === '1') return
+  if (el.dataset.fallback === '1') {
+    markLoaded(img)
+    return
+  }
   el.dataset.fallback = '1'
   el.src = img.url
 }
@@ -168,7 +198,7 @@ async function persistOrder() {
 }
 
 function moveUp(idx: number) {
-  if (idx <= 0) return
+  if (props.readonly || idx <= 0) return
   const order = [...sortedImages.value]
   ;[order[idx - 1], order[idx]] = [order[idx], order[idx - 1]]
   applyOrder(order)
@@ -176,7 +206,7 @@ function moveUp(idx: number) {
 }
 
 function moveDown(idx: number) {
-  if (idx >= sortedImages.value.length - 1) return
+  if (props.readonly || idx >= sortedImages.value.length - 1) return
   const order = [...sortedImages.value]
   ;[order[idx], order[idx + 1]] = [order[idx + 1], order[idx]]
   applyOrder(order)
@@ -184,6 +214,10 @@ function moveDown(idx: number) {
 }
 
 function onDragStart(event: DragEvent, id: number) {
+  if (props.readonly) {
+    event.preventDefault()
+    return
+  }
   draggingId.value = id
   dragFromIndex.value = sortedImages.value.findIndex((img) => img.id === id)
   if (event.dataTransfer) {
@@ -216,6 +250,10 @@ function onDragEnd() {
 async function onFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
+  if (props.readonly) {
+    input.value = ''
+    return
+  }
   if (!file) return
   uploading.value = true
   try {
@@ -235,6 +273,7 @@ async function onFileChange(event: Event) {
 }
 
 async function removeImage(imageId: number) {
+  if (props.readonly) return
   removingId.value = imageId
   try {
     await (props.entity === 'item'
@@ -252,6 +291,7 @@ async function removeImage(imageId: number) {
 
 async function onAltBlur(event: Event, img: ImageResponse) {
   const input = event.target as HTMLInputElement
+  if (props.readonly) return
   const value = input.value.trim()
   if (value === (img.alt ?? '')) return
 
@@ -370,14 +410,45 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   text-align: center;
 }
 
-.col-thumb img {
-  display: block;
+.thumb-wrap {
+  position: relative;
   width: 80px;
   height: 60px;
+  overflow: hidden;
   border: 1px solid #444;
   border-radius: 4px;
   background: #222;
+}
+
+.col-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  transition: opacity 0.15s ease;
+}
+
+.thumb--loading {
+  opacity: 0;
+}
+
+.thumb-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid #444;
+  border-top-color: #9fd8a6;
+  border-radius: 50%;
+  animation: thumb-spin 0.7s linear infinite;
+}
+
+@keyframes thumb-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .order-controls {
@@ -534,7 +605,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
     text-align: left;
   }
 
-  .images-table td.col-thumb img {
+  .images-table td.col-thumb .thumb-wrap {
     width: 120px;
     height: 90px;
     margin-right: auto;

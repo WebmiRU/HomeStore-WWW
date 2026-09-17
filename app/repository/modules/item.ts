@@ -2,9 +2,14 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { ImageResponse } from './image'
 import type { ItemPayload, StorePayload } from './code'
+import type { AccessRight } from './access'
 
 export type ItemResponse = {
   type: 'item'
+  rights?: AccessRight[]
+  is_owner?: boolean
+  can_edit?: boolean
+  can_delete?: boolean
   code: string | null
   payload: ItemPayload
   store: StorePayload[] | null

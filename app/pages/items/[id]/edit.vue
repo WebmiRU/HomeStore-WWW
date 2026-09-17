@@ -8,17 +8,17 @@
     <form v-else @submit.prevent="save" class="edit-form">
       <label class="field">
         <span class="field-label">Название</span>
-        <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+        <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
       </label>
 
       <label class="field">
         <span class="field-label">Название для печати</span>
-        <input v-model="form.title_print" type="text" class="field-input" maxlength="500" />
+        <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
       </label>
 
       <label class="field">
         <span class="field-label">Хранилище</span>
-        <select v-model.number="form.store_id" class="field-select">
+        <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
           <option :value="null">[НЕТ]</option>
           <option
             v-for="opt in storeOptions"
@@ -37,8 +37,9 @@
             class="field-input"
             :class="{ 'field-input--changed': codeChanged }"
             maxlength="256"
+            :readonly="!canEdit"
           />
-          <button v-if="codeChanged" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
+          <button v-if="codeChanged && canEdit" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
         </div>
       </label>
 
@@ -50,16 +51,17 @@
           class="field-input"
           step="1"
           placeholder="без количества"
+          :readonly="!canEdit"
         />
       </label>
 
       <div class="field">
         <span class="field-label">Изображения</span>
-        <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" />
+        <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" :readonly="!canEdit" />
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+        <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
       </div>
     </form>
@@ -69,6 +71,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
+import type { ItemResponse } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 
@@ -83,6 +86,9 @@ const saving = ref(false)
 const originalCode = ref('')
 const quantityInput = ref('')
 const images = ref<ImageResponse[]>([])
+const itemEntity = ref<ItemResponse | null>(null)
+
+const canEdit = computed(() => itemEntity.value?.rights?.includes('edit') ?? false)
 
 interface StoreOption {
   id: number
@@ -148,6 +154,7 @@ async function load() {
       $api.store.list(),
     ])
 
+    itemEntity.value = item
     form.title = item.payload.title
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id

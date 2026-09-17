@@ -1,6 +1,7 @@
 import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { ImageResponse } from './image'
+import type { AccessRight } from './access'
 
 export type UserBrief = {
   id: number
@@ -50,6 +51,10 @@ export type FulltextSearchResult = {
     parent_id?: number | null
     created_at: string
     updated_at: string
+    rights?: AccessRight[]
+    is_owner?: boolean
+    can_edit?: boolean
+    can_delete?: boolean
   }
 }
 

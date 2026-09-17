@@ -62,10 +62,32 @@
             </td>
             <td class="actions">
               <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
-              <NuxtLink :to="`/stores/${node.store.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink
+                v-if="canEdit(node.store)"
+                :to="`/stores/${node.store.id}/edit`"
+                class="action-link action-edit"
+                title="Редактировать"
+                aria-label="Редактировать"
+              >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteStore(node.store.id)">
+              <NuxtLink
+                v-else
+                :to="`/stores/${node.store.id}/edit`"
+                class="action-link action-view"
+                title="Открыть"
+                aria-label="Открыть"
+              >
+                <img src="/img/icon/view.svg" class="action-icon" alt="" />
+              </NuxtLink>
+              <a
+                href="#"
+                class="action-link action-del"
+                :class="{ 'action-del--forbidden': !canDelete(node.store) }"
+                :title="canDelete(node.store) ? 'Удалить' : 'Нельзя удалить'"
+                :aria-label="canDelete(node.store) ? 'Удалить' : 'Нельзя удалить'"
+                @click.prevent="deleteStore(node.store.id)"
+              >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
             </td>
@@ -81,6 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
+import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
@@ -96,6 +119,10 @@ const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => flatList.value.length > 0 && flatList.value.every(n => selected.value.has(n.store.id)))
 const showOwnerColumn = computed(() => flatList.value.some(n => n.store.user && n.store.user.id))
+
+const rightsOf = (store: StoreResponse): AccessRight[] => store.rights ?? []
+const canEdit = (store: StoreResponse): boolean => rightsOf(store).includes('edit')
+const canDelete = (store: StoreResponse): boolean => rightsOf(store).includes('delete')
 
 function toggleAll() {
   if (allSelected.value) {
@@ -207,6 +234,8 @@ async function loadLabelListInfo() {
 }
 
 async function deleteStore(id: number) {
+  const store = flatList.value.find(n => n.store.id === id)?.store
+  if (store && !canDelete(store)) return
   if (!confirm('Удалить хранилище?')) return
   try {
     await $api.store.delete(id)
@@ -345,6 +374,24 @@ onMounted(load)
 
 .action-del:hover {
   color: #f88;
+}
+
+.action-view {
+  color: #88a;
+}
+
+.action-del--forbidden {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.action-del--forbidden:hover {
+  color: #666;
+}
+
+.action-del--forbidden .action-icon {
+  filter: grayscale(1);
+  opacity: 0.55;
 }
 
 @media (max-width: 768px) {

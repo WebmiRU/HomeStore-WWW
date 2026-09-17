@@ -12,17 +12,17 @@
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
             <span class="field-label">Название</span>
-            <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+            <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
           </label>
 
           <label class="field">
             <span class="field-label">Название для печати</span>
-            <input v-model="form.title_print" type="text" class="field-input" maxlength="500" />
+            <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
           </label>
 
           <label class="field">
             <span class="field-label">Склад</span>
-            <select v-model.number="form.warehouse_id" class="field-select">
+            <select v-model.number="form.warehouse_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
               <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id">
                 {{ opt.title }}
@@ -32,7 +32,7 @@
 
           <label class="field">
             <span class="field-label">Родительское хранилище</span>
-            <select v-model.number="form.parent_id" class="field-select">
+            <select v-model.number="form.parent_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
               <option
                 v-for="opt in parentOptions"
@@ -44,17 +44,18 @@
 
           <label class="field">
             <span class="field-label">Код</span>
-            <input v-model="form.code" type="text" class="field-input" maxlength="256" />
+            <input v-model="form.code" type="text" class="field-input" maxlength="256" :readonly="!canEdit" />
           </label>
         </section>
 
         <section v-if="activeTab === 'images'" class="tab-section">
-          <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" />
+          <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" :readonly="!canEdit" />
         </section>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
           <NuxtLink
+            v-if="canEdit"
             :to="{
               path: '/stores/create',
               query: {
@@ -88,6 +89,9 @@ const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
 const images = ref<ImageResponse[]>([])
+const storeEntity = ref<StoreResponse | null>(null)
+
+const canEdit = computed(() => storeEntity.value?.rights?.includes('edit') ?? false)
 
 const tabs = [
   { key: 'main', label: 'Основные параметры' },
@@ -164,6 +168,7 @@ async function load() {
       $api.warehouse.all(),
     ])
 
+    storeEntity.value = store
     form.title = store.title
     form.title_print = store.title_print ?? ''
     form.warehouse_id = store.warehouse_id ?? null
