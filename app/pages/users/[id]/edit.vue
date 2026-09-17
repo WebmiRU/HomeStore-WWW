@@ -7,7 +7,7 @@
 
     <form v-else @submit.prevent="save" class="edit-form">
       <div class="avatar-block">
-        <UserAvatar :user="previewUser" :size="120" />
+        <UserAvatar :user="previewUser" :size="120" thumb-key="150x150_cover" />
 
         <div class="avatar-actions">
           <input
@@ -79,6 +79,7 @@ const uploading = ref(false)
 const loggingOut = ref(false)
 const avatarInput = ref<HTMLInputElement | null>(null)
 const currentAvatarUrl = ref<string | null>(null)
+const currentAvatarSha = ref<string | null>(null)
 
 const form = reactive({
   name: '',
@@ -91,6 +92,7 @@ const previewUser = computed<UserProfileResponse>(() => ({
   name: form.name || 'Пользователь',
   email: form.email,
   avatar_url: currentAvatarUrl.value,
+  avatar_sha: currentAvatarSha.value,
   created_at: '',
   updated_at: '',
 }))
@@ -103,6 +105,7 @@ async function load() {
     form.name = user.name
     form.email = user.email
     currentAvatarUrl.value = user.avatar_url ?? null
+    currentAvatarSha.value = user.avatar_sha ?? null
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -119,6 +122,7 @@ async function save() {
       ...(form.password ? { password: form.password } : {}),
     })
     currentAvatarUrl.value = updated.avatar_url ?? null
+    currentAvatarSha.value = updated.avatar_sha ?? null
     if (isMe.value) {
       setProfile(updated)
     }
@@ -140,6 +144,7 @@ async function onAvatarChange(event: Event) {
   try {
     const updated = await $api.userProfile.updateAvatar(id, file)
     currentAvatarUrl.value = updated.avatar_url ?? null
+    currentAvatarSha.value = updated.avatar_sha ?? null
     if (isMe.value) {
       setProfile(updated)
     }
