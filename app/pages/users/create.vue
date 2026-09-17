@@ -13,6 +13,11 @@
         <input v-model="form.email" type="email" class="field-input" maxlength="255" required />
       </label>
 
+      <label class="field">
+        <span class="field-label">Пароль</span>
+        <input v-model="form.password" type="password" class="field-input" minlength="6" maxlength="255" required autocomplete="new-password" />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
@@ -33,6 +38,7 @@ const saving = ref(false)
 const form = reactive({
   name: '',
   email: '',
+  password: '',
 })
 
 async function save() {

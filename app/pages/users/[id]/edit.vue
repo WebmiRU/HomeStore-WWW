@@ -33,6 +33,19 @@
         <input v-model="form.email" type="email" class="field-input" maxlength="255" required />
       </label>
 
+      <label class="field">
+        <span class="field-label">Новый пароль</span>
+        <input
+          v-model="form.password"
+          type="password"
+          class="field-input"
+          minlength="6"
+          maxlength="255"
+          autocomplete="new-password"
+          placeholder="Оставьте пустым, чтобы не менять"
+        />
+      </label>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
         <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
@@ -70,6 +83,7 @@ const currentAvatarUrl = ref<string | null>(null)
 const form = reactive({
   name: '',
   email: '',
+  password: '',
 })
 
 const previewUser = computed<UserProfileResponse>(() => ({
@@ -99,11 +113,16 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const updated = await $api.userProfile.update(id, { ...form })
+    const updated = await $api.userProfile.update(id, {
+      name: form.name,
+      email: form.email,
+      ...(form.password ? { password: form.password } : {}),
+    })
     currentAvatarUrl.value = updated.avatar_url ?? null
     if (isMe.value) {
       setProfile(updated)
     }
+    form.password = ''
     $notify.add('Пользователь сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })

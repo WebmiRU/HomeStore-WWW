@@ -53,13 +53,13 @@ class UserProfileModule extends FetchFactory<any> {
     return unwrapped as UserProfileResponse
   }
 
-  async create(data: { name: string; email: string }): Promise<UserProfileResponse> {
+  async create(data: { name: string; email: string; password: string }): Promise<UserProfileResponse> {
     const result = await this.call('POST', this.baseUrl, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as UserProfileResponse
   }
 
-  async update(id: number, data: { name?: string; email?: string }): Promise<UserProfileResponse> {
+  async update(id: number, data: { name?: string; email?: string; password?: string }): Promise<UserProfileResponse> {
     const result = await this.call('PUT', `${this.baseUrl}/${id}`, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as UserProfileResponse
