@@ -23,7 +23,7 @@
             </td>
             <td data-label="Доступ">
               <div class="grant-rights">
-                <label class="grant-check" v-for="opt in rightOptions" :key="opt.key">
+                <label class="grant-check" v-for="opt in rightOptions" :key="`${grant.id}-${effectiveRightsFor(grant).join(',')}-${opt.key}`">
                   <input
                     type="checkbox"
                     :checked="effectiveRightsFor(grant).includes(opt.key)"
@@ -243,8 +243,7 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
   savingRow.value = grant.id
   try {
     const updated = await $api.access.update(grant.id, { rights })
-    const newRights = normalizeRights(updated.rights)
-    grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: newRights } : g))
+    grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: updated.rights } : g))
     $notify.add('Права обновлены', { type: 'success', timer: 3 })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка обновления прав'), { type: 'error', timer: 10 })
