@@ -176,11 +176,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
+import type { OperationMode } from '~/composables/useOperationMode'
 
-type Mode = 'search' | 'replenish' | 'writeoff'
+type Mode = OperationMode
 type FoundResult =
   | { type: 'item'; payload: ItemPayload; code: string }
   | { type: 'store'; payload: StorePayload; code: string }
@@ -195,7 +196,15 @@ const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
 
+const { mode: savedMode, persist } = useOperationMode()
+
+// Начинаем в режиме «Поиск» при отрисовке (безопасно для SSR/hydration),
+// затем синхронизируемся с сохранённым из сессии режимом после монтирования.
 const activeMode = ref<Mode>('search')
+
+onMounted(() => {
+  activeMode.value = savedMode.value
+})
 
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
@@ -229,6 +238,10 @@ const foundQuantity = computed<number | null>(() => {
 function setMode(mode: Mode) {
   const prev = activeMode.value
   if (prev === mode) return
+
+  // Запоминаем выбранный режим в сессии: при следующем сканировании
+  // (с любой страницы) автоматически включится он же.
+  persist(mode)
 
   notFoundCode.value = ''
 
@@ -289,58 +302,6 @@ async function refreshFoundItem(code: string) {
   } catch {
     // Фоновое обновление: ошибки игнорируем, оставляем текущий результат.
   }
-}
-
-let buffer = ''
-let scanTimer: ReturnType<typeof setTimeout> | null = null
-
-const MIN_CODE_LEN = 8
-const MAX_CODE_LEN = 256
-const SCAN_DEBOUNCE_MS = 100
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName.toLowerCase()
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
-}
-
-function keyToLatin(e: KeyboardEvent): string {
-  const key = e.key
-  if (key.length !== 1) return key
-
-  // Уже латиница или цифра — раскладка не важна, возвращаем как есть.
-  if (/[a-zA-Z0-9]/.test(key)) return key
-
-  // Кириллица с буквенной клавиши: e.code не зависит от раскладки,
-  // по нему достаём соответствующую латинскую букву.
-  if (e.code.startsWith('Key')) {
-    const latin = e.code.slice(3) // 'A'..'Z'
-    return e.shiftKey ? latin : latin.toLowerCase()
-  }
-
-  return key
-}
-
-function onKeydown(e: KeyboardEvent) {
-  if (isEditableTarget(e.target)) return
-  if (e.ctrlKey || e.metaKey || e.altKey) return
-
-  const key = keyToLatin(e)
-  if (key.length !== 1) return
-
-  buffer += key
-  if (buffer.length > MAX_CODE_LEN) {
-    buffer = buffer.slice(0, MAX_CODE_LEN)
-  }
-
-  if (scanTimer) clearTimeout(scanTimer)
-  scanTimer = setTimeout(() => {
-    const code = buffer
-    buffer = ''
-    if (code.length >= MIN_CODE_LEN) {
-      handleScan(code)
-    }
-  }, SCAN_DEBOUNCE_MS)
 }
 
 async function handleScan(code: string) {
@@ -435,10 +396,13 @@ function formatDate(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ru-RU')
 }
 
-// Поле «КОД» в футере эмулирует сканер: код из ?scan= обрабатываем так же,
-// как если бы он пришёл с устройства ввода.
+// Поле «КОД» в футере эмулирует сканер, а глобальный сканер (app.vue)
+// обрабатывает код с устройства на любой странице: всё сводится к переходу
+// на главную с ?scan=<code>. Здесь код обрабатываем так же, как если бы он
+// пришёл с устройства ввода.
 // `?mode=replenish|writeoff` (из результатов поиска) сразу включает нужный
 // режим — предмет попадает в список, как при сканировании.
+// Без `?mode` включается последний сохранённый в сессии режим.
 watch(
   () => route.query.scan,
   (value) => {
@@ -452,6 +416,9 @@ watch(
     if (modeParam === 'replenish' || modeParam === 'writeoff') {
       setMode(modeParam)
       delete rest.mode
+    } else {
+      // Сканирование без явного режима — работаем в сохранённом из сессии.
+      setMode(savedMode.value)
     }
 
     void router.replace({ query: rest })
@@ -459,13 +426,4 @@ watch(
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  window.addEventListener('keydown', onKeydown)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown)
-  if (scanTimer) clearTimeout(scanTimer)
-})
 </script>

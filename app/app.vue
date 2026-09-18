@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
@@ -44,6 +44,75 @@ const router = useRouter()
 
 const uuidQuery = ref('')
 const { next: triggerSearch } = useSearchTrigger()
+
+// Клавиатурный буфер-сканер, работающий на любой странице: отсканированный
+// код «эмулирует» переход на главную с ?scan=<code>, где его обрабатывает
+// главная страница (в сохранённом режиме сессии).
+let buffer = ''
+let scanTimer: ReturnType<typeof setTimeout> | null = null
+
+const MIN_CODE_LEN = 8
+const MAX_CODE_LEN = 256
+const SCAN_DEBOUNCE_MS = 100
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName.toLowerCase()
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
+}
+
+function keyToLatin(e: KeyboardEvent): string {
+  const key = e.key
+  if (key.length !== 1) return key
+
+  // Уже латиница или цифра — раскладка не важна, возвращаем как есть.
+  if (/[a-zA-Z0-9]/.test(key)) return key
+
+  // Кириллица с буквенной клавиши: e.code не зависит от раскладки,
+  // по нему достаём соответствующую латинскую букву.
+  if (e.code.startsWith('Key')) {
+    const latin = e.code.slice(3) // 'A'..'Z'
+    return e.shiftKey ? latin : latin.toLowerCase()
+  }
+
+  return key
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (isEditableTarget(e.target)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+
+  const key = keyToLatin(e)
+  if (key.length !== 1) return
+
+  buffer += key
+  if (buffer.length > MAX_CODE_LEN) {
+    buffer = buffer.slice(0, MAX_CODE_LEN)
+  }
+
+  if (scanTimer) clearTimeout(scanTimer)
+  scanTimer = setTimeout(() => {
+    const code = buffer
+    buffer = ''
+    if (code.length >= MIN_CODE_LEN) {
+      submitScan(code)
+    }
+  }, SCAN_DEBOUNCE_MS)
+}
+
+function submitScan(code: string) {
+  // Сканирование с любой страницы: обрабатывается главной через ?scan=.
+  router.push({ path: '/', query: { scan: code } })
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (scanTimer) clearTimeout(scanTimer)
+})
 
 async function doSearch(q: string) {
   try {

@@ -443,7 +443,7 @@ watch(trigger, () => {
   width: 40px;
   height: 40px;
   border-radius: 6px;
-  border: 1px solid transparent;
+  border: 1px solid #333;
   background: transparent;
   color: #88a;
   text-decoration: none;
@@ -512,6 +512,7 @@ watch(trigger, () => {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+  border: 1px solid #333;
 }
 
 .action-grid :deep(.toggler-icon) {
