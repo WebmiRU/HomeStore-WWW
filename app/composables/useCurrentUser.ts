@@ -12,10 +12,16 @@ function readStoredUserId(): number | null {
 }
 
 export function useCurrentUser() {
-  const currentUserId = useState<number | null>('current-user-id', () => readStoredUserId())
+  // Не читачём localStorage в момент первичной отрисовки: это вызывало
+  // hydration mismatch (SSR рисует placeholder без id, клиент при гидрации
+  // уже знал id и рисовал ссылку на профиль). Значение подтягиваем на
+  // клиенте уже ПОСЛЕ монтирования, чтобы первый render совпал с SSR.
+  const currentUserId = useState<number | null>('current-user-id', () => null)
 
   if (import.meta.client) {
-    currentUserId.value = readStoredUserId()
+    onMounted(() => {
+      currentUserId.value = readStoredUserId()
+    })
   }
 
   const isOwner = (user?: UserBrief | null): boolean =>
