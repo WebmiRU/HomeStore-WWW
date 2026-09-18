@@ -82,7 +82,7 @@
                 <template v-if="r.type === 'item'">
                   <button
                     type="button"
-                    class="action-btn"
+                    class="action-btn action-btn--replenish"
                     :disabled="!r.payload.code"
                     :title="r.payload.code ? `Пополнить: ${r.payload.title}` : 'Нет кода'"
                     aria-label="Пополнить"
@@ -102,7 +102,7 @@
                   </button>
                   <button
                     type="button"
-                    class="action-btn"
+                    class="action-btn action-btn--writeoff"
                     :disabled="!r.payload.code"
                     :title="r.payload.code ? `Списать: ${r.payload.title}` : 'Нет кода'"
                     aria-label="Списать"
@@ -471,6 +471,28 @@ watch(trigger, () => {
   background: #2a2a2a;
   border-color: #444;
   color: #aaf;
+}
+
+.action-btn--replenish {
+  border-color: #3a5a3a;
+  color: #48c25a;
+}
+
+.action-btn--replenish:hover:not(:disabled) {
+  border-color: #3fb950;
+  color: #7fdb8b;
+  background: #1b3525;
+}
+
+.action-btn--writeoff {
+  border-color: #5a4a3a;
+  color: #d9a53a;
+}
+
+.action-btn--writeoff:hover:not(:disabled) {
+  border-color: #d29922;
+  color: #eec271;
+  background: #3a2e1a;
 }
 
 .action-btn:disabled {
