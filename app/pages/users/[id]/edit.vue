@@ -5,55 +5,65 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="edit-form">
-      <div class="avatar-block">
-        <UserAvatar :user="previewUser" :size="120" thumb-key="150x150_cover" />
+    <template v-else>
+      <TabBar :tabs="tabs" class="edit-tabs" />
 
-        <div class="avatar-actions">
-          <input
-            ref="avatarInput"
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/avif"
-            class="avatar-file"
-            @change="onAvatarChange"
-          />
-          <button type="button" class="btn-avatar" :disabled="uploading" @click="avatarInput?.click()">
-            {{ uploading ? 'Загрузка...' : 'Загрузить аватар' }}
+      <form @submit.prevent="save" class="edit-form">
+        <section v-if="activeTab === 'main'" class="tab-section">
+          <div class="avatar-block">
+            <UserAvatar :user="previewUser" :size="120" thumb-key="150x150_cover" />
+
+            <div class="avatar-actions">
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/avif"
+                class="avatar-file"
+                @change="onAvatarChange"
+              />
+              <button type="button" class="btn-avatar" :disabled="uploading" @click="avatarInput?.click()">
+                {{ uploading ? 'Загрузка...' : 'Загрузить аватар' }}
+              </button>
+            </div>
+          </div>
+
+          <label class="field">
+            <span class="field-label">Имя</span>
+            <input v-model="form.name" type="text" class="field-input" maxlength="255" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">E-mail</span>
+            <input v-model="form.email" type="email" class="field-input" maxlength="255" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Новый пароль</span>
+            <input
+              v-model="form.password"
+              type="password"
+              class="field-input"
+              minlength="6"
+              maxlength="255"
+              autocomplete="new-password"
+              placeholder="Оставьте пустым, чтобы не менять"
+            />
+          </label>
+        </section>
+
+        <section v-if="activeTab === 'stats'" class="tab-section">
+          <EntityAuditStats entity-type="user" :entity-id="Number(id)" />
+        </section>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
+          <button v-if="isMe" type="button" class="btn-logout" :disabled="loggingOut" @click="logout">
+            {{ loggingOut ? 'Выход...' : 'Выйти' }}
           </button>
         </div>
-      </div>
-
-      <label class="field">
-        <span class="field-label">Имя</span>
-        <input v-model="form.name" type="text" class="field-input" maxlength="255" required />
-      </label>
-
-      <label class="field">
-        <span class="field-label">E-mail</span>
-        <input v-model="form.email" type="email" class="field-input" maxlength="255" required />
-      </label>
-
-      <label class="field">
-        <span class="field-label">Новый пароль</span>
-        <input
-          v-model="form.password"
-          type="password"
-          class="field-input"
-          minlength="6"
-          maxlength="255"
-          autocomplete="new-password"
-          placeholder="Оставьте пустым, чтобы не менять"
-        />
-      </label>
-
-      <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
-        <button v-if="isMe" type="button" class="btn-logout" :disabled="loggingOut" @click="logout">
-          {{ loggingOut ? 'Выход...' : 'Выйти' }}
-        </button>
-      </div>
-    </form>
+      </form>
+    </template>
   </div>
 </template>
 
@@ -71,6 +81,19 @@ const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, setProfile, clear: clearProfile } = useUserProfile()
 
 const isMe = computed(() => currentUserId.value !== null && currentUserId.value === id)
+
+const tabs = [
+  { key: 'main', label: 'Основные параметры' },
+  { key: 'stats', label: 'Статистика' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -197,6 +220,16 @@ onMounted(load)
   max-width: 500px;
 }
 
+.edit-tabs {
+  margin: 14px 0 20px;
+}
+
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .avatar-block {
   display: flex;
   align-items: center;
@@ -237,6 +270,10 @@ onMounted(load)
 .field {
   display: block;
   margin-bottom: 14px;
+}
+
+.tab-section .field {
+  margin-bottom: 0;
 }
 
 .field-label {

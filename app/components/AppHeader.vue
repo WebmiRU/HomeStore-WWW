@@ -41,6 +41,7 @@
       <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
       <NuxtLink to="/warehouses" class="entity-link">Склады</NuxtLink>
       <NuxtLink to="/access" class="entity-link">Доступ</NuxtLink>
+      <NuxtLink to="/journal" class="entity-link">Журнал</NuxtLink>
       <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
       <NuxtLink to="/label-lists" class="entity-link">Этикетки</NuxtLink>
       <NuxtLink to="/users" class="entity-link">Пользователи</NuxtLink>

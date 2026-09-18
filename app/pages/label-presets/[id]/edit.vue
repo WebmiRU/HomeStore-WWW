@@ -5,155 +5,178 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="edit-form">
-      <!-- Основное -->
-      <fieldset class="fieldset">
-        <legend class="legend">Основное</legend>
-        <label class="field">
-          <span class="field-label">Название</span>
-          <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-        </label>
-      </fieldset>
+    <template v-else>
+      <TabBar :tabs="tabs" class="edit-tabs" />
 
-      <!-- Страница -->
-      <fieldset class="fieldset">
-        <legend class="legend">Страница</legend>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Ширина</span>
-            <input v-model.number="form.page_width" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Высота</span>
-            <input v-model.number="form.page_height" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Отступ сверху</span>
-            <input v-model.number="form.page_margin_top" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Отступ справа</span>
-            <input v-model.number="form.page_margin_right" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Отступ снизу</span>
-            <input v-model.number="form.page_margin_bottom" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Отступ слева</span>
-            <input v-model.number="form.page_margin_left" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-        </div>
-      </fieldset>
+      <form @submit.prevent="save" class="edit-form">
+        <section v-if="activeTab === 'main'" class="tab-section">
+          <!-- Основное -->
+          <fieldset class="fieldset">
+            <legend class="legend">Основное</legend>
+            <label class="field">
+              <span class="field-label">Название</span>
+              <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
+            </label>
+          </fieldset>
 
-      <!-- Ячейка -->
-      <fieldset class="fieldset">
-        <legend class="legend">Ячейка</legend>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Ширина</span>
-            <input v-model.number="form.cell_width" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Высота</span>
-            <input v-model.number="form.cell_height" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Отступ сверху</span>
-            <input v-model.number="form.cell_pad_top" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Отступ справа</span>
-            <input v-model.number="form.cell_pad_right" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Отступ снизу</span>
-            <input v-model.number="form.cell_pad_bottom" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Отступ слева</span>
-            <input v-model.number="form.cell_pad_left" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-        </div>
-      </fieldset>
+          <!-- Страница -->
+          <fieldset class="fieldset">
+            <legend class="legend">Страница</legend>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Ширина</span>
+                <input v-model.number="form.page_width" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Высота</span>
+                <input v-model.number="form.page_height" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Отступ сверху</span>
+                <input v-model.number="form.page_margin_top" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Отступ справа</span>
+                <input v-model.number="form.page_margin_right" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Отступ снизу</span>
+                <input v-model.number="form.page_margin_bottom" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Отступ слева</span>
+                <input v-model.number="form.page_margin_left" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+            </div>
+          </fieldset>
 
-      <!-- Штрих-код -->
-      <fieldset class="fieldset">
-        <legend class="legend">Штрих-код</legend>
-        <label class="field">
-          <span class="field-label">Позиция</span>
-          <select v-model="form.barcode_position" class="field-select" required>
-            <option value="left">Слева</option>
-            <option value="right">Справа</option>
-            <option value="top">Сверху</option>
-            <option value="bottom">Снизу</option>
-          </select>
-        </label>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Отступ текста</span>
-            <input v-model.number="form.barcode_text_gap" type="number" class="field-input" min="0" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Размер</span>
-            <input v-model.number="form.barcode_size" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-        </div>
-      </fieldset>
+          <!-- Ячейка -->
+          <fieldset class="fieldset">
+            <legend class="legend">Ячейка</legend>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Ширина</span>
+                <input v-model.number="form.cell_width" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Высота</span>
+                <input v-model.number="form.cell_height" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Отступ сверху</span>
+                <input v-model.number="form.cell_pad_top" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Отступ справа</span>
+                <input v-model.number="form.cell_pad_right" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Отступ снизу</span>
+                <input v-model.number="form.cell_pad_bottom" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Отступ слева</span>
+                <input v-model.number="form.cell_pad_left" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+            </div>
+          </fieldset>
 
-      <!-- Шрифт -->
-      <fieldset class="fieldset">
-        <legend class="legend">Шрифт</legend>
-        <label class="field">
-          <span class="field-label">font_id</span>
-          <input v-model.number="form.font_id" type="number" class="field-input" />
-        </label>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Мин. размер</span>
-            <input v-model.number="form.font_size_min" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Макс. размер</span>
-            <input v-model.number="form.font_size_max" type="number" class="field-input" min="1" step="0.1" required />
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="field field-half">
-            <span class="field-label">Шаг размера</span>
-            <input v-model.number="form.font_size_step" type="number" class="field-input" min="0.1" step="0.1" required />
-          </label>
-          <label class="field field-half">
-            <span class="field-label">Межстрочный</span>
-            <input v-model.number="form.line_height_factor" type="number" class="field-input" min="0.5" step="0.1" required />
-          </label>
-        </div>
-      </fieldset>
+          <!-- Штрих-код -->
+          <fieldset class="fieldset">
+            <legend class="legend">Штрих-код</legend>
+            <label class="field">
+              <span class="field-label">Позиция</span>
+              <select v-model="form.barcode_position" class="field-select" required>
+                <option value="left">Слева</option>
+                <option value="right">Справа</option>
+                <option value="top">Сверху</option>
+                <option value="bottom">Снизу</option>
+              </select>
+            </label>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Отступ текста</span>
+                <input v-model.number="form.barcode_text_gap" type="number" class="field-input" min="0" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Размер</span>
+                <input v-model.number="form.barcode_size" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+            </div>
+          </fieldset>
 
-      <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/label-presets" class="btn-cancel">Отмена</NuxtLink>
-      </div>
-    </form>
+          <!-- Шрифт -->
+          <fieldset class="fieldset">
+            <legend class="legend">Шрифт</legend>
+            <label class="field">
+              <span class="field-label">font_id</span>
+              <input v-model.number="form.font_id" type="number" class="field-input" />
+            </label>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Мин. размер</span>
+                <input v-model.number="form.font_size_min" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Макс. размер</span>
+                <input v-model.number="form.font_size_max" type="number" class="field-input" min="1" step="0.1" required />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-half">
+                <span class="field-label">Шаг размера</span>
+                <input v-model.number="form.font_size_step" type="number" class="field-input" min="0.1" step="0.1" required />
+              </label>
+              <label class="field field-half">
+                <span class="field-label">Межстрочный</span>
+                <input v-model.number="form.line_height_factor" type="number" class="field-input" min="0.5" step="0.1" required />
+              </label>
+            </div>
+          </fieldset>
+        </section>
+
+        <section v-if="activeTab === 'stats'" class="tab-section">
+          <EntityAuditStats entity-type="label_preset" :entity-id="Number(id)" />
+        </section>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <NuxtLink to="/label-presets" class="btn-cancel">Отмена</NuxtLink>
+        </div>
+      </form>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 
 const id = route.params.id as string
+
+const tabs = [
+  { key: 'main', label: 'Основные параметры' },
+  { key: 'stats', label: 'Статистика' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -250,6 +273,10 @@ onMounted(load)
 
 .edit-form {
   max-width: 600px;
+}
+
+.edit-tabs {
+  margin: 14px 0 20px;
 }
 
 .fieldset {

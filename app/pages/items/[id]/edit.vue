@@ -5,66 +5,79 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="edit-form">
-      <label class="field">
-        <span class="field-label">Название</span>
-        <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
-      </label>
+    <template v-else>
+      <TabBar :tabs="tabs" class="edit-tabs" />
 
-      <label class="field">
-        <span class="field-label">Название для печати</span>
-        <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
-      </label>
+      <form @submit.prevent="save" class="edit-form">
+        <section v-if="activeTab === 'main'" class="tab-section">
+          <label class="field">
+            <span class="field-label">Название</span>
+            <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
+          </label>
 
-      <label class="field">
-        <span class="field-label">Хранилище</span>
-        <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
-          <option :value="null">[НЕТ]</option>
-          <option
-            v-for="opt in storeOptions"
-            :key="opt.id"
-            :value="opt.id"
-          >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
-        </select>
-      </label>
+          <label class="field">
+            <span class="field-label">Название для печати</span>
+            <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
+          </label>
 
-      <label class="field">
-        <span class="field-label">Код</span>
-        <div class="code-field">
-          <input
-            v-model="form.code"
-            type="text"
-            class="field-input"
-            :class="{ 'field-input--changed': codeChanged }"
-            maxlength="256"
-            :readonly="!canEdit"
-          />
-          <button v-if="codeChanged && canEdit" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
+          <label class="field">
+            <span class="field-label">Хранилище</span>
+            <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
+              <option :value="null">[НЕТ]</option>
+              <option
+                v-for="opt in storeOptions"
+                :key="opt.id"
+                :value="opt.id"
+              >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Код</span>
+            <div class="code-field">
+              <input
+                v-model="form.code"
+                type="text"
+                class="field-input"
+                :class="{ 'field-input--changed': codeChanged }"
+                maxlength="256"
+                :readonly="!canEdit"
+              />
+              <button v-if="codeChanged && canEdit" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
+            </div>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Количество</span>
+            <input
+              v-model="quantityInput"
+              type="number"
+              class="field-input"
+              step="1"
+              placeholder="без количества"
+              :readonly="!canEdit"
+            />
+          </label>
+        </section>
+
+        <section v-if="activeTab === 'images'" class="tab-section">
+          <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" :readonly="!canEdit" />
+        </section>
+
+        <section v-if="activeTab === 'balance'" class="tab-section">
+          <EntityBalanceChart entity-type="item" :entity-id="Number(id)" />
+        </section>
+
+        <section v-if="activeTab === 'stats'" class="tab-section">
+          <EntityAuditStats entity-type="item" :entity-id="Number(id)" />
+        </section>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
+          <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
         </div>
-      </label>
-
-      <label class="field">
-        <span class="field-label">Количество</span>
-        <input
-          v-model="quantityInput"
-          type="number"
-          class="field-input"
-          step="1"
-          placeholder="без количества"
-          :readonly="!canEdit"
-        />
-      </label>
-
-      <div class="field">
-        <span class="field-label">Изображения</span>
-        <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" :readonly="!canEdit" />
-      </div>
-
-      <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
-        <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
-      </div>
-    </form>
+      </form>
+    </template>
   </div>
 </template>
 
@@ -89,6 +102,21 @@ const images = ref<ImageResponse[]>([])
 const itemEntity = ref<ItemResponse | null>(null)
 
 const canEdit = computed(() => itemEntity.value?.rights?.includes('edit') ?? false)
+
+const tabs = [
+  { key: 'main', label: 'Основные параметры' },
+  { key: 'images', label: 'Картинки' },
+  { key: 'balance', label: 'Остатки' },
+  { key: 'stats', label: 'Статистика' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
 
 interface StoreOption {
   id: number
@@ -219,6 +247,16 @@ onMounted(load)
   color: #f88;
 }
 
+.edit-tabs {
+  margin: 14px 0 20px;
+}
+
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .edit-form {
   max-width: none;
   width: 100%;
@@ -227,6 +265,10 @@ onMounted(load)
 .field {
   display: block;
   margin-bottom: 14px;
+}
+
+.tab-section .field {
+  margin-bottom: 0;
 }
 
 .field-label {

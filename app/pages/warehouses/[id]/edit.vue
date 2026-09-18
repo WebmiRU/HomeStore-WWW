@@ -31,6 +31,10 @@
         <section v-if="activeTab === 'rights'" class="tab-section">
           <AccessGrants :scoped-warehouse="warehouse" />
         </section>
+
+        <section v-if="activeTab === 'stats'" class="tab-section">
+          <EntityAuditStats entity-type="warehouse" :entity-id="Number(id)" />
+        </section>
       </form>
     </template>
   </div>
@@ -66,6 +70,7 @@ const tabs = computed(() => {
   if (isOwner) {
     base.push({ key: 'rights', label: 'Права' })
   }
+  base.push({ key: 'stats', label: 'Статистика' })
   return base
 })
 

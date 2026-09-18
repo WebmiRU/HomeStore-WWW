@@ -11,7 +11,9 @@
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
-      <form @submit.prevent="save" class="edit-form">
+      <TabBar :tabs="tabs" class="edit-tabs" />
+
+      <form v-if="activeTab === 'main'" @submit.prevent="save" class="edit-form">
         <fieldset class="fieldset">
           <legend class="legend">Основное</legend>
           <label class="field">
@@ -33,7 +35,7 @@
         </div>
       </form>
 
-      <section class="content-section">
+      <section v-if="activeTab === 'items'" class="content-section">
         <h4 class="section-title">Предметы в списке ({{ listItems.length }})</h4>
         <div v-if="listItems.length === 0" class="section-empty">Нет предметов</div>
         <table v-else class="content-table">
@@ -68,7 +70,7 @@
         </table>
       </section>
 
-      <section class="content-section">
+      <section v-if="activeTab === 'stores'" class="content-section">
         <h4 class="section-title">Хранилища в списке ({{ listStores.length }})</h4>
         <div v-if="listStores.length === 0" class="section-empty">Нет хранилищ</div>
         <table v-else class="content-table">
@@ -100,14 +102,18 @@
           </tbody>
         </table>
       </section>
+
+      <section v-if="activeTab === 'stats'" class="content-section">
+        <EntityAuditStats entity-type="label_list" :entity-id="Number(id)" />
+      </section>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
- import type { ItemResponse } from '~/repository/modules/item'
+import type { ItemResponse } from '~/repository/modules/item'
 import type { StoreResponse } from '~/repository/modules/store'
 import { formatApiError } from '~/composables/formatApiError'
 
@@ -115,6 +121,21 @@ const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 
 const id = route.params.id as string
+
+const tabs = [
+  { key: 'main', label: 'Основное' },
+  { key: 'items', label: 'Предметы' },
+  { key: 'stores', label: 'Хранилища' },
+  { key: 'stats', label: 'Статистика' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+    return q
+  }
+  return 'main'
+})
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -258,6 +279,10 @@ onMounted(load)
 
 .edit-form {
   max-width: 500px;
+}
+
+.edit-tabs {
+  margin: 14px 0 20px;
 }
 
 .fieldset {
