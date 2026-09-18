@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
@@ -198,13 +198,9 @@ const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
 
-// Начинаем в режиме «Поиск» при отрисовке (безопасно для SSR/hydration),
-// затем синхронизируемся с сохранённым из сессии режимом после монтирования.
-const activeMode = ref<Mode>('search')
-
-onMounted(() => {
-  activeMode.value = savedMode.value
-})
+// Режим берём сразу из сессии: модуль useOperationMode на клиенте читает
+// sessionStorage при импорте, поэтому savedMode.value корректен уже в setup.
+const activeMode = ref<Mode>(savedMode.value)
 
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
