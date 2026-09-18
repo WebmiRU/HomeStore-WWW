@@ -4,7 +4,7 @@
       <button
         type="button"
         class="mode-btn mode-btn--search"
-        :class="{ 'mode-btn--active': activeMode === 'search' }"
+        :class="{ 'mode-btn--active': hydrated && activeMode === 'search' }"
         @click="setMode('search')"
       >
         <svg
@@ -25,7 +25,7 @@
       <button
         type="button"
         class="mode-btn mode-btn--replenish"
-        :class="{ 'mode-btn--active': activeMode === 'replenish' }"
+        :class="{ 'mode-btn--active': hydrated && activeMode === 'replenish' }"
         @click="setMode('replenish')"
       >
         <svg
@@ -46,7 +46,7 @@
       <button
         type="button"
         class="mode-btn mode-btn--writeoff"
-        :class="{ 'mode-btn--active': activeMode === 'writeoff' }"
+        :class="{ 'mode-btn--active': hydrated && activeMode === 'writeoff' }"
         @click="setMode('writeoff')"
       >
         <svg
@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
@@ -197,6 +197,16 @@ const route = useRoute()
 const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
+
+// Акцент активной кнопки включаем только на клиенте после гидрации:
+// SSR и первичный client-render отрисовывают кнопки без «активной» рамки
+// (совпадают друг с другом — без hydration mismatch), а сразу после
+// монтирования подсвечивается сохранённый из сессии режим.
+const hydrated = ref(false)
+
+onMounted(() => {
+  hydrated.value = true
+})
 
 // Режим берём сразу из сессии: модуль useOperationMode на клиенте читает
 // sessionStorage при импорте, поэтому savedMode.value корректен уже в setup.
