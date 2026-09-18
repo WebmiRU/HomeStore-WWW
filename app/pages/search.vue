@@ -57,27 +57,72 @@
               <div v-if="r.payload.title_print" class="result-sub">{{ r.payload.title_print }}</div>
             </td>
             <td class="actions">
-              <LabelListToggler
-                v-if="r.type === 'item'"
-                :item-id="r.payload.id"
-                :in-any-list="itemsInLists.has(r.payload.id)"
-                @changed="onTogglerChanged"
-              />
-              <LabelListToggler
-                v-else
-                :store-id="r.payload.id"
-                :in-any-list="storesInLists.has(r.payload.id)"
-                @changed="onTogglerChanged"
-              />
-              <NuxtLink
-                :to="r.type === 'item' ? `/items/${r.payload.id}/edit` : `/stores/${r.payload.id}/edit`"
-                class="action-link"
-                :class="canEdit(r) ? 'action-edit' : 'action-view'"
-                :title="canEdit(r) ? 'Редактировать' : 'Открыть'"
-                :aria-label="canEdit(r) ? 'Редактировать' : 'Открыть'"
-              >
-                <img :src="canEdit(r) ? '/img/icon/edit.svg' : '/img/icon/view.svg'" class="action-icon" alt="" />
-              </NuxtLink>
+              <div class="action-grid">
+                <LabelListToggler
+                  v-if="r.type === 'item'"
+                  :item-id="r.payload.id"
+                  :in-any-list="itemsInLists.has(r.payload.id)"
+                  @changed="onTogglerChanged"
+                />
+                <LabelListToggler
+                  v-else
+                  :store-id="r.payload.id"
+                  :in-any-list="storesInLists.has(r.payload.id)"
+                  @changed="onTogglerChanged"
+                />
+                <NuxtLink
+                  :to="r.type === 'item' ? `/items/${r.payload.id}/edit` : `/stores/${r.payload.id}/edit`"
+                  class="action-link"
+                  :class="canEdit(r) ? 'action-edit' : 'action-view'"
+                  :title="canEdit(r) ? 'Редактировать' : 'Открыть'"
+                  :aria-label="canEdit(r) ? 'Редактировать' : 'Открыть'"
+                >
+                  <img :src="canEdit(r) ? '/img/icon/edit.svg' : '/img/icon/view.svg'" class="action-icon" alt="" />
+                </NuxtLink>
+                <template v-if="r.type === 'item'">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    :disabled="!r.payload.code"
+                    :title="r.payload.code ? `Пополнить: ${r.payload.title}` : 'Нет кода'"
+                    aria-label="Пополнить"
+                    @click="goReplenish(r)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn"
+                    :disabled="!r.payload.code"
+                    :title="r.payload.code ? `Списать: ${r.payload.title}` : 'Нет кода'"
+                    aria-label="Списать"
+                    @click="goWriteoff(r)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M4 4h16v16H4z" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <polyline points="9 13 12 16 15 13" />
+                    </svg>
+                  </button>
+                </template>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -92,6 +137,7 @@ import type { FulltextSearchResult } from '~/repository/modules/code'
 
 const { $api } = useNuxtApp()
 const route = useRoute()
+const router = useRouter()
 
 const query = ref((route.query.q as string) || '')
 const loading = ref(true)
@@ -170,6 +216,22 @@ function onTogglerChanged(e: { itemId?: number; storeId?: number; added: boolean
     else next.delete(e.storeId)
     storesInLists.value = next
   }
+}
+
+// Переходим на главную в режиме «Пополнить/Списать», передавая код штрих-кода
+// через ?scan= (как при сканировании) и режим через ?mode=.
+function goReplenish(r: FulltextSearchResult) {
+  if (!r.payload.code) return
+  navigateOperation(r.payload.code, 'replenish')
+}
+
+function goWriteoff(r: FulltextSearchResult) {
+  if (!r.payload.code) return
+  navigateOperation(r.payload.code, 'writeoff')
+}
+
+function navigateOperation(code: string, mode: 'replenish' | 'writeoff') {
+  void router.push({ path: '/', query: { scan: code, mode } })
 }
 
 async function search() {
@@ -365,27 +427,74 @@ watch(trigger, () => {
   white-space: nowrap;
 }
 
-.action-link {
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 4px;
+  align-items: center;
+  justify-items: center;
+}
+
+.action-link,
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
   color: #88a;
   text-decoration: none;
-  font-size: 13px;
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.action-btn {
+  font-size: 0;
 }
 
 .action-link img.action-icon {
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 32px;
   display: block;
 }
 
-.action-link:hover {
+.action-btn svg {
+  width: 32px;
+  height: 32px;
+}
+
+.action-link:hover,
+.action-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  border-color: #444;
   color: #aaf;
+}
+
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .action-view {
   color: #88a;
+}
+
+.action-grid :deep(.toggler-btn) {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.action-grid :deep(.toggler-icon) {
+  width: 32px;
+  height: 32px;
 }
 
 @media (max-width: 768px) {
@@ -450,12 +559,30 @@ watch(trigger, () => {
   }
 
   .results-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
+    position: static;
     width: auto;
-    padding: 0;
-    white-space: nowrap;
+    padding: 10px 0 0;
+    white-space: normal;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .action-grid {
+    gap: 6px;
+  }
+
+  .action-link,
+  .action-btn,
+  .action-grid :deep(.toggler-btn) {
+    width: 48px;
+    height: 48px;
+  }
+
+  .action-link img.action-icon,
+  .action-btn svg,
+  .action-grid :deep(.toggler-icon) {
+    width: 36px;
+    height: 36px;
   }
 
   .results-table td::before {

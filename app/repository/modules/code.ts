@@ -56,6 +56,7 @@ export type FulltextSearchResult = {
     can_edit?: boolean
     can_delete?: boolean
     images?: ImageResponse[]
+    code?: string | null
   }
 }
 

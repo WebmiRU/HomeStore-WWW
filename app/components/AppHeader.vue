@@ -19,8 +19,9 @@
           type="text"
           placeholder="Поиск предметов и хранилищ..."
           class="header-search__input"
+          @keydown.enter.prevent="doSearch"
         />
-        <button type="submit" class="header-search__btn">Поиск</button>
+        <button type="button" class="header-search__btn" @click="doSearch">Поиск</button>
       </form>
 
       <button
@@ -48,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const emit = defineEmits<{
   search: [query: string]
@@ -56,11 +57,24 @@ const emit = defineEmits<{
 
 const { $api, $notify } = useNuxtApp()
 const router = useRouter()
+const route = useRoute()
 const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
 
 const searchQuery = ref('')
 const loggingOut = ref(false)
+
+// Подставляем текущий запрос из URL (например, при открытии /search?q=...),
+// чтобы строка поиска отражала то, что уже ищем.
+watch(
+  () => route.query.q,
+  (value) => {
+    if (typeof value === 'string' && value !== '') {
+      searchQuery.value = value
+    }
+  },
+  { immediate: true },
+)
 
 const profileHref = computed<string | null>(() =>
   currentUserId.value !== null ? `/users/${currentUserId.value}/edit` : null

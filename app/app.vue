@@ -43,6 +43,7 @@ const { items, remove: removeNotify } = $notify
 const router = useRouter()
 
 const uuidQuery = ref('')
+const { next: triggerSearch } = useSearchTrigger()
 
 async function doSearch(q: string) {
   try {
@@ -50,7 +51,7 @@ async function doSearch(q: string) {
     await router.push({ path: '/search', query: { q } })
     // Если уже на /search с тем же q — route.query не изменится и watch не
     // сработает; форсируем повторный поиск меткой-триггером.
-    useSearchTrigger().next()
+    triggerSearch()
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка поиска'), { type: 'error', timer: 10 })
   }

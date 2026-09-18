@@ -437,13 +437,23 @@ function formatDate(iso: string): string {
 
 // Поле «КОД» в футере эмулирует сканер: код из ?scan= обрабатываем так же,
 // как если бы он пришёл с устройства ввода.
+// `?mode=replenish|writeoff` (из результатов поиска) сразу включает нужный
+// режим — предмет попадает в список, как при сканировании.
 watch(
   () => route.query.scan,
   (value) => {
     if (!import.meta.client) return
     if (typeof value !== 'string' || !value) return
+
     const rest = { ...route.query }
     delete rest.scan
+
+    const modeParam = route.query.mode
+    if (modeParam === 'replenish' || modeParam === 'writeoff') {
+      setMode(modeParam)
+      delete rest.mode
+    }
+
     void router.replace({ query: rest })
     void handleScan(value)
   },
