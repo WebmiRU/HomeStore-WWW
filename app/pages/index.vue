@@ -327,7 +327,7 @@ async function handleScan(code: string) {
     } else if (result.type === 'store' && result.payload) {
       notifyStoreBlocked(result.payload as StorePayload)
     } else {
-      notifyNotFound(code)
+      handleCodeNotFound(code)
     }
   } catch (err: any) {
     if (activeMode.value === 'search') {
@@ -337,7 +337,7 @@ async function handleScan(code: string) {
         $notify.add(formatApiError(err, 'Ошибка поиска кода'), { type: 'error', timer: 10 })
       }
     } else {
-      notifyNotFound(code)
+      handleCodeNotFound(code)
     }
   }
 }
@@ -359,8 +359,13 @@ function removeFromScanList(code: string) {
   scanList.value = scanList.value.filter((entry) => entry.code !== code)
 }
 
-function notifyNotFound(code: string) {
-  $notify.add(`Код "${code}" не найден`, { type: 'warning', timer: 10 })
+// Код не найден: переключаемся в «Поиск» и показываем предложение
+// добавить предмет или хранилище.
+function handleCodeNotFound(code: string) {
+  activeMode.value = 'search'
+  found.value = null
+  scanList.value = []
+  notFoundCode.value = code
 }
 
 function notifyStoreBlocked(store: StorePayload) {
