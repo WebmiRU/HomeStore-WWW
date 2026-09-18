@@ -55,6 +55,7 @@ export type FulltextSearchResult = {
     is_owner?: boolean
     can_edit?: boolean
     can_delete?: boolean
+    images?: ImageResponse[]
   }
 }
 

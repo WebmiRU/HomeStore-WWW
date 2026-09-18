@@ -9,7 +9,10 @@
       />
     </div>
 
-    <div v-if="loading" class="loading">Поиск...</div>
+    <div v-if="loading" class="loading">
+      <SpinnerIcon :size="36" />
+      <span class="loading-text">Поиск...</span>
+    </div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -27,6 +30,7 @@
                 @change="toggleAll"
               />
             </th>
+            <th class="img-col">Изображение</th>
             <th>Тип</th>
             <th>Название</th>
             <th></th>
@@ -40,6 +44,9 @@
                 :checked="isSelected(r)"
                 @change="toggleOne(r)"
               />
+            </td>
+            <td class="img-col" data-label="Изображение">
+              <ItemPhoto :images="r.payload.images" :alt="r.payload.title" />
             </td>
             <td data-label="Тип">
               <span v-if="r.type === 'item'" class="type-badge type-item">Предмет</span>
@@ -176,6 +183,7 @@ async function search() {
   query.value = q
   loading.value = true
   error.value = null
+  results.value = []
   try {
     results.value = await $api.code.fulltextSearch(q)
     selectedItems.value = new Set()
@@ -208,9 +216,15 @@ async function loadLabelListInfo() {
   }
 }
 
+const { trigger } = useSearchTrigger()
+
 onMounted(search)
 
 watch(() => route.query.q, () => {
+  search()
+})
+
+watch(trigger, () => {
   search()
 })
 </script>
@@ -234,6 +248,25 @@ watch(() => route.query.q, () => {
 .empty {
   padding: 20px;
   color: #888;
+}
+
+.loading {
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.loading-text {
+  font-size: 15px;
+  color: #888;
+}
+
+.img-col {
+  width: 1px;
+  white-space: nowrap;
 }
 
 .error {
@@ -398,6 +431,17 @@ watch(() => route.query.q, () => {
     left: 14px;
     width: auto;
     padding: 0;
+  }
+
+  .results-table td.img-col {
+    width: auto;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .results-table td.img-col::before {
+    display: none;
   }
 
   .results-table td.cb-col input[type="checkbox"] {

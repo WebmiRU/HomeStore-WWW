@@ -46,12 +46,11 @@ const uuidQuery = ref('')
 
 async function doSearch(q: string) {
   try {
-    const results = await $api.code.fulltextSearch(q)
-    if (results.length === 0) {
-      $notify.add('Ничего не найдено', { type: 'info', timer: 5 })
-      return
-    }
-    router.push({ path: '/search', query: { q } })
+    // Навигация сразу: страница поиска сама покажет спиннер и сделает запрос.
+    await router.push({ path: '/search', query: { q } })
+    // Если уже на /search с тем же q — route.query не изменится и watch не
+    // сработает; форсируем повторный поиск меткой-триггером.
+    useSearchTrigger().next()
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка поиска'), { type: 'error', timer: 10 })
   }
