@@ -5,18 +5,29 @@
     </div>
 
     <div class="journal-controls">
-      <div class="control-group">
+      <div class="control-group date-group">
         <span class="control-label">Период:</span>
+        <ClientOnly>
+          <VueDatepicker
+            v-model="dateRange"
+            range
+            :format="'dd.MM.yyyy'"
+            value-format="yyyy-MM-dd"
+            :enable-time-picker="false"
+            :clearable="false"
+            auto-apply
+            @closed="applyDateRange"
+          />
+        </ClientOnly>
         <button
-          v-for="range in ranges"
-          :key="range.value"
           type="button"
           class="ctl-btn"
-          :class="{ active: period === range.value }"
-          @click="setPeriod(range.value)"
+          :class="{ active: !hasRange }"
+          @click="setAllTime"
         >
-          {{ range.label }}
+          Всё время
         </button>
+        <button type="button" class="ctl-btn" @click="setDefaultRange">Посл. 30 дней</button>
       </div>
 
       <div class="control-group">
@@ -35,7 +46,7 @@
 
       <div class="control-group">
         <span class="control-label">Объект:</span>
-        <select v-model="entityFilter" class="ctl-select" @change="applyEntityFilter">
+        <select v-model="entityFilter" class="ctl-select" @change="applyFilters">
           <option value="">Все объекты</option>
           <option v-for="et in entityOptions" :key="et.value" :value="et.value">
             {{ et.label }}
@@ -49,56 +60,23 @@
 
     <div v-else class="charts-grid">
       <section class="chart-card chart-card--wide">
-        <h4 class="chart-title">Активность за период</h4>
-        <p class="chart-subtitle">Сколько событий журнала происходило по дням (или часам) за выбранный период</p>
-        <div v-if="activityPoints.length" class="bars-chart">
-          <div
-            v-for="(p, i) in activityPoints"
-            :key="i"
-            class="bar-col"
-            :title="`${p.bucket}: ${p.count}`"
-          >
-            <div class="bar-track">
-              <div
-                class="bar-fill"
-                :style="{ height: barHeight(p.count) }"
-              ></div>
-            </div>
-            <div v-if="showBarLabel(i)" class="bar-label">{{ barLabel(p.bucket) }}</div>
-          </div>
-          <div class="bars-empty" v-if="!activityTotal">За выбранный период событий нет</div>
+        <div class="chart-head">
+          <h4 class="chart-title">Активность и действия</h4>
+          <span v-if="activityTotal" class="stats-summary">Всего за период: <b>{{ activityTotal }}</b></span>
         </div>
-        <div v-else class="empty">Нет данных</div>
+        <p class="chart-subtitle">
+          Ось X — дата, ось Y — число событий. Цвет сегмента — действие (пополнение, списание,
+          создание и т.д.); высота столбца — общая активность, белая линия — итог за день/час.
+        </p>
+        <AuditActivityChart :points="actionSeries" :labels="ACTION_LABELS" />
       </section>
 
-      <section class="chart-card">
-        <h4 class="chart-title">По действиям</h4>
-        <p class="chart-subtitle">Итог по каждому действию за период: пополнение, списание, создание предметов и т.д.</p>
-        <div v-if="sortedActionPoints.length" class="hbar-list">
-          <div v-for="p in sortedActionPoints" :key="p.key ?? p.bucket" class="hbar-row">
-            <span class="hbar-label" :title="p.key ?? ''">{{ actionLabel(p.key) }}</span>
-            <div class="hbar-track">
-              <div class="hbar-fill" :style="{ width: barWidth(p.count, sortedActionPoints) }"></div>
-            </div>
-            <span class="hbar-count">{{ p.count }}</span>
-          </div>
-        </div>
-        <div v-else class="empty">Нет данных</div>
-      </section>
-
-      <section class="chart-card">
-        <h4 class="chart-title">По объектам</h4>
-        <p class="chart-subtitle">Итог по типу объекта за период: предметы, хранилища, склады и т.д.</p>
-        <div v-if="sortedEntityPoints.length" class="hbar-list">
-          <div v-for="p in sortedEntityPoints" :key="p.key ?? p.bucket" class="hbar-row">
-            <span class="hbar-label" :title="p.key ?? ''">{{ entityLabel(p.key) }}</span>
-            <div class="hbar-track">
-              <div class="hbar-fill" :style="{ width: barWidth(p.count, sortedEntityPoints) }"></div>
-            </div>
-            <span class="hbar-count">{{ p.count }}</span>
-          </div>
-        </div>
-        <div v-else class="empty">Нет данных</div>
+      <section class="chart-card chart-card--wide">
+        <h4 class="chart-title">Активность по объектам</h4>
+        <p class="chart-subtitle">
+          Те же события по типу затронутого объекта: предметы, хранилища, склады, этикетки и т.д.
+        </p>
+        <AuditActivityChart :points="entitySeries" :labels="ENTITY_LABELS" />
       </section>
     </div>
 
@@ -174,18 +152,29 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { actionLabel, entityLabel, actionBadgeClass, formatDate, summarize } from '~/utils/auditLabels'
-import type {
-  AuditLogEntry,
-  AuditLogStatsPoint,
-} from '~/repository/modules/auditLog'
+import { defineAsyncComponent } from 'vue'
+import {
+  actionLabel,
+  entityLabel,
+  actionBadgeClass,
+  formatDate,
+  summarize,
+  ACTION_LABELS,
+  ENTITY_LABELS,
+} from '~/utils/auditLabels'
+import type { AuditLogEntry, AuditLogStatsPoint } from '~/repository/modules/auditLog'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+const VueDatepicker = defineAsyncComponent(() =>
+  import('@vuepic/vue-datepicker').then((m) => m.default),
+)
 
 const { $api } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
 
-// ---- объекты ----
-const ENTITY_LABELS_FOR_FILTER: Record<string, string> = {
+// ---- объекты (фильтр) ----
+const ENTITY_FILTER_OPTIONS: Record<string, string> = {
   item: 'Предметы',
   store: 'Хранилища',
   warehouse: 'Склады',
@@ -195,89 +184,94 @@ const ENTITY_LABELS_FOR_FILTER: Record<string, string> = {
   user: 'Пользователи',
 }
 
-// ---- период и шаг ----
-const ranges = [
-  { label: '7 дней', value: '7' },
-  { label: '30 дней', value: '30' },
-  { label: '90 дней', value: '90' },
-  { label: 'Всё время', value: 'all' },
-]
+const entityOptions = Object.entries(ENTITY_FILTER_OPTIONS).map(([value, label]) => ({ value, label }))
+const entityFilter = ref<string>('')
+
+// ---- шаг ----
 const granularities = [
   { label: 'дни', value: 'day' },
   { label: 'часы', value: 'hour' },
 ]
-
-const period = ref<string>('30')
 const granularity = ref<'day' | 'hour'>('day')
-const entityFilter = ref<string>('')
 
-const entityOptions = Object.entries(ENTITY_LABELS_FOR_FILTER).map(([value, label]) => ({ value, label }))
+// ---- период (календарь) ----
+function isoLocal(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+function defaultRange(): [string, string] {
+  const to = new Date()
+  const from = new Date()
+  from.setDate(to.getDate() - 29)
+  return [isoLocal(from), isoLocal(to)]
+}
+
+const dateRange = ref<[string, string] | null>(defaultRange())
+
+const hasRange = computed(() => {
+  const r = dateRange.value
+  return !!(r && typeof r[0] === 'string' && typeof r[1] === 'string')
+})
+
+function toISO(v: unknown): string | null {
+  if (v == null) return null
+  if (typeof v === 'string') return v.slice(0, 10)
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return isoLocal(v)
+  return null
+}
+
+function applyDateRange() {
+  const r = dateRange.value
+  const from = r ? toISO(r[0]) : null
+  const to = r ? toISO(r[1] ?? r[0]) : null
+  dateRange.value = from && to ? [from, to] : null
+  reloadAll()
+}
+
+function setAllTime() {
+  dateRange.value = null
+  reloadAll()
+}
+
+function setDefaultRange() {
+  dateRange.value = defaultRange()
+  reloadAll()
+}
+
+function rangeParams(): { date_from?: string; date_to?: string } {
+  const r = dateRange.value
+  if (!r || !r[0] || !r[1]) return {}
+  return { date_from: r[0], date_to: r[1] + 'T23:59:59' }
+}
 
 // ---- статистика ----
 const statsLoading = ref(true)
 const statsError = ref<string | null>(null)
-const activityPoints = ref<AuditLogStatsPoint[]>([])
-const actionPoints = ref<AuditLogStatsPoint[]>([])
-const entityPoints = ref<AuditLogStatsPoint[]>([])
+const actionSeries = ref<AuditLogStatsPoint[]>([])
+const entitySeries = ref<AuditLogStatsPoint[]>([])
 
-const activityTotal = computed(() => activityPoints.value.reduce((s, p) => s + p.count, 0))
+const activityTotal = computed(() => actionSeries.value.reduce((s, p) => s + p.count, 0))
 
-const sortedActionPoints = computed(() => [...actionPoints.value].sort((a, b) => b.count - a.count))
-const sortedEntityPoints = computed(() => [...entityPoints.value].sort((a, b) => b.count - a.count))
-
-function maxOf(points: AuditLogStatsPoint[]): number {
-  return Math.max(1, ...points.map((p) => p.count))
-}
-
-function barHeight(count: number): string {
-  return `${Math.round((count / maxOf(activityPoints.value)) * 100)}%`
-}
-
-function barWidth(count: number, points: AuditLogStatsPoint[]): string {
-  return `${Math.round((count / maxOf(points)) * 100)}%`
-}
-
-// При длинных периодах подписи прореживаются, чтобы не слипаться.
-function showBarLabel(index: number): boolean {
-  const total = activityPoints.value.length
-  const step = Math.max(1, Math.ceil(total / 60))
-  return index % step === 0
-}
-
-function barLabel(bucket: string | null): string {
-  if (!bucket) return ''
-  const [date, time] = bucket.split(' ')
-  const d = new Date(date.length === 10 ? date + 'T00:00:00' : bucket)
-  if (granularity.value === 'hour' && time) {
-    return `${d.getDate()}.${d.getMonth() + 1} ${time}`
-  }
-  return `${d.getDate()}.${d.getMonth() + 1}`
-}
-
-function rangeParams(): { date_from?: string; date_to?: string } {
-  if (period.value === 'all') return {}
-  const to = new Date()
-  const from = new Date()
-  from.setDate(to.getDate() - (Number(period.value) - 1))
+function statsParams() {
   return {
-    date_from: from.toISOString().slice(0, 10),
-    date_to: to.toISOString().slice(0, 10),
+    granularity: granularity.value,
+    entity_type: entityFilter.value || undefined,
+    ...rangeParams(),
   }
 }
 
 async function loadStats() {
   statsLoading.value = true
   statsError.value = null
-  const range = rangeParams()
   try {
-    const [activity, actions, entities] = await Promise.all([
-      $api.auditLog.stats({ group_by: 'day', granularity: granularity.value, ...range }),
-      $api.auditLog.stats({ group_by: 'action', granularity: granularity.value, ...range }),
-      $api.auditLog.stats({ group_by: 'entity', granularity: granularity.value, ...range }),
+    const [actions, entities] = await Promise.all([
+      $api.auditLog.stats({ group_by: 'day,action', ...statsParams() }),
+      $api.auditLog.stats({ group_by: 'day,entity', ...statsParams() }),
     ])
-    activityPoints.value = activity
-    actionPoints.value = actions
-    entityPoints.value = entities
+    actionSeries.value = actions
+    entitySeries.value = entities
   } catch (err: any) {
     statsError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -318,8 +312,7 @@ async function loadList() {
   }
 }
 
-function setPeriod(value: string) {
-  period.value = value
+function reloadAll() {
   router.push({ query: { ...route.query, page: undefined } })
   loadStats()
   loadList()
@@ -330,9 +323,8 @@ function setGranularity(value: 'day' | 'hour') {
   loadStats()
 }
 
-function applyEntityFilter() {
-  router.push({ query: { ...route.query, page: undefined } })
-  loadList()
+function applyFilters() {
+  reloadAll()
 }
 
 function goToPage(page: number) {
@@ -373,6 +365,10 @@ watch(() => route.query.page, () => loadList())
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.date-group {
+  gap: 8px;
 }
 
 .control-label {
@@ -431,12 +427,31 @@ watch(() => route.query.page, () => loadList())
 }
 
 .chart-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 14px;
   color: #999;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
+}
+
+.chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stats-summary {
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.stats-summary b {
+  color: #9dd;
+  font-size: 15px;
 }
 
 .chart-subtitle {
@@ -446,95 +461,47 @@ watch(() => route.query.page, () => loadList())
   line-height: 1.5;
 }
 
-.bars-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 140px;
-  padding-top: 8px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-}
-
-.bar-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  flex: 1 1 0;
-  min-width: 18px;
-  height: 100%;
-}
-
-.bar-track {
-  display: flex;
-  align-items: flex-end;
-  width: 100%;
-  height: 110px;
-  justify-content: center;
-}
-
-.bar-fill {
-  width: 70%;
-  max-width: 26px;
-  min-height: 2px;
-  background: linear-gradient(to top, #3a3a5a, #5a5a8a);
-  border-radius: 2px 2px 0 0;
-}
-
-.bar-label {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #666;
-  white-space: nowrap;
-}
-
-.bars-empty {
-  font-size: 13px;
-  color: #666;
-}
-
-.hbar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hbar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.hbar-label {
-  flex: 0 0 120px;
-  font-size: 13px;
-  color: #bbb;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hbar-track {
-  flex: 1;
+/* --- датапикер в тёмной теме --- */
+.date-group :deep(.dp__input) {
+  height: 30px;
+  padding: 0 10px;
   background: #2a2a2a;
-  border-radius: 3px;
-  height: 14px;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
 }
 
-.hbar-fill {
-  height: 100%;
-  background: linear-gradient(to right, #3a5a3a, #5a8a5a);
-  border-radius: 3px;
-  min-width: 2px;
+.date-group :deep(.dp__input:hover) {
+  border-color: #5a5a5a;
 }
 
-.hbar-count {
-  flex: 0 0 32px;
-  font-size: 12px;
-  color: #999;
-  text-align: right;
+.date-group :deep(.dp__input_icon) {
+  color: #777;
+}
+
+.date-group :deep(.dp__theme_light) {
+  --dp-background-color: #1e1e1e;
+  --dp-text-color: #ddd;
+  --dp-hover-color: #2a2a3a;
+  --dp-hover-text-color: #fff;
+  --dp-hover-icon-color: #ddd;
+  --dp-primary-color: #5a5a8a;
+  --dp-primary-text-color: #fff;
+  --dp-secondary-color: #3a3a3a;
+  --dp-border-color: #3a3a3a;
+  --dp-menu-border-color: #3a3a3a;
+  --dp-border-color-hover: #5a5a5a;
+  --dp-disabled-color: #4a4a4a;
+  --dp-disabled-border-color: #3a3a3a;
+  --dp-scroll-bar-background: #2a2a2a;
+  --dp-scroll-bar-color: #5a5a5a;
+  --dp-success-color: #5a8a5a;
+  --dp-success-border-color: #5a8a5a;
+  --dp-tooltip-color: #ddd;
+  --dp-action-row-color: #8a8a8a;
+  --dp-icon-color: #8a8a8a;
 }
 
 .section-divider {

@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@vuepic/vue-datepicker": "^9.0.3",
     "echarts": "^6.1.0",
     "nuxt": "^4.5.1",
     "ofetch": "^1.5.1",

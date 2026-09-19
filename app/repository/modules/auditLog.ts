@@ -35,7 +35,7 @@ export type AuditLogStatsPoint = {
 }
 
 export type AuditLogStatsParams = {
-  group_by: 'action' | 'entity' | 'day'
+  group_by: 'action' | 'entity' | 'day' | 'day,action' | 'day,entity'
   granularity?: 'hour' | 'day'
   entity_type?: string
   entity_id?: number
