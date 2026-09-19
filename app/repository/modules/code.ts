@@ -33,11 +33,27 @@ export type ItemPayload = {
   images?: ImageResponse[]
 }
 
-export type CodeSearchResponse = {
+export type CodeMatch = {
+  code: string
+  user_id: number | null
+  user?: UserBrief | null
+  type: 'item' | 'store' | null
+  payload: ItemPayload | StorePayload | null
+}
+
+export type CodeSearchSingle = {
   code: string
   type: 'item' | 'store' | null
   payload: ItemPayload | StorePayload | null
 }
+
+export type CodeSearchAmbiguous = {
+  code: string
+  ambiguous: true
+  matches: CodeMatch[]
+}
+
+export type CodeSearchResponse = CodeSearchSingle | CodeSearchAmbiguous
 
 export type FulltextSearchResult = {
   type: 'item' | 'store'

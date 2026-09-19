@@ -5,6 +5,7 @@ export type OperationType = 'operation.replenish' | 'operation.writeoff'
 
 export type OperationRow = {
   code: string
+  item_id?: number
   quantity: number
 }
 

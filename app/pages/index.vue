@@ -100,6 +100,39 @@
       </div>
     </div>
 
+    <!-- Несколько предметов с одним кодом: показываем все варианты -->
+    <div v-else-if="activeMode === 'search' && ambiguousMatches && ambiguousMatches.length" class="ambiguous-list">
+      <div class="ambiguous-list__title">
+        Код найден у {{ ambiguousMatches.length }} {{ pluralItems(ambiguousMatches.length) }} — выберите нужный:
+      </div>
+      <NuxtLink
+        v-for="m in ambiguousMatches"
+        :key="m.payload.id"
+        :to="`/items/${m.payload.id}/edit`"
+        class="ambiguous-card"
+      >
+        <ItemPhoto :images="m.payload.images" :alt="m.payload.title_print || m.payload.title" />
+
+        <div class="ambiguous-card__info">
+          <div class="ambiguous-card__title">{{ m.payload.title }}</div>
+          <div v-if="m.payload.title_print" class="ambiguous-card__print">
+            {{ m.payload.title_print }}
+          </div>
+          <div v-if="m.payload.user" class="ambiguous-card__owner">
+            <span class="owner-name" :class="isOwner(m.payload.user) ? 'owner--me' : 'owner--other'">
+              {{ m.payload.user.name }}
+            </span>
+          </div>
+          <div v-if="matchChains[m.payload.id]" class="ambiguous-card__chain">
+            {{ matchChains[m.payload.id] }}
+          </div>
+          <div v-if="m.payload.quantity != null" class="ambiguous-card__stock">
+            В наличии: {{ m.payload.quantity }}
+          </div>
+        </div>
+      </NuxtLink>
+    </div>
+
     <div v-else-if="activeMode === 'search' && notFoundCode" class="not-found">
       <div class="not-found__text">Код не найден в Базе.</div>
       <div class="not-found__ask">
@@ -121,7 +154,7 @@
       <div class="scan-list__title">{{ listTitle }}</div>
       <div
         v-for="entry in scanList"
-        :key="entry.code"
+        :key="keyOf(entry)"
         class="scan-row"
         :class="[
           entry.done ? ['scan-row--done', `scan-row--done--${entry.doneMode}`] : '',
@@ -159,44 +192,90 @@
             {{ entryProblem(entry) }}
           </div>
           <div class="scan-row__meta">Создано: {{ formatDate(entry.payload.created_at) }}</div>
-          <div v-if="scanChains[entry.code]?.length" class="scan-row__chain">
-            <LocationChain :chain="scanChains[entry.code]" />
+        </div>
+
+        <div class="scan-row__right">
+            <div class="scan-row__top">
+            <div class="scan-row__action">
+              <template v-if="!entry.done">
+                <input
+                  v-if="entry.payload.quantity != null"
+                  v-model.number="entry.count"
+                  type="number"
+                  min="1"
+                  step="1"
+                  class="scan-row__count"
+                />
+                <span v-else class="scan-row__whole">1 шт.</span>
+              </template>
+            </div>
+
+            <button
+              type="button"
+              class="scan-row__remove"
+              :aria-label="`Удалить ${entry.payload.title}`"
+              title="Удалить"
+              @click="removeFromScanList(entry)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
           </div>
         </div>
 
-        <div class="scan-row__action">
-          <template v-if="!entry.done">
-            <input
-              v-if="entry.payload.quantity != null"
-              v-model.number="entry.count"
-              type="number"
-              min="1"
-              step="1"
-              class="scan-row__count"
-            />
-            <span v-else class="scan-row__whole">1 шт.</span>
-          </template>
-        </div>
+        <div class="scan-row__chain">
+          <div class="scan-row__where">
+            <span v-if="entry.payload.user && !entry.selectOpen" class="scan-row__owner">
+              <span
+                class="owner-name"
+                :class="isOwner(entry.payload.user) ? 'owner--me' : 'owner--other'"
+              >{{ entry.payload.user.name }}</span>
+            </span>
 
-        <button
-          type="button"
-          class="scan-row__remove"
-          :aria-label="`Удалить ${entry.payload.title}`"
-          title="Удалить"
-          @click="removeFromScanList(entry.code)"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="6" y1="6" x2="18" y2="18" />
-            <line x1="18" y1="6" x2="6" y2="18" />
-          </svg>
-        </button>
+            <div
+              v-if="entry.selectOpen && !entry.done"
+              :ref="(el) => setSelectRef(entry, el)"
+              class="scan-row__select"
+            >
+              <button
+                v-for="m in entry.matches"
+                :key="m.id"
+                type="button"
+                class="scan-match"
+                :class="{ 'scan-match--active': m.id === activeMatchId(entry) }"
+                @mouseenter="entry.activeId = m.id"
+                @click="applyMatch(entry, m)"
+              >{{ selectLabel(m) }}</button>
+            </div>
+
+            <LocationChain
+              v-else-if="!entry.selectOpen && scanChains[keyOf(entry)]?.length"
+              :chain="scanChains[keyOf(entry)]"
+            />
+            <span v-else class="scan-row__none">Без склада</span>
+
+            <button
+              v-if="!entry.done"
+              type="button"
+              class="scan-pick"
+              :disabled="entry.matches.length < 2"
+              :title="entry.matches.length < 2 ? 'Выбирать нечего' : 'Выбрать предмет'"
+              @mousedown.prevent
+              @click="togglePick(entry)"
+            >
+              ▾ Выбрать
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="scan-controls">
@@ -227,8 +306,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import type { ItemPayload, StorePayload } from '~/repository/modules/code'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { CodeMatch, CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
 import type { ChainCrumb } from '~/composables/useLocationChain'
@@ -240,12 +319,16 @@ type FoundResult =
 
 interface ScanEntry {
   code: string
+  item_id: number
   payload: ItemPayload
+  matches: ItemPayload[]
   count: number
   done: boolean
   doneAt: string
   doneDelta: number
   doneMode: Mode | null
+  selectOpen: boolean
+  activeId: number | null
 }
 
 const { $api, $notify } = useNuxtApp()
@@ -254,6 +337,7 @@ const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
 const { chainForStore } = useLocationChain()
+const { isOwner } = useCurrentUser()
 
 // Акцент активной кнопки включаем только на клиенте после гидрации:
 // SSR и первичный client-render отрисовывают кнопки без «активной» рамки
@@ -271,10 +355,19 @@ const activeMode = ref<Mode>(savedMode.value)
 
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
+const ambiguousMatches = ref<(CodeMatch & { payload: ItemPayload })[] | null>(null)
 const scanList = ref<ScanEntry[]>([])
 const foundChain = ref<ChainCrumb[]>([])
 const scanChains = ref<Record<string, ChainCrumb[]>>({})
+const matchChains = ref<Record<number, string>>({})
 const submitting = ref(false)
+
+// Уникальный ключ строки скана: один и тот же код у разных предметов —
+// это разные строки (замесы не сливаются), у одного предмета две метки
+// с разными кодами — тоже разные строки.
+function keyOf(entry: ScanEntry): string {
+  return `${entry.code}|${entry.item_id}`
+}
 
 const pendingEntries = computed(() => scanList.value.filter((entry) => !entry.done).length)
 
@@ -414,30 +507,54 @@ async function handleScan(code: string) {
   if (activeMode.value === 'search') {
     found.value = null
     foundChain.value = []
+    ambiguousMatches.value = null
     notFoundCode.value = ''
   }
 
   try {
     const result = await $api.code.search(code)
 
-    if (activeMode.value === 'search') {
-      if (result.type === 'item' && result.payload) {
+    if (isAmbiguous(result)) {
+      const items = result.matches.filter(
+        (m): m is CodeMatch & { payload: ItemPayload } => m.type === 'item' && m.payload !== null,
+      )
+
+      if (activeMode.value === 'search') {
+        if (items.length === 0) {
+          notFoundCode.value = code
+        } else {
+          ambiguousMatches.value = items
+          void loadMatchChains(items.map((m) => m.payload))
+        }
+        return
+      }
+
+      clearDoneEntries()
+      if (items.length === 0) {
+        handleCodeNotFound(code)
+        return
+      }
+      addToScanList(result.code, items[0]!.payload, items.map((m) => m.payload))
+      return
+    }
+
+    if (result.type === 'item' && result.payload) {
+      if (activeMode.value === 'search') {
         found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
         void refreshFoundChain()
-      } else if (result.type === 'store' && result.payload) {
+      } else {
+        clearDoneEntries()
+        addToScanList(result.code, result.payload as ItemPayload)
+      }
+    } else if (result.type === 'store' && result.payload) {
+      if (activeMode.value === 'search') {
         found.value = { type: 'store', payload: result.payload as StorePayload, code: result.code }
         void refreshFoundChain()
       } else {
-        // Код существует, но ни к чему не привязан — считаем «не найден»
-        found.value = null
-        foundChain.value = []
-        notFoundCode.value = code
+        notifyStoreBlocked(result.payload as StorePayload)
       }
-    } else if (result.type === 'item' && result.payload) {
-      clearDoneEntries()
-      addToScanList(result.code, result.payload as ItemPayload)
-    } else if (result.type === 'store' && result.payload) {
-      notifyStoreBlocked(result.payload as StorePayload)
+    } else if (activeMode.value === 'search') {
+      notFoundCode.value = code
     } else {
       handleCodeNotFound(code)
     }
@@ -454,8 +571,14 @@ async function handleScan(code: string) {
   }
 }
 
-function addToScanList(code: string, payload: ItemPayload) {
-  const existing = scanList.value.find((entry) => entry.code === code)
+function isAmbiguous(result: CodeSearchResponse): result is CodeSearchResponse & { ambiguous: true; matches: CodeMatch[] } {
+  return (result as { ambiguous?: unknown }).ambiguous === true
+}
+
+function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload[]) {
+  const matchList = matches && matches.length > 0 ? matches : [payload]
+  const key = `${code}|${payload.id}`
+  const existing = scanList.value.find((entry) => keyOf(entry) === key)
   if (existing) {
     // Повторное сканирование: увеличиваем количество к списанию/пополнению.
     // Для предметов без количества — всегда единственный экземпляр, ничего не делаем.
@@ -464,33 +587,143 @@ function addToScanList(code: string, payload: ItemPayload) {
     }
     return
   }
-  scanList.value.push({ code, payload, count: 1, done: false, doneAt: '', doneDelta: 0, doneMode: null })
-  void setScanChain(code, payload)
+  scanList.value.push({
+    code,
+    item_id: payload.id,
+    payload,
+    matches: matchList,
+    count: 1,
+    done: false,
+    doneAt: '',
+    doneDelta: 0,
+    doneMode: null,
+    selectOpen: false,
+    activeId: null,
+  })
+  void setScanChain(key, payload)
+  if (matchList.length > 1) void loadMatchChains(matchList)
 }
 
 // Повторное сканирование: выполненные записи убираем, невыполненные сохраняем.
 function clearDoneEntries() {
   const done = scanList.value.filter((entry) => entry.done)
   if (done.length === 0) return
-  const codes = new Set(done.map((entry) => entry.code))
+  const keys = new Set(done.map((entry) => keyOf(entry)))
   scanList.value = scanList.value.filter((entry) => !entry.done)
-  codes.forEach((code) => {
-    delete scanChains.value[code]
+  keys.forEach((key) => {
+    delete scanChains.value[key]
   })
 }
 
 function clearList() {
   scanList.value = []
   scanChains.value = {}
+  matchChains.value = {}
 }
 
-async function setScanChain(code: string, payload: ItemPayload) {
-  scanChains.value[code] = await chainForStore(payload.store_id)
+async function setScanChain(key: string, payload: ItemPayload) {
+  scanChains.value[key] = await chainForStore(payload.store_id)
 }
 
-function removeFromScanList(code: string) {
-  scanList.value = scanList.value.filter((entry) => entry.code !== code)
-  delete scanChains.value[code]
+function removeFromScanList(entry: ScanEntry) {
+  const key = keyOf(entry)
+  scanList.value = scanList.value.filter((item) => item !== entry)
+  delete scanChains.value[key]
+  entry.matches.forEach((m) => delete matchChains.value[m.id])
+}
+
+// Цепочка каждого кандидата для селекта: «Склад → … → Шкаф» (или «Без склада»).
+async function loadMatchChains(matchList: ItemPayload[]) {
+  for (const m of matchList) {
+    if (matchChains.value[m.id]) continue
+    const chain = await chainForStore(m.store_id)
+    matchChains.value[m.id] = chain.length
+      ? chain.map((c) => c.title).join(' → ')
+      : 'Без склада'
+  }
+}
+
+function matchOwnerName(m: ItemPayload): string {
+  if (m.user?.name) return m.user.name
+  if (m.user?.email) return m.user.email
+  return m.user_id != null ? `Пользователь #${m.user_id}` : '—'
+}
+
+function selectLabel(m: ItemPayload): string {
+  return `[${matchOwnerName(m)}] ${matchChains.value[m.id] ?? '…'}`
+}
+
+function togglePick(entry: ScanEntry) {
+  if (entry.matches.length < 2 || entry.done) return
+
+  if (entry.selectOpen) {
+    entry.selectOpen = false
+    return
+  }
+
+  entry.selectOpen = true
+  entry.activeId = entry.item_id
+  void loadMatchChains(entry.matches)
+}
+
+const selectRefs = new Map<string, HTMLElement>()
+
+function setSelectRef(entry: ScanEntry, el: unknown) {
+  const key = keyOf(entry)
+  if (el instanceof HTMLElement) {
+    selectRefs.set(key, el)
+  } else {
+    selectRefs.delete(key)
+  }
+}
+
+function activeMatchId(entry: ScanEntry): number {
+  return entry.activeId ?? entry.item_id
+}
+
+// Клик вне раскрытого списка подтверждает текущий активный пункт —
+// строка переходит в состояние «выбрано» (чип владельца + цепочка).
+function onDocumentPointerDown(event: PointerEvent) {
+  const target = event.target as HTMLElement | null
+
+  // Кнопку «Выбрать» обрабатывает её собственный @click.
+  if (target?.closest('.scan-pick')) return
+
+  for (const entry of scanList.value) {
+    if (!entry.selectOpen) continue
+    const el = selectRefs.get(keyOf(entry))
+    if (el && target && (el === target || el.contains(target))) continue
+    commitCurrentOption(entry)
+  }
+}
+
+function commitCurrentOption(entry: ScanEntry) {
+  const match = entry.matches.find((m) => m.id === activeMatchId(entry))
+  if (match) {
+    applyMatch(entry, match)
+  } else {
+    entry.selectOpen = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', onDocumentPointerDown, true)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocumentPointerDown, true)
+})
+
+function applyMatch(entry: ScanEntry, match: ItemPayload) {
+  entry.selectOpen = false
+  entry.activeId = null
+  if (entry.item_id === match.id) return
+  const oldKey = keyOf(entry)
+  entry.item_id = match.id
+  entry.payload = match
+  entry.count = 1
+  delete scanChains.value[oldKey]
+  void setScanChain(keyOf(entry), match)
 }
 
 // Код не найден: переключаемся в «Поиск» и показываем предложение
@@ -499,8 +732,10 @@ function handleCodeNotFound(code: string) {
   activeMode.value = 'search'
   found.value = null
   foundChain.value = []
+  ambiguousMatches.value = null
   scanList.value = []
   scanChains.value = {}
+  matchChains.value = {}
   notFoundCode.value = code
 }
 
@@ -515,6 +750,7 @@ async function submitList() {
   const pending = scanList.value.filter((entry) => !entry.done)
   const rows: OperationRow[] = pending.map((entry) => ({
     code: entry.code,
+    ...(entry.matches.length > 1 ? { item_id: entry.item_id } : {}),
     quantity: entry.payload.quantity != null ? entry.count : 1,
   }))
 
@@ -543,11 +779,11 @@ async function submitList() {
   submitting.value = true
   try {
     const result = await $api.operation.store({ type, payload: rows })
-    const rowsByCode = new Map((result?.rows ?? []).map((row) => [row.code, row]))
+    const rowsByKey = new Map((result?.rows ?? []).map((row) => [`${row.code}|${row.item_id}`, row]))
     const now = new Date().toISOString()
 
     for (const entry of pending) {
-      const applied = rowsByCode.get(entry.code)
+      const applied = rowsByKey.get(keyOf(entry))
       if (applied) {
         entry.payload.quantity = applied.after
         entry.doneDelta = applied.delta
