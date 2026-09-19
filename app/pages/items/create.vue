@@ -51,6 +51,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+        <button type="button" @click="saveAndCopy" class="btn-save-copy" :disabled="saving">Сохранить и создать копию</button>
         <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
       </div>
     </form>
@@ -67,6 +68,11 @@ const router = useRouter()
 const route = useRoute()
 
 const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
+const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
+const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
+const copyStoreId = typeof route.query.copy_store_id === 'string' ? Number(route.query.copy_store_id) : null
+const copyCode = typeof route.query.copy_code === 'string' ? route.query.copy_code : ''
+const copyQuantity = typeof route.query.copy_quantity === 'string' ? route.query.copy_quantity : ''
 
 const tabs = [{ key: 'main', label: 'Основные параметры' }]
 
@@ -75,13 +81,13 @@ const loadError = ref<string | null>(null)
 const saving = ref(false)
 
 const form = reactive({
-  title: '',
-  title_print: '',
-  store_id: null as number | null,
-  code: scannedCode,
+  title: copyTitle,
+  title_print: copyTitlePrint,
+  store_id: copyStoreId,
+  code: copyCode !== '' ? copyCode : scannedCode,
 })
 
-const quantityInput = ref('')
+const quantityInput = ref(copyQuantity)
 
 const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(stores.value))
 
@@ -111,6 +117,34 @@ async function save() {
     })
     $notify.add('Предмет создан', { type: 'success' })
     router.push(`/items/${created.payload.id}/edit`)
+  } catch (err: any) {
+    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+  } finally {
+    saving.value = false
+  }
+}
+
+async function saveAndCopy() {
+  saving.value = true
+  try {
+    const created = await $api.item.create({
+      title: form.title,
+      title_print: form.title_print || null,
+      store_id: form.store_id,
+      code: form.code.trim() || null,
+      quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
+    })
+    $notify.add('Предмет создан', { type: 'success' })
+    router.push({
+      path: '/items/create',
+      query: {
+        copy_title: form.title,
+        copy_title_print: form.title_print,
+        copy_store_id: form.store_id,
+        copy_code: form.code,
+        copy_quantity: quantityInput.value,
+      },
+    })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {
@@ -217,9 +251,25 @@ onMounted(load)
   background: #3a7a3a;
 }
 
-.btn-save:disabled {
+.btn-save:disabled,
+.btn-save-copy:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.btn-save-copy {
+  padding: 8px 24px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #2a5a4a;
+  color: #cfc;
+  border: 1px solid #3a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-save-copy:hover:not(:disabled) {
+  background: #3a7a6a;
 }
 
 .btn-cancel {
