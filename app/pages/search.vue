@@ -124,6 +124,9 @@
                 </template>
               </div>
             </td>
+            <td v-if="resultChains[keyFor(r)]?.length" colspan="5" class="result-chain-cell" data-label="Расположение">
+              <LocationChain :chain="resultChains[keyFor(r)]" />
+            </td>
           </tr>
         </tbody>
       </table>
@@ -134,8 +137,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { FulltextSearchResult } from '~/repository/modules/code'
+import type { ChainCrumb } from '~/composables/useLocationChain'
 
 const { $api } = useNuxtApp()
+const { chainForStore, chainForItem } = useLocationChain()
 const route = useRoute()
 const router = useRouter()
 
@@ -147,6 +152,12 @@ const selectedItems = ref<Set<number>>(new Set())
 const selectedStores = ref<Set<number>>(new Set())
 const itemsInLists = ref<Set<number>>(new Set())
 const storesInLists = ref<Set<number>>(new Set())
+
+const resultChains = ref<Record<string, ChainCrumb[]>>({})
+
+function keyFor(r: FulltextSearchResult): string {
+  return `${r.type}-${r.payload.id}`
+}
 
 const selectedItemIds = computed(() => [...selectedItems.value])
 const selectedStoreIds = computed(() => [...selectedStores.value])
@@ -250,12 +261,24 @@ async function search() {
     results.value = await $api.code.fulltextSearch(q)
     selectedItems.value = new Set()
     selectedStores.value = new Set()
-    await loadLabelListInfo()
+    await Promise.all([loadChains(), loadLabelListInfo()])
   } catch (err: any) {
     error.value = err?.data?.error || err?.message || 'Ошибка поиска'
   } finally {
     loading.value = false
   }
+}
+
+async function loadChains() {
+  const map: Record<string, ChainCrumb[]> = {}
+  for (const r of results.value) {
+    if (r.type === 'item') {
+      map[keyFor(r)] = await chainForItem(r.payload.store_id, r.payload.id, r.payload.title)
+    } else {
+      map[keyFor(r)] = await chainForStore(r.payload.id)
+    }
+  }
+  resultChains.value = map
 }
 
 async function loadLabelListInfo() {
@@ -421,6 +444,16 @@ watch(trigger, () => {
   font-size: 13px;
   color: #888;
   margin-top: 2px;
+}
+
+.result-chain-cell {
+  padding-top: 6px;
+  border-top: 1px dashed #333;
+  color: #777;
+}
+
+.result-chain-cell::before {
+  display: none;
 }
 
 .actions {

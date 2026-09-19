@@ -94,6 +94,10 @@
           <span v-else class="found-card__whole">1 шт.</span>
         </div>
       </div>
+
+      <div v-if="foundChain.length" class="found-card__chain">
+        <LocationChain :chain="foundChain" />
+      </div>
     </div>
 
     <div v-else-if="activeMode === 'search' && notFoundCode" class="not-found">
@@ -128,6 +132,9 @@
             В наличии: {{ entry.payload.quantity }}
           </div>
           <div class="scan-row__meta">Создано: {{ formatDate(entry.payload.created_at) }}</div>
+          <div v-if="scanChains[entry.code]?.length" class="scan-row__chain">
+            <LocationChain :chain="scanChains[entry.code]" />
+          </div>
         </div>
 
         <div class="scan-row__action">
@@ -180,6 +187,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import type { ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
+import type { ChainCrumb } from '~/composables/useLocationChain'
 
 type Mode = OperationMode
 type FoundResult =
@@ -197,6 +205,7 @@ const route = useRoute()
 const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
+const { chainForStore, chainForItem } = useLocationChain()
 
 // Акцент активной кнопки включаем только на клиенте после гидрации:
 // SSR и первичный client-render отрисовывают кнопки без «активной» рамки
@@ -215,6 +224,8 @@ const activeMode = ref<Mode>(savedMode.value)
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
 const scanList = ref<ScanEntry[]>([])
+const foundChain = ref<ChainCrumb[]>([])
+const scanChains = ref<Record<string, ChainCrumb[]>>({})
 
 const isListMode = computed(
   () => activeMode.value === 'replenish' || activeMode.value === 'writeoff',
@@ -276,9 +287,11 @@ function setMode(mode: Mode) {
     if (scanList.value.length === 1) {
       const entry = scanList.value[0]!
       found.value = { type: 'item', payload: entry.payload, code: entry.code }
+      void refreshFoundChain()
     } else if (scanList.value.length > 1) {
       // Более одного предмета — сбрасываем поиск к состоянию по умолчанию.
       found.value = null
+      foundChain.value = []
     }
     // 0 предметов: оставляем found как есть (например, ранее найденное хранилище).
 
@@ -302,17 +315,32 @@ async function refreshFoundItem(code: string) {
     if (activeMode.value !== 'search') return
     if (result.type === 'item' && result.payload) {
       found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
+      void refreshFoundChain()
     } else if (result.type === 'store' && result.payload) {
       found.value = { type: 'store', payload: result.payload as StorePayload, code: result.code }
+      void refreshFoundChain()
     }
   } catch {
     // Фоновое обновление: ошибки игнорируем, оставляем текущий результат.
   }
 }
 
+async function refreshFoundChain() {
+  const f = found.value
+  if (!f) {
+    foundChain.value = []
+    return
+  }
+  foundChain.value =
+    f.type === 'item'
+      ? await chainForItem(f.payload.store_id, f.payload.id, f.payload.title)
+      : await chainForStore(f.payload.id)
+}
+
 async function handleScan(code: string) {
   if (activeMode.value === 'search') {
     found.value = null
+    foundChain.value = []
     notFoundCode.value = ''
   }
 
@@ -322,10 +350,14 @@ async function handleScan(code: string) {
     if (activeMode.value === 'search') {
       if (result.type === 'item' && result.payload) {
         found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
+        void refreshFoundChain()
       } else if (result.type === 'store' && result.payload) {
         found.value = { type: 'store', payload: result.payload as StorePayload, code: result.code }
+        void refreshFoundChain()
       } else {
         // Код существует, но ни к чему не привязан — считаем «не найден»
+        found.value = null
+        foundChain.value = []
         notFoundCode.value = code
       }
     } else if (result.type === 'item' && result.payload) {
@@ -359,10 +391,16 @@ function addToScanList(code: string, payload: ItemPayload) {
     return
   }
   scanList.value.push({ code, payload, count: 1 })
+  void setScanChain(code, payload)
+}
+
+async function setScanChain(code: string, payload: ItemPayload) {
+  scanChains.value[code] = await chainForItem(payload.store_id, payload.id, payload.title)
 }
 
 function removeFromScanList(code: string) {
   scanList.value = scanList.value.filter((entry) => entry.code !== code)
+  delete scanChains.value[code]
 }
 
 // Код не найден: переключаемся в «Поиск» и показываем предложение
@@ -370,7 +408,9 @@ function removeFromScanList(code: string) {
 function handleCodeNotFound(code: string) {
   activeMode.value = 'search'
   found.value = null
+  foundChain.value = []
   scanList.value = []
+  scanChains.value = {}
   notFoundCode.value = code
 }
 
@@ -397,6 +437,7 @@ async function submitList() {
     const message = activeMode.value === 'replenish' ? 'Пополнение прошло успешно' : 'Списание прошло успешно'
     $notify.add(message, { type: 'success', timer: 5 })
     scanList.value = []
+    scanChains.value = {}
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка операции'), { type: 'error', timer: 10 })
   }
