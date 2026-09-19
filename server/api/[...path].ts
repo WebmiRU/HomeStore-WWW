@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
 
     if (contentType?.startsWith('multipart/form-data')) {
       const rawBody = await readRawBody(event, false)
-      return await $fetch.raw(url, {
+      return await $fetch(url, {
         method: event.method,
         query,
         body: rawBody,
         headers: { 'content-type': contentType, ...authHeaders },
-      }).then((r) => r._data)
+      })
     }
 
     const rawBody = await readRawBody(event, 'utf-8')
