@@ -1,12 +1,14 @@
 <template>
   <div v-if="chain.length" class="location-chain">
-    <NuxtLink
-      v-for="(crumb, i) in chain"
-      :key="`${crumb.type}-${crumb.id}`"
-      :to="crumbLink(crumb)"
-      class="crumb__link"
-    >{{ crumb.title }}</NuxtLink
-    ><span v-if="i < chain.length - 1" class="crumb__sep">›</span>
+    <template v-for="(crumb, i) in chain" :key="`${crumb.type}-${crumb.id}`">
+      <NuxtLink
+        v-if="i < chain.length - 1"
+        :to="crumbLink(crumb)"
+        class="crumb__link"
+      >{{ crumb.title }}</NuxtLink>
+      <span v-else class="crumb__current">{{ crumb.title }}</span>
+      <span v-if="i < chain.length - 1" class="crumb__sep">›</span>
+    </template>
   </div>
 </template>
 
@@ -45,6 +47,11 @@ function crumbLink(crumb: ChainCrumb): string {
 .crumb__link:hover {
   color: #aaf;
   border-bottom-color: #3a3a5a;
+}
+
+.crumb__current {
+  color: #bbb;
+  white-space: nowrap;
 }
 
 .crumb__sep {
