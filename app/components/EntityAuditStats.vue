@@ -1,64 +1,79 @@
 <template>
   <div class="entity-stats">
-    <div class="controls">
-      <div class="control-group">
+    <div class="stats-controls">
+      <div class="preset-row">
         <span class="control-label">Период:</span>
         <button
-          v-for="range in ranges"
-          :key="range.value"
+          v-for="preset in periodPresets"
+          :key="preset.label"
           type="button"
           class="ctl-btn"
-          :class="{ active: period === range.value }"
-          @click="setPeriod(range.value)"
+          :class="{ active: activePreset(preset) }"
+          @click="setRange(preset.range())"
         >
-          {{ range.label }}
+          {{ preset.label }}
         </button>
       </div>
 
-      <div class="control-group">
-        <span class="control-label">Шаг:</span>
-        <button
-          v-for="g in granularities"
-          :key="g.value"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: granularity === g.value }"
-          @click="setGranularity(g.value)"
-        >
-          {{ g.label }}
-        </button>
+      <div class="preset-row">
+        <div class="control-group date-group">
+          <span class="control-label">Свои даты:</span>
+          <ClientOnly>
+            <VueDatepicker
+              v-model="dateRange"
+              range
+              :format="'dd.MM.yyyy'"
+              value-format="yyyy-MM-dd"
+              :enable-time-picker="false"
+              :clearable="false"
+              auto-apply
+              @closed="applyDateRange"
+            />
+          </ClientOnly>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Шаг:</span>
+          <button
+            v-for="g in granularities"
+            :key="g.value"
+            type="button"
+            class="ctl-btn"
+            :class="{ active: granularity === g.value }"
+            @click="setGranularity(g.value)"
+          >
+            {{ g.label }}
+          </button>
+        </div>
       </div>
     </div>
 
     <div v-if="statsLoading" class="loading">Загрузка статистики...</div>
     <div v-else-if="statsError" class="error">{{ statsError }}</div>
 
-    <div v-else>
-      <section class="chart-card">
-        <h4 class="chart-title">Активность по действиям</h4>
-        <div
-          v-if="chartBuckets.length"
-          class="chart"
-          :class="{ 'chart--hourly': granularity === 'hour' }"
-        >
-          <div ref="chartEl" class="chart-body"></div>
-        </div>
-        <div v-else class="empty">За выбранный период событий нет</div>
-      </section>
+    <div v-else class="chart-card chart-card--wide">
+      <div class="chart-head">
+        <h4 class="chart-title">Активность и действия</h4>
+        <span v-if="activityTotal" class="stats-summary">Всего за период: <b>{{ activityTotal }}</b></span>
+      </div>
+      <p class="chart-subtitle">
+        Ось X — дата, ось Y — число событий. Цвет сегмента — действие (пополнение, списание,
+        изменение и т.д.); высота столбца — общая активность, белая линия — итог за день/час.
+      </p>
+      <AuditActivityChart :points="actionPoints" :labels="ACTION_LABELS" />
     </div>
 
     <hr class="section-divider" />
 
-    <div class="table-head">
-      <h4 class="table-title">Записи</h4>
-      <span v-if="meta.total" class="total">Всего: {{ meta.total }}</span>
+    <div class="journal-table-head">
+      <span class="total" v-if="meta.total">Всего записей: {{ meta.total }}</span>
     </div>
 
     <div v-if="listLoading" class="loading">Загрузка записей...</div>
     <div v-else-if="listError" class="error">{{ listError }}</div>
 
     <template v-else>
-      <table v-if="entries.length" class="entry-table">
+      <table v-if="entries.length" class="journal-table">
         <thead>
           <tr>
             <th>Когда</th>
@@ -112,10 +127,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import * as echarts from 'echarts'
-import { actionLabel, actionBadgeClass, formatDate, summarize } from '~/utils/auditLabels'
+import { ref, computed, watch, onMounted } from 'vue'
+import { defineAsyncComponent } from 'vue'
+import { actionLabel, actionBadgeClass, formatDate, summarize, ACTION_LABELS } from '~/utils/auditLabels'
+import {
+  isoLocal,
+  todayRange,
+  type PeriodPreset,
+  defaultPeriodPresets,
+} from '~/utils/periodPresets'
 import type { AuditLogEntry, AuditLogStatsPoint } from '~/repository/modules/auditLog'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+const VueDatepicker = defineAsyncComponent(() =>
+  import('@vuepic/vue-datepicker').then((m) => m.default),
+)
 
 const props = defineProps<{
   entityType: string
@@ -124,205 +150,86 @@ const props = defineProps<{
 
 const { $api } = useNuxtApp()
 
-const ranges = [
-  { label: '7 дней', value: '7' },
-  { label: '30 дней', value: '30' },
-  { label: '90 дней', value: '90' },
-  { label: 'Всё время', value: 'all' },
-]
+// ---- период / шаг (как на странице журнала) ----
 const granularities = [
   { label: 'дни', value: 'day' },
   { label: 'часы', value: 'hour' },
 ]
-
-const period = ref<string>('all')
 const granularity = ref<'day' | 'hour'>('day')
 
-const statsLoading = ref(true)
-const statsError = ref<string | null>(null)
+const dateRange = ref<[string, string] | null>(todayRange())
+const periodPresets: PeriodPreset[] = defaultPeriodPresets()
 
-// Для конкретной сущности события создания неинформативны (их ровно 0 или 1),
-// скрываем их из диаграммы.
-const actionPoints = ref<AuditLogStatsPoint[]>([])
-const filteredActionPoints = computed(() =>
-  actionPoints.value.filter((p) => !p.key?.endsWith('.created')),
-)
-
-const ACTION_COLORS: Record<string, string> = {
-  'operation.replenish': '#5a9a6a',
-  'operation.writeoff': '#aa5a5a',
-  'operation.preset': '#5a7aaa',
-  'operation.bulk_replenish': '#5a9a6a',
-  'operation.bulk_writeoff': '#aa5a5a',
-}
-
-// Один график: по оси X — даты/часы, по Y — активность, разложенная по действиям.
-const chartBuckets = computed<string[]>(() => {
-  const buckets = new Set<string>()
-  for (const p of filteredActionPoints.value) buckets.add(p.bucket)
-  return [...buckets].sort()
+const hasRange = computed(() => {
+  const r = dateRange.value
+  return !!(r && typeof r[0] === 'string' && typeof r[1] === 'string')
 })
 
-const chartSeries = computed(() => {
-  const totals = new Map<string, number>()
-  for (const p of filteredActionPoints.value) {
-    const key = p.key ?? 'unknown'
-    totals.set(key, (totals.get(key) ?? 0) + p.count)
-  }
-  const keys = [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([key]) => key)
-
-  const buckets = chartBuckets.value
-  const perKey = new Map<string, Map<string, number>>()
-  for (const p of filteredActionPoints.value) {
-    const key = p.key ?? 'unknown'
-    if (!perKey.has(key)) perKey.set(key, new Map())
-    const bucketMap = perKey.get(key)!
-    bucketMap.set(p.bucket, (bucketMap.get(p.bucket) ?? 0) + p.count)
-  }
-
-  return keys.map((key) => ({
-    key,
-    name: actionLabel(key),
-    color: ACTION_COLORS[key] ?? '#5a7aaa',
-    data: buckets.map((b) => perKey.get(key)?.get(b) ?? 0),
-  }))
-})
-
-const seriesTotals = computed(() =>
-  chartSeries.value.map((s) => ({ key: s.key, name: s.name, total: s.data.reduce((a, b) => a + b, 0) })),
-)
-
-// --- ECharts ---------------------------------------------------------------
-
-const chartEl = ref<HTMLDivElement | null>(null)
-let chart: any = null
-let chartNode: HTMLElement | null = null
-
-const AXIS_COLOR = '#8a8a8a'
-const SPLIT_COLOR = '#2c2c2c'
-
-function fmtTick(value: string): string {
-  const [date, time] = value.split(' ')
-  const d = new Date(date.length === 10 ? date + 'T00:00:00' : value)
-  const day = `${d.getDate()}.${d.getMonth() + 1}`
-  if (granularity.value === 'hour' && time) {
-    return `${day} ${time.slice(0, 5)}`
-  }
-  return day.length === 5 ? day : `${d.getFullYear()}.${day}`
+function toISO(v: unknown): string | null {
+  if (v == null) return null
+  if (typeof v === 'string') return v.slice(0, 10)
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return isoLocal(v)
+  return null
 }
 
-function buildChartOption(): any {
-  return {
-    animation: false,
-    grid: { left: 38, right: 14, top: 10, bottom: 56 },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.04)' } },
-      backgroundColor: '#2a2a2e',
-      borderColor: '#3a3a3e',
-      textStyle: { color: '#ccc', fontSize: 13 },
-      formatter: (params: any[]) => {
-        if (!params.length) return ''
-        const date = fmtTick(params[0].axisValue)
-        const rows = params
-          .map((p) => `${p.marker}${p.seriesName}: <b>${p.value}</b>`)
-          .join('<br/>')
-        const total = params.reduce((s, p) => s + (p.value || 0), 0)
-        return `${date}<br/>${rows}<br/><b style="color:#ddd">Всего: ${total}</b>`
-      },
-    },
-    legend: {
-      bottom: 14,
-      icon: 'circle',
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: { color: '#bbb', fontSize: 12 },
-      formatter: (name: string) => {
-        const s = seriesTotals.value.find((x) => x.name === name)
-        return s ? `${name} — ${s.total}` : name
-      },
-    },
-    xAxis: {
-      type: 'category',
-      data: chartBuckets.value,
-      axisLabel: {
-        color: AXIS_COLOR,
-        fontSize: 11,
-        hideOverlap: true,
-        formatter: (value: string) => fmtTick(value),
-      },
-      axisLine: { lineStyle: { color: '#333' } },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      minInterval: 1,
-      axisLabel: { color: AXIS_COLOR, fontSize: 11 },
-      axisLine: { show: false },
-      axisTick: { show: false },
-      splitLine: { lineStyle: { color: SPLIT_COLOR } },
-    },
-    series: chartSeries.value.map((s) => ({
-      name: s.name,
-      type: 'bar',
-      stack: 'total',
-      barMaxWidth: 24,
-      data: s.data,
-      itemStyle: { color: s.color, borderRadius: [0, 0, 0, 0] },
-    })),
-  }
+function applyDateRange() {
+  const r = dateRange.value
+  const from = r ? toISO(r[0]) : null
+  const to = r ? toISO(r[1] ?? r[0]) : null
+  dateRange.value = from && to ? [from, to] : null
+  reloadAll()
 }
 
-async function renderChart() {
-  if (statsLoading.value || statsError.value) return
-  await nextTick()
-  if (!chartEl.value) await nextTick()
-  if (!chartEl.value || !chartBuckets.value.length) return
-
-  if (chart && chartNode !== chartEl.value) {
-    chart.dispose()
-    chart = null
-  }
-  if (!chart) {
-    chart = echarts.init(chartEl.value)
-    chartNode = chartEl.value
-  }
-  chart.setOption(buildChartOption(), { notMerge: true })
-  chart.resize()
+function setRange(r: [string, string] | null) {
+  dateRange.value = r
+  reloadAll()
 }
 
-function onResize() {
-  chart?.resize()
+function activePreset(preset: PeriodPreset): boolean {
+  const r = preset.range()
+  if (r === null) return !hasRange.value
+  const cur = dateRange.value
+  return !!(cur && cur[0] === r[0] && cur[1] === r[1])
 }
-
-// --- загрузка ---------------------------------------------------------------
 
 function rangeParams(): { date_from?: string; date_to?: string } {
-  if (period.value === 'all') return {}
-  const to = new Date()
-  const from = new Date()
-  from.setDate(to.getDate() - (Number(period.value) - 1))
+  const r = dateRange.value
+  if (!r || !r[0] || !r[1]) return {}
+  return { date_from: r[0], date_to: r[1] + 'T23:59:59' }
+}
+
+function requestBase() {
   return {
-    date_from: from.toISOString().slice(0, 10),
-    date_to: to.toISOString().slice(0, 10),
+    entity_type: props.entityType,
+    entity_id: props.entityId,
+    granularity: granularity.value,
+    ...rangeParams(),
   }
 }
+
+// ---- статистика ----
+const statsLoading = ref(true)
+const statsError = ref<string | null>(null)
+const actionPoints = ref<AuditLogStatsPoint[]>([])
+
+const activityTotal = computed(() => actionPoints.value.reduce((s, p) => s + p.count, 0))
 
 async function loadStats() {
   statsLoading.value = true
   statsError.value = null
-  const range = rangeParams()
-  const base = { entity_type: props.entityType, entity_id: props.entityId, granularity: granularity.value, ...range }
   try {
-    actionPoints.value = await $api.auditLog.stats({ ...base, group_by: 'action' })
+    actionPoints.value = await $api.auditLog.stats({
+      group_by: 'day,action',
+      ...requestBase(),
+    })
   } catch (err: any) {
     statsError.value = err?.data?.error || err?.message || String(err)
   } finally {
     statsLoading.value = false
-    renderChart()
   }
 }
 
+// ---- записи ----
 const entries = ref<AuditLogEntry[]>([])
 const listLoading = ref(true)
 const listError = ref<string | null>(null)
@@ -356,8 +263,7 @@ async function loadList() {
   }
 }
 
-function setPeriod(value: string) {
-  period.value = value
+function reloadAll() {
   page.value = 1
   loadStats()
   loadList()
@@ -374,42 +280,47 @@ function goToPage(next: number) {
 }
 
 onMounted(() => {
-  window.addEventListener('resize', onResize)
   loadStats()
   loadList()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize)
-  chart?.dispose()
-  chart = null
 })
 
 watch(
   () => [props.entityType, props.entityId],
   () => {
-    period.value = 'all'
     granularity.value = 'day'
-    page.value = 1
-    loadStats()
-    loadList()
+    reloadAll()
   },
 )
 </script>
 
 <style scoped>
-.controls {
+.entity-stats {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.preset-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-bottom: 16px;
+  gap: 8px 10px;
 }
 
 .control-group {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.date-group {
+  gap: 8px;
 }
 
 .control-label {
@@ -438,7 +349,7 @@ watch(
   border-color: #3a3a5a;
 }
 
-.chart-card {
+.chart-card--wide {
   background: #1e1e1e;
   border: 1px solid #2b2b2b;
   border-radius: 8px;
@@ -446,7 +357,7 @@ watch(
 }
 
 .chart-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 14px;
   color: #999;
   font-weight: 600;
@@ -454,17 +365,92 @@ watch(
   letter-spacing: 0.6px;
 }
 
-.chart {
-  height: 280px;
+.chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.chart--hourly {
-  height: 320px;
+.stats-summary {
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
 }
 
-.chart-body {
-  width: 100%;
-  height: 100%;
+.stats-summary b {
+  color: #9dd;
+  font-size: 15px;
+}
+
+.chart-subtitle {
+  margin: -6px 0 12px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* --- датапикер в тёмной теме --- */
+.date-group :deep(.dp__input) {
+  --dp-input-padding: 4px 10px 4px 42px;
+  height: 30px;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.date-group :deep(.dp__input:hover) {
+  border-color: #5a5a5a;
+}
+
+.date-group :deep(.dp__input_icon) {
+  color: #777;
+}
+
+.date-group :deep(.dp__theme_light) {
+  --dp-background-color: #1e1e1e;
+  --dp-text-color: #ddd;
+  --dp-hover-color: #2a2a3a;
+  --dp-hover-text-color: #fff;
+  --dp-hover-icon-color: #ddd;
+  --dp-primary-color: #5a5a8a;
+  --dp-primary-text-color: #fff;
+  --dp-secondary-color: #3a3a3a;
+  --dp-border-color: #3a3a3a;
+  --dp-menu-border-color: #3a3a3a;
+  --dp-border-color-hover: #5a5a5a;
+  --dp-disabled-color: #4a4a4a;
+  --dp-disabled-border-color: #3a3a3a;
+  --dp-scroll-bar-background: #2a2a2a;
+  --dp-scroll-bar-color: #5a5a5a;
+  --dp-success-color: #5a8a5a;
+  --dp-success-border-color: #5a8a5a;
+  --dp-tooltip-color: #ddd;
+  --dp-action-row-color: #8a8a8a;
+  --dp-icon-color: #8a8a8a;
+}
+
+.section-divider {
+  border: none;
+  height: 1px;
+  margin: 24px 0 14px;
+  background: #333;
+}
+
+.journal-table-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.total {
+  font-size: 13px;
+  color: #777;
 }
 
 .loading,
@@ -480,38 +466,13 @@ watch(
   border-radius: 4px;
 }
 
-.section-divider {
-  border: none;
-  height: 1px;
-  margin: 24px 0 14px;
-  background: #333;
-}
-
-.table-head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin-bottom: 10px;
-}
-
-.table-title {
-  margin: 0;
-  font-size: 15px;
-  color: #aaa;
-}
-
-.total {
-  font-size: 13px;
-  color: #777;
-}
-
-.entry-table {
+.journal-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.entry-table th,
-.entry-table td {
+.journal-table th,
+.journal-table td {
   padding: 8px 12px;
   text-align: left;
   border-bottom: 1px solid #333;
@@ -519,18 +480,18 @@ watch(
   vertical-align: top;
 }
 
-.entry-table th {
+.journal-table th {
   color: #888;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.entry-table td {
+.journal-table td {
   color: #ccc;
 }
 
-.entry-table tr:hover td {
+.journal-table tr:hover td {
   background: #252525;
 }
 
@@ -616,18 +577,18 @@ watch(
 }
 
 @media (max-width: 768px) {
-  .entry-table,
-  .entry-table tbody,
-  .entry-table tr,
-  .entry-table td {
+  .journal-table,
+  .journal-table tbody,
+  .journal-table tr,
+  .journal-table td {
     display: block;
   }
 
-  .entry-table thead {
+  .journal-table thead {
     display: none;
   }
 
-  .entry-table tr {
+  .journal-table tr {
     position: relative;
     margin-bottom: 14px;
     padding: 44px 14px 14px;
@@ -637,7 +598,7 @@ watch(
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 
-  .entry-table td {
+  .journal-table td {
     width: 100%;
     box-sizing: border-box;
     padding: 6px 0;
@@ -647,7 +608,7 @@ watch(
     white-space: normal;
   }
 
-  .entry-table td::before {
+  .journal-table td::before {
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
@@ -657,7 +618,7 @@ watch(
     text-transform: uppercase;
   }
 
-  .entry-table tr:hover td {
+  .journal-table tr:hover td {
     background: transparent;
   }
 }
