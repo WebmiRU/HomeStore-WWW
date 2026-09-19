@@ -119,7 +119,15 @@
     <!-- Режимы «Пополнить» / «Списать» -->
     <div v-if="isListMode && scanList.length" class="scan-list">
       <div class="scan-list__title">{{ listTitle }}</div>
-      <div v-for="entry in scanList" :key="entry.code" class="scan-row">
+      <div
+        v-for="entry in scanList"
+        :key="entry.code"
+        class="scan-row"
+        :class="[
+          entry.done ? ['scan-row--done', `scan-row--done--${entry.doneMode}`] : '',
+          !entry.done && entryProblem(entry) !== null ? 'scan-row--invalid' : '',
+        ]"
+      >
         <ItemPhoto :images="entry.payload.images" :alt="entry.payload.title_print || entry.payload.title" />
 
         <div class="scan-row__info">
@@ -128,8 +136,27 @@
             {{ entry.payload.title_print }}
           </div>
           <div class="scan-row__code">Код: {{ entry.code }}</div>
-          <div v-if="entry.payload.quantity != null" class="scan-row__stock">
+          <div v-if="!entry.done && entry.payload.quantity != null" class="scan-row__stock">
             В наличии: {{ entry.payload.quantity }}
+          </div>
+          <div v-else-if="entry.done" class="scan-row__stock">
+            <span
+              class="scan-row__done"
+              :class="`scan-row__done--${entry.doneMode}`"
+              :title="`Выполнено: ${formatDate(entry.doneAt)}`"
+            >
+              {{ entry.doneMode === 'replenish' ? 'Пополнено' : 'Списано' }}
+            </span>
+            <span class="scan-row__residue">
+              Остаток: {{ entry.payload.quantity }}
+              ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
+            </span>
+          </div>
+          <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
+            Единичный предмет — операция на 1 шт.
+          </div>
+          <div v-if="!entry.done && entryProblem(entry) !== null" class="scan-row__hint scan-row__hint--error">
+            {{ entryProblem(entry) }}
           </div>
           <div class="scan-row__meta">Создано: {{ formatDate(entry.payload.created_at) }}</div>
           <div v-if="scanChains[entry.code]?.length" class="scan-row__chain">
@@ -138,15 +165,17 @@
         </div>
 
         <div class="scan-row__action">
-          <input
-            v-if="entry.payload.quantity != null"
-            v-model.number="entry.count"
-            type="number"
-            min="1"
-            step="1"
-            class="scan-row__count"
-          />
-          <span v-else class="scan-row__whole">1 шт.</span>
+          <template v-if="!entry.done">
+            <input
+              v-if="entry.payload.quantity != null"
+              v-model.number="entry.count"
+              type="number"
+              min="1"
+              step="1"
+              class="scan-row__count"
+            />
+            <span v-else class="scan-row__whole">1 шт.</span>
+          </template>
         </div>
 
         <button
@@ -170,14 +199,29 @@
         </button>
       </div>
 
-      <button
-        type="button"
-        class="scan-submit"
-        :class="`scan-submit--${activeMode}`"
-        @click="submitList"
-      >
-        {{ activeMode === 'replenish' ? 'Пополнить' : 'Списать' }}
-      </button>
+      <div class="scan-controls">
+        <button
+          type="button"
+          class="scan-submit"
+          :class="`scan-submit--${activeMode}`"
+          :disabled="submitting || pendingEntries === 0"
+          @click="submitList"
+        >
+          {{ submitting ? 'Сохранение…' : activeMode === 'replenish' ? 'Пополнить' : 'Списать' }}
+          <template v-if="!submitting && pendingEntries"> ({{ pendingEntries }})</template>
+        </button>
+
+        <button
+          v-if="scanList.length"
+          type="button"
+          class="scan-reset"
+          :disabled="submitting"
+          title="Очистить список"
+          @click="clearList"
+        >
+          Сбросить
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -198,6 +242,10 @@ interface ScanEntry {
   code: string
   payload: ItemPayload
   count: number
+  done: boolean
+  doneAt: string
+  doneDelta: number
+  doneMode: Mode | null
 }
 
 const { $api, $notify } = useNuxtApp()
@@ -205,7 +253,7 @@ const route = useRoute()
 const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
-const { chainForStore, chainForItem } = useLocationChain()
+const { chainForStore } = useLocationChain()
 
 // Акцент активной кнопки включаем только на клиенте после гидрации:
 // SSR и первичный client-render отрисовывают кнопки без «активной» рамки
@@ -226,6 +274,23 @@ const notFoundCode = ref('')
 const scanList = ref<ScanEntry[]>([])
 const foundChain = ref<ChainCrumb[]>([])
 const scanChains = ref<Record<string, ChainCrumb[]>>({})
+const submitting = ref(false)
+
+const pendingEntries = computed(() => scanList.value.filter((entry) => !entry.done).length)
+
+// Причина, по которой строку нельзя отправить в операции (или null — можно).
+function entryProblem(entry: ScanEntry): string | null {
+  if (entry.done) return null
+  if (!Number.isInteger(entry.count) || entry.count < 1) {
+    return 'Количество должно быть целым и не меньше 1'
+  }
+  if (activeMode.value === 'writeoff' && entry.payload.quantity != null && entry.count > entry.payload.quantity) {
+    return `В наличии ${entry.payload.quantity}, указано ${entry.count}`
+  }
+  return null
+}
+
+const invalidRows = computed(() => scanList.value.filter((entry) => entryProblem(entry) !== null))
 
 const isListMode = computed(
   () => activeMode.value === 'replenish' || activeMode.value === 'writeoff',
@@ -305,7 +370,10 @@ function setMode(mode: Mode) {
     return
   }
 
-  // Пополнить <-> Списать: список сохраняем без изменений.
+  // Пополнить <-> Списать: начинаем заново, чтобы не смешивать смысл
+  // и цветовые статусы выполненных записей.
+  scanList.value = []
+  scanChains.value = {}
   activeMode.value = mode
 }
 
@@ -333,8 +401,8 @@ async function refreshFoundChain() {
   }
   foundChain.value =
     f.type === 'item'
-      ? await chainForItem(f.payload.store_id, f.payload.id, f.payload.title)
-      : await chainForStore(f.payload.id)
+      ? await chainForStore(f.payload.store_id)
+      : await chainForStore(f.payload.id, false)
 }
 
 async function handleScan(code: string) {
@@ -361,6 +429,7 @@ async function handleScan(code: string) {
         notFoundCode.value = code
       }
     } else if (result.type === 'item' && result.payload) {
+      clearDoneEntries()
       addToScanList(result.code, result.payload as ItemPayload)
     } else if (result.type === 'store' && result.payload) {
       notifyStoreBlocked(result.payload as StorePayload)
@@ -390,12 +459,28 @@ function addToScanList(code: string, payload: ItemPayload) {
     }
     return
   }
-  scanList.value.push({ code, payload, count: 1 })
+  scanList.value.push({ code, payload, count: 1, done: false, doneAt: '', doneDelta: 0, doneMode: null })
   void setScanChain(code, payload)
 }
 
+// Повторное сканирование: выполненные записи убираем, невыполненные сохраняем.
+function clearDoneEntries() {
+  const done = scanList.value.filter((entry) => entry.done)
+  if (done.length === 0) return
+  const codes = new Set(done.map((entry) => entry.code))
+  scanList.value = scanList.value.filter((entry) => !entry.done)
+  codes.forEach((code) => {
+    delete scanChains.value[code]
+  })
+}
+
+function clearList() {
+  scanList.value = []
+  scanChains.value = {}
+}
+
 async function setScanChain(code: string, payload: ItemPayload) {
-  scanChains.value[code] = await chainForItem(payload.store_id, payload.id, payload.title)
+  scanChains.value[code] = await chainForStore(payload.store_id)
 }
 
 function removeFromScanList(code: string) {
@@ -420,27 +505,80 @@ function notifyStoreBlocked(store: StorePayload) {
 }
 
 async function submitList() {
-  const rows: OperationRow[] = scanList.value
-    .filter((entry) => entry.payload.quantity != null)
-    .map((entry) => ({ code: entry.code, quantity: entry.count }))
+  if (submitting.value) return
+
+  const pending = scanList.value.filter((entry) => !entry.done)
+  const rows: OperationRow[] = pending.map((entry) => ({
+    code: entry.code,
+    quantity: entry.payload.quantity != null ? entry.count : 1,
+  }))
 
   if (rows.length === 0) {
     $notify.add('Нет предметов для операции', { type: 'warning', timer: 5 })
     return
   }
 
-  const type: OperationType =
-    activeMode.value === 'replenish' ? 'operation.replenish' : 'operation.writeoff'
+  const problems = pending
+    .map((entry) => ({ entry, problem: entryProblem(entry) }))
+    .filter((item): item is { entry: ScanEntry; problem: string } => item.problem !== null)
 
+  if (problems.length > 0) {
+    const details = problems
+      .map((item) => `«${item.entry.payload.title}»: ${item.problem}`)
+      .join('; ')
+    $notify.add(`Невозможно выполнить операцию: ${details}`, { type: 'error', timer: 12 })
+    return
+  }
+
+  const modeAtSubmit = activeMode.value
+  const type: OperationType =
+    modeAtSubmit === 'replenish' ? 'operation.replenish' : 'operation.writeoff'
+  const isReplenish = type === 'operation.replenish'
+
+  submitting.value = true
   try {
-    await $api.operation.store({ type, payload: rows })
-    const message = activeMode.value === 'replenish' ? 'Пополнение прошло успешно' : 'Списание прошло успешно'
-    $notify.add(message, { type: 'success', timer: 5 })
-    scanList.value = []
-    scanChains.value = {}
+    const result = await $api.operation.store({ type, payload: rows })
+    const rowsByCode = new Map((result?.rows ?? []).map((row) => [row.code, row]))
+    const now = new Date().toISOString()
+
+    for (const entry of pending) {
+      const applied = rowsByCode.get(entry.code)
+      if (applied) {
+        entry.payload.quantity = applied.after
+        entry.doneDelta = applied.delta
+      } else {
+        // Сервер не вернул строки (например, старый api) — считаем остаток локально.
+        const base = entry.payload.quantity != null ? entry.payload.quantity : 1
+        entry.payload.quantity = isReplenish
+          ? base + entry.count
+          : base - entry.count
+        entry.doneDelta = entry.count
+      }
+      entry.done = true
+      entry.doneAt = now
+      entry.doneMode = modeAtSubmit
+    }
+
+    const deltaSum = rows.reduce((sum, row) => sum + row.quantity, 0)
+    const sign = isReplenish ? '+' : '&minus;'
+    const verb = isReplenish ? 'Пополнено' : 'Списано'
+    $notify.add(`${verb}: ${rows.length} ${pluralItems(rows.length)} (${sign}${deltaSum} шт.)`, {
+      type: 'success',
+      timer: 6,
+    })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка операции'), { type: 'error', timer: 10 })
+  } finally {
+    submitting.value = false
   }
+}
+
+function pluralItems(n: number): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'предмет'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'предмета'
+  return 'предметов'
 }
 
 function formatDate(iso: string): string {

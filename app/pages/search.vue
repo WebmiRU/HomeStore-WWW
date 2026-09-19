@@ -36,9 +36,10 @@
             <th></th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="r in results" :key="`${r.type}-${r.payload.id}`">
-            <td class="cb-col">
+        <template v-for="r in results" :key="`${r.type}-${r.payload.id}`">
+          <tbody class="result-group">
+            <tr>
+              <td class="cb-col">
               <input
                 type="checkbox"
                 :checked="isSelected(r)"
@@ -124,11 +125,14 @@
                 </template>
               </div>
             </td>
-            <td v-if="resultChains[keyFor(r)]?.length" colspan="5" class="result-chain-cell" data-label="Расположение">
-              <LocationChain :chain="resultChains[keyFor(r)]" />
-            </td>
-          </tr>
-        </tbody>
+            </tr>
+            <tr v-if="resultChains[keyFor(r)]?.length" class="result-chain-row">
+              <td colspan="5">
+                <LocationChain :chain="resultChains[keyFor(r)]" />
+              </td>
+            </tr>
+          </tbody>
+        </template>
       </table>
     </template>
   </div>
@@ -140,7 +144,7 @@ import type { FulltextSearchResult } from '~/repository/modules/code'
 import type { ChainCrumb } from '~/composables/useLocationChain'
 
 const { $api } = useNuxtApp()
-const { chainForStore, chainForItem } = useLocationChain()
+const { chainForStore } = useLocationChain()
 const route = useRoute()
 const router = useRouter()
 
@@ -273,9 +277,9 @@ async function loadChains() {
   const map: Record<string, ChainCrumb[]> = {}
   for (const r of results.value) {
     if (r.type === 'item') {
-      map[keyFor(r)] = await chainForItem(r.payload.store_id, r.payload.id, r.payload.title)
+      map[keyFor(r)] = await chainForStore(r.payload.store_id)
     } else {
-      map[keyFor(r)] = await chainForStore(r.payload.id)
+      map[keyFor(r)] = await chainForStore(r.payload.id, false)
     }
   }
   resultChains.value = map
@@ -400,7 +404,7 @@ watch(trigger, () => {
   color: #ccc;
 }
 
-.results-table tr:hover td {
+.results-table .result-group:hover td {
   background: #252525;
 }
 
@@ -446,14 +450,20 @@ watch(trigger, () => {
   margin-top: 2px;
 }
 
-.result-chain-cell {
-  padding-top: 6px;
-  border-top: 1px dashed #333;
+.result-chain-row td {
+  padding: 4px 12px 10px;
+  background: #1a1a1a;
+  border-top: 0;
+  border-bottom: 1px solid #2b2b2b;
   color: #777;
 }
 
-.result-chain-cell::before {
+.result-chain-row td::before {
   display: none;
+}
+
+.results-table tr:has(+ tr.result-chain-row) td {
+  border-bottom: 0;
 }
 
 .actions {
@@ -651,8 +661,27 @@ watch(trigger, () => {
     text-transform: uppercase;
   }
 
-  .results-table tr:hover td {
+  .results-table .result-group:hover td {
     background: transparent;
+  }
+
+  .results-table tr:has(+ tr.result-chain-row) {
+    margin-bottom: 0;
+    border-bottom: 0;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .results-table tr.result-chain-row {
+    margin-bottom: 14px;
+    padding: 8px 14px 12px;
+    background: #1a1a1a;
+    border: 1px solid #2b2b2b;
+    border-radius: 0 0 10px 10px;
+    box-shadow: none;
+  }
+
+  .results-table tr.result-chain-row td {
+    padding: 0;
   }
 }
 </style>
