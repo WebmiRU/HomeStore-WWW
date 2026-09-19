@@ -1,10 +1,12 @@
 <template>
   <div v-if="chain.length" class="location-chain">
-    <span v-for="(crumb, i) in chain" :key="`${crumb.type}-${crumb.id}`" class="crumb">
-      <span class="crumb__kind">{{ kindLabel(crumb) }}</span>
-      <NuxtLink :to="crumbLink(crumb)" class="crumb__link">{{ crumb.title }}</NuxtLink>
-      <span v-if="i < chain.length - 1" class="crumb__sep">›</span>
-    </span>
+    <NuxtLink
+      v-for="(crumb, i) in chain"
+      :key="`${crumb.type}-${crumb.id}`"
+      :to="crumbLink(crumb)"
+      class="crumb__link"
+    >{{ crumb.title }}</NuxtLink
+    ><span v-if="i < chain.length - 1" class="crumb__sep">›</span>
   </div>
 </template>
 
@@ -14,12 +16,6 @@ import type { ChainCrumb } from '~/composables/useLocationChain'
 defineProps<{
   chain: ChainCrumb[]
 }>()
-
-function kindLabel(crumb: ChainCrumb): string {
-  if (crumb.type === 'warehouse') return 'Склад'
-  if (crumb.type === 'store') return crumb.root ? 'Хранилище' : 'Подхранилище'
-  return 'Предмет'
-}
 
 function crumbLink(crumb: ChainCrumb): string {
   if (crumb.type === 'item') return `/items/${crumb.id}/edit`
@@ -33,29 +29,17 @@ function crumbLink(crumb: ChainCrumb): string {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 6px;
+  gap: 4px 2px;
   font-size: 12px;
   color: #777;
-}
-
-.crumb {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.crumb__kind {
-  font-size: 11px;
-  color: #666;
-  text-transform: lowercase;
 }
 
 .crumb__link {
   color: #88a;
   text-decoration: none;
   border-bottom: 1px dashed transparent;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, border-bottom-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .crumb__link:hover {
@@ -65,6 +49,6 @@ function crumbLink(crumb: ChainCrumb): string {
 
 .crumb__sep {
   color: #555;
-  margin-left: 2px;
+  margin: 0 4px;
 }
 </style>
