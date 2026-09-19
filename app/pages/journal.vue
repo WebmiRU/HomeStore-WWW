@@ -451,6 +451,10 @@ watch(activeTab, () => loadActive())
   color: #ccc;
 }
 
+.tabbar {
+  margin-bottom: 16px;
+}
+
 .journal-controls {
   display: flex;
   flex-direction: column;
