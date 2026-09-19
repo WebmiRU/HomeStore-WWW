@@ -36,7 +36,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="node in flatList" :key="node.store.id">
+          <tr v-for="node in flatList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}/edit`)">
             <td class="cb-col">
               <input
                 type="checkbox"
@@ -108,6 +108,7 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
+const { openRow } = useRowOpen()
 
 const loading = ref(true)
 const error = ref<string | null>(null)

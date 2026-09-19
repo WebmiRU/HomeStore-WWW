@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="w in warehouses" :key="w.id">
+          <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}/edit`)">
             <td data-label="ID">{{ w.id }}</td>
             <td data-label="Название">{{ w.title }}</td>
             <td data-label="Создан">{{ formatDate(w.created_at) }}</td>
@@ -100,6 +100,7 @@ const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
+const { openRow } = useRowOpen()
 
 const warehouses = ref<WarehouseResponse[]>([])
 const loading = ref(true)

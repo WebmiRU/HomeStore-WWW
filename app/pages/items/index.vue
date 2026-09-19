@@ -39,7 +39,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.payload.id">
+          <tr v-for="item in items" :key="item.payload.id" @dblclick="openRow($event, `/items/${item.payload.id}/edit`)">
             <td class="cb-col">
               <input
                 type="checkbox"
@@ -127,6 +127,7 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
+const { openRow } = useRowOpen()
 const route = useRoute()
 const router = useRouter()
 

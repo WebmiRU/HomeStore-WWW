@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in users" :key="u.id">
+          <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}/edit`)">
             <td data-label="ID">{{ u.id }}</td>
             <td data-label="Имя">{{ u.name }}</td>
             <td data-label="E-mail">{{ u.email }}</td>
@@ -68,6 +68,7 @@ import type { UserProfileResponse } from '~/repository/modules/userProfile'
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
+const { openRow } = useRowOpen()
 
 const users = ref<UserProfileResponse[]>([])
 const loading = ref(true)

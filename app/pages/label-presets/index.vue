@@ -25,7 +25,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in presets" :key="p.id">
+          <tr v-for="p in presets" :key="p.id" @dblclick="openRow($event, `/label-presets/${p.id}/edit`)">
             <td data-label="ID">{{ p.id }}</td>
             <td data-label="Название">{{ p.title }}</td>
             <td data-label="Страница">{{ p.page_width }}×{{ p.page_height }}</td>
@@ -86,6 +86,7 @@ const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
+const { openRow } = useRowOpen()
 
 const presets = ref<LabelPresetResponse[]>([])
 const loading = ref(true)

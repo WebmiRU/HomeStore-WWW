@@ -1,4 +1,4 @@
-д<template>
+<template>
   <div class="lists-page">
     <div class="page-header">
       <h3 class="page-title">Этикетки</h3>
@@ -23,7 +23,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="list in lists" :key="list.id">
+          <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}/edit`)">
             <td data-label="ID">{{ list.id }}</td>
             <td data-label="Название">{{ list.title }}</td>
             <td data-label="Шаблон">{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
@@ -91,6 +91,7 @@ const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
+const { openRow } = useRowOpen()
 
 const lists = ref<LabelListResponse[]>([])
 const loading = ref(true)
