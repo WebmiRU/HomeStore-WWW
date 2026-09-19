@@ -24,12 +24,15 @@
             <span class="field-label">Хранилище</span>
             <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
-              <option
-                v-for="opt in storeOptions"
-                :key="opt.id"
-                :value="opt.id"
-              >{{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+              <optgroup v-for="group in storeGroups" :key="group.label" :label="group.label">
+                <option
+                  v-for="opt in group.options"
+                  :key="opt.id"
+                  :value="opt.id"
+                >{{ opt.own ? '●' : '○' }} {{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
+              </optgroup>
             </select>
+            <span class="field-hint">● — своё хранилище, ○ — доступ по правам</span>
           </label>
 
           <label class="field">
@@ -87,6 +90,7 @@ import type { ItemPayload } from '~/repository/modules/code'
 import type { ItemResponse } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
+import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
@@ -118,47 +122,9 @@ const activeTab = computed(() => {
   return 'main'
 })
 
-interface StoreOption {
-  id: number
-  title: string
-  depth: number
-}
+const stores = ref<StoreResponse[]>([])
 
-const storeOptions = ref<StoreOption[]>([])
-
-interface TreeNode {
-  store: StoreResponse
-  children: TreeNode[]
-}
-
-function buildTree(stores: StoreResponse[]): TreeNode[] {
-  const map = new Map<number, TreeNode>()
-  const roots: TreeNode[] = []
-
-  for (const store of stores) {
-    map.set(store.id, { store, children: [] })
-  }
-
-  for (const store of stores) {
-    const node = map.get(store.id)!
-    if (store.parent_id && map.has(store.parent_id)) {
-      map.get(store.parent_id)!.children.push(node)
-    } else {
-      roots.push(node)
-    }
-  }
-
-  return roots
-}
-
-function flattenTree(nodes: TreeNode[], depth: number = 0): StoreOption[] {
-  const result: StoreOption[] = []
-  for (const node of nodes) {
-    result.push({ id: node.store.id, title: node.store.title, depth })
-    result.push(...flattenTree(node.children, depth + 1))
-  }
-  return result
-}
+const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(stores.value, itemEntity.value?.payload?.store_id ?? null))
 
 const form = reactive({
   title: '',
@@ -177,11 +143,12 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [item, stores] = await Promise.all([
+    const [item, list] = await Promise.all([
       $api.item.get(Number(id)),
       $api.store.list(),
     ])
 
+    stores.value = list
     itemEntity.value = item
     form.title = item.payload.title
     form.title_print = item.payload.title_print ?? ''
@@ -190,9 +157,6 @@ async function load() {
     originalCode.value = item.code ?? ''
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
     images.value = item.images ?? []
-
-    const tree = buildTree(stores)
-    storeOptions.value = flattenTree(tree)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -306,6 +270,13 @@ onMounted(load)
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
+}
+
+.field-hint {
+  display: block;
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
 }
 
 .code-field {
