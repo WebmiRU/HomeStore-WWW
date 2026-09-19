@@ -2,6 +2,8 @@
   <div class="create-page">
     <h3 class="page-title">Добавление пользователя</h3>
 
+    <TabBar :tabs="tabs" class="create-tabs" />
+
     <form @submit.prevent="save" class="create-form">
       <label class="field">
         <span class="field-label">Имя</span>
@@ -35,6 +37,8 @@ const router = useRouter()
 
 const saving = ref(false)
 
+const tabs = [{ key: 'main', label: 'Основные параметры' }]
+
 const form = reactive({
   name: '',
   email: '',
@@ -62,8 +66,12 @@ async function save() {
   color: #ccc;
 }
 
+.create-tabs {
+  margin: 14px 0 20px;
+}
+
 .create-form {
-  max-width: 500px;
+  width: 100%;
 }
 
 .field {

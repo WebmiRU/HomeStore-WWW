@@ -2,6 +2,8 @@
   <div class="create-page">
     <h3 class="page-title">Добавление предмета</h3>
 
+    <TabBar :tabs="tabs" class="create-tabs" />
+
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
@@ -61,6 +63,8 @@ const router = useRouter()
 const route = useRoute()
 
 const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
+
+const tabs = [{ key: 'main', label: 'Основные параметры' }]
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -160,6 +164,10 @@ onMounted(load)
   color: #ccc;
 }
 
+.create-tabs {
+  margin: 14px 0 20px;
+}
+
 .loading,
 .error {
   color: #888;
@@ -171,7 +179,7 @@ onMounted(load)
 }
 
 .create-form {
-  max-width: 500px;
+  width: 100%;
 }
 
 .field {

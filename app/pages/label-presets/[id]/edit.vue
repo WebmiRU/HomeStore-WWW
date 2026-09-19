@@ -272,7 +272,7 @@ onMounted(load)
 }
 
 .edit-form {
-  max-width: 600px;
+  width: 100%;
 }
 
 .edit-tabs {

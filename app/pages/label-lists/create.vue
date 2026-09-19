@@ -2,6 +2,8 @@
   <div class="create-page">
     <h3 class="page-title">Добавление списка этикеток</h3>
 
+    <TabBar :tabs="tabs" class="create-tabs" />
+
     <form @submit.prevent="save" class="create-form">
       <fieldset class="fieldset">
         <legend class="legend">Основное</legend>
@@ -36,6 +38,8 @@ const router = useRouter()
 
 const saving = ref(false)
 const presets = ref<LabelPresetResponse[]>([])
+
+const tabs = [{ key: 'main', label: 'Основные параметры' }]
 
 const form = reactive({
   title: '',
@@ -74,8 +78,12 @@ onMounted(loadPresets)
   color: #ccc;
 }
 
+.create-tabs {
+  margin: 14px 0 20px;
+}
+
 .create-form {
-  max-width: 500px;
+  width: 100%;
 }
 
 .fieldset {

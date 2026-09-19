@@ -2,6 +2,8 @@
   <div class="create-page">
     <h3 class="page-title">Добавление шаблона этикетки</h3>
 
+    <TabBar :tabs="tabs" class="create-tabs" />
+
     <form @submit.prevent="save" class="create-form">
       <!-- Основное -->
       <fieldset class="fieldset">
@@ -152,6 +154,8 @@ const router = useRouter()
 
 const saving = ref(false)
 
+const tabs = [{ key: 'main', label: 'Основные параметры' }]
+
 const form = reactive({
   title: '',
   page_width: 210,
@@ -197,8 +201,12 @@ async function save() {
   color: #ccc;
 }
 
+.create-tabs {
+  margin: 14px 0 20px;
+}
+
 .create-form {
-  max-width: 600px;
+  width: 100%;
 }
 
 .fieldset {

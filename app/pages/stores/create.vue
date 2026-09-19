@@ -2,6 +2,8 @@
   <div class="create-page">
     <h3 class="page-title">Добавление хранилища</h3>
 
+    <TabBar :tabs="tabs" class="create-tabs" />
+
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
@@ -66,6 +68,8 @@ const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_
 const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
 const copyParentId = typeof route.query.copy_parent_id === 'string' ? Number(route.query.copy_parent_id) : null
 const copyWarehouseId = typeof route.query.copy_warehouse_id === 'string' ? Number(route.query.copy_warehouse_id) : null
+
+const tabs = [{ key: 'main', label: 'Основные параметры' }]
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -201,6 +205,10 @@ onMounted(load)
   color: #ccc;
 }
 
+.create-tabs {
+  margin: 14px 0 20px;
+}
+
 .loading,
 .error {
   color: #888;
@@ -212,7 +220,7 @@ onMounted(load)
 }
 
 .create-form {
-  max-width: 500px;
+  width: 100%;
 }
 
 .field {
