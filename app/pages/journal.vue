@@ -50,7 +50,8 @@
     <div v-else class="charts-grid">
       <section class="chart-card chart-card--wide">
         <h4 class="chart-title">Активность за период</h4>
-        <div v-if="activityPoints.length" class="bars-chart" :class="{ 'bars-chart--hourly': granularity === 'hour' }">
+        <p class="chart-subtitle">Сколько событий журнала происходило по дням (или часам) за выбранный период</p>
+        <div v-if="activityPoints.length" class="bars-chart">
           <div
             v-for="(p, i) in activityPoints"
             :key="i"
@@ -63,7 +64,7 @@
                 :style="{ height: barHeight(p.count) }"
               ></div>
             </div>
-            <div class="bar-label">{{ barLabel(p.bucket) }}</div>
+            <div v-if="showBarLabel(i)" class="bar-label">{{ barLabel(p.bucket) }}</div>
           </div>
           <div class="bars-empty" v-if="!activityTotal">За выбранный период событий нет</div>
         </div>
@@ -72,11 +73,12 @@
 
       <section class="chart-card">
         <h4 class="chart-title">По действиям</h4>
-        <div v-if="actionPoints.length" class="hbar-list">
-          <div v-for="p in actionPoints" :key="p.key ?? p.bucket" class="hbar-row">
+        <p class="chart-subtitle">Итог по каждому действию за период: пополнение, списание, создание предметов и т.д.</p>
+        <div v-if="sortedActionPoints.length" class="hbar-list">
+          <div v-for="p in sortedActionPoints" :key="p.key ?? p.bucket" class="hbar-row">
             <span class="hbar-label" :title="p.key ?? ''">{{ actionLabel(p.key) }}</span>
             <div class="hbar-track">
-              <div class="hbar-fill" :style="{ width: barWidth(p.count, actionPoints) }"></div>
+              <div class="hbar-fill" :style="{ width: barWidth(p.count, sortedActionPoints) }"></div>
             </div>
             <span class="hbar-count">{{ p.count }}</span>
           </div>
@@ -86,11 +88,12 @@
 
       <section class="chart-card">
         <h4 class="chart-title">По объектам</h4>
-        <div v-if="entityPoints.length" class="hbar-list">
-          <div v-for="p in entityPoints" :key="p.key ?? p.bucket" class="hbar-row">
+        <p class="chart-subtitle">Итог по типу объекта за период: предметы, хранилища, склады и т.д.</p>
+        <div v-if="sortedEntityPoints.length" class="hbar-list">
+          <div v-for="p in sortedEntityPoints" :key="p.key ?? p.bucket" class="hbar-row">
             <span class="hbar-label" :title="p.key ?? ''">{{ entityLabel(p.key) }}</span>
             <div class="hbar-track">
-              <div class="hbar-fill" :style="{ width: barWidth(p.count, entityPoints) }"></div>
+              <div class="hbar-fill" :style="{ width: barWidth(p.count, sortedEntityPoints) }"></div>
             </div>
             <span class="hbar-count">{{ p.count }}</span>
           </div>
@@ -219,6 +222,9 @@ const entityPoints = ref<AuditLogStatsPoint[]>([])
 
 const activityTotal = computed(() => activityPoints.value.reduce((s, p) => s + p.count, 0))
 
+const sortedActionPoints = computed(() => [...actionPoints.value].sort((a, b) => b.count - a.count))
+const sortedEntityPoints = computed(() => [...entityPoints.value].sort((a, b) => b.count - a.count))
+
 function maxOf(points: AuditLogStatsPoint[]): number {
   return Math.max(1, ...points.map((p) => p.count))
 }
@@ -229,6 +235,13 @@ function barHeight(count: number): string {
 
 function barWidth(count: number, points: AuditLogStatsPoint[]): string {
   return `${Math.round((count / maxOf(points)) * 100)}%`
+}
+
+// При длинных периодах подписи прореживаются, чтобы не слипаться.
+function showBarLabel(index: number): boolean {
+  const total = activityPoints.value.length
+  const step = Math.max(1, Math.ceil(total / 60))
+  return index % step === 0
 }
 
 function barLabel(bucket: string | null): string {
@@ -426,16 +439,21 @@ watch(() => route.query.page, () => loadList())
   letter-spacing: 0.6px;
 }
 
+.chart-subtitle {
+  margin: -6px 0 12px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
 .bars-chart {
   display: flex;
   align-items: flex-end;
   gap: 4px;
   height: 140px;
   padding-top: 8px;
-}
-
-.bars-chart--hourly {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .bar-col {

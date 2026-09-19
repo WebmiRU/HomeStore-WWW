@@ -41,6 +41,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   label_list: 'Этикетки',
   access_grant: 'Доступ',
   user: 'Пользователи',
+  none: 'Без объекта',
 }
 
 export function actionLabel(key: string | null): string {
