@@ -208,14 +208,12 @@ function isoLocal(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`
 }
 
-function defaultRange(): [string, string] {
-  const to = new Date()
-  const from = new Date()
-  from.setDate(to.getDate() - 29)
-  return [isoLocal(from), isoLocal(to)]
+function todayRange(): [string, string] {
+  const to = startOfDay(new Date())
+  return [isoLocal(to), isoLocal(to)]
 }
 
-const dateRange = ref<[string, string] | null>(defaultRange())
+const dateRange = ref<[string, string] | null>(todayRange())
 
 const hasRange = computed(() => {
   const r = dateRange.value
@@ -305,7 +303,7 @@ function lastYearsRange(n: number): [string, string] {
 }
 
 const periodPresets: PeriodPreset[] = [
-  { label: 'Посл. 30 дней', range: () => lastNDaysRange(30) },
+  { label: 'Сегодня', range: () => lastNDaysRange(1) },
   { label: 'Эта неделя', range: thisWeekRange },
   { label: 'Этот месяц', range: currentMonthRange },
   { label: 'Этот год', range: currentYearRange },
