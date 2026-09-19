@@ -208,7 +208,7 @@
           @click="submitList"
         >
           {{ submitting ? 'Сохранение…' : activeMode === 'replenish' ? 'Пополнить' : 'Списать' }}
-          <template v-if="!submitting && pendingEntries"> ({{ pendingEntries }})</template>
+          <template v-if="!submitting && pendingEntries"> ({{ pendingEntries }}/{{ pendingTotal }})</template>
         </button>
 
         <button
@@ -277,6 +277,13 @@ const scanChains = ref<Record<string, ChainCrumb[]>>({})
 const submitting = ref(false)
 
 const pendingEntries = computed(() => scanList.value.filter((entry) => !entry.done).length)
+
+// Общее число предметов среди невыполненных строк (сумма количеств).
+const pendingTotal = computed(() =>
+  scanList.value
+    .filter((entry) => !entry.done)
+    .reduce((sum, entry) => sum + entry.count, 0),
+)
 
 // Причина, по которой строку нельзя отправить в операции (или null — можно).
 function entryProblem(entry: ScanEntry): string | null {
