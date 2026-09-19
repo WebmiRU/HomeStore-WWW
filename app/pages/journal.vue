@@ -5,53 +5,60 @@
     </div>
 
     <div class="journal-controls">
-      <div class="control-group date-group">
+      <div class="preset-row">
         <span class="control-label">Период:</span>
-        <ClientOnly>
-          <VueDatepicker
-            v-model="dateRange"
-            range
-            :format="'dd.MM.yyyy'"
-            value-format="yyyy-MM-dd"
-            :enable-time-picker="false"
-            :clearable="false"
-            auto-apply
-            @closed="applyDateRange"
-          />
-        </ClientOnly>
         <button
+          v-for="preset in periodPresets"
+          :key="preset.label"
           type="button"
           class="ctl-btn"
-          :class="{ active: !hasRange }"
-          @click="setAllTime"
+          :class="{ active: activePreset(preset) }"
+          @click="setRange(preset.range())"
         >
-          Всё время
-        </button>
-        <button type="button" class="ctl-btn" @click="setDefaultRange">Посл. 30 дней</button>
-      </div>
-
-      <div class="control-group">
-        <span class="control-label">Шаг:</span>
-        <button
-          v-for="g in granularities"
-          :key="g.value"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: granularity === g.value }"
-          @click="setGranularity(g.value)"
-        >
-          {{ g.label }}
+          {{ preset.label }}
         </button>
       </div>
 
-      <div class="control-group">
-        <span class="control-label">Объект:</span>
-        <select v-model="entityFilter" class="ctl-select" @change="applyFilters">
-          <option value="">Все объекты</option>
-          <option v-for="et in entityOptions" :key="et.value" :value="et.value">
-            {{ et.label }}
-          </option>
-        </select>
+      <div class="preset-row">
+        <div class="control-group date-group">
+          <span class="control-label">Свои даты:</span>
+          <ClientOnly>
+            <VueDatepicker
+              v-model="dateRange"
+              range
+              :format="'dd.MM.yyyy'"
+              value-format="yyyy-MM-dd"
+              :enable-time-picker="false"
+              :clearable="false"
+              auto-apply
+              @closed="applyDateRange"
+            />
+          </ClientOnly>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Шаг:</span>
+          <button
+            v-for="g in granularities"
+            :key="g.value"
+            type="button"
+            class="ctl-btn"
+            :class="{ active: granularity === g.value }"
+            @click="setGranularity(g.value)"
+          >
+            {{ g.label }}
+          </button>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Объект:</span>
+          <select v-model="entityFilter" class="ctl-select" @change="applyFilters">
+            <option value="">Все объекты</option>
+            <option v-for="et in entityOptions" :key="et.value" :value="et.value">
+              {{ et.label }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -230,14 +237,89 @@ function applyDateRange() {
   reloadAll()
 }
 
-function setAllTime() {
-  dateRange.value = null
+function setRange(r: [string, string] | null) {
+  dateRange.value = r
   reloadAll()
 }
 
-function setDefaultRange() {
-  dateRange.value = defaultRange()
-  reloadAll()
+type PeriodPreset = { label: string; range: () => [string, string] | null }
+
+function startOfDay(d: Date): Date {
+  const c = new Date(d)
+  c.setHours(0, 0, 0, 0)
+  return c
+}
+
+function addMonths(d: Date, delta: number): Date {
+  const total = d.getFullYear() * 12 + d.getMonth() + delta
+  const year = Math.floor(total / 12)
+  const month = ((total % 12) + 12) % 12
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const day = Math.min(d.getDate(), lastDay)
+  return new Date(year, month, day)
+}
+
+function thisWeekRange(): [string, string] {
+  const to = startOfDay(new Date())
+  const dow = to.getDay()
+  const diff = dow === 0 ? 6 : dow - 1
+  const from = new Date(to)
+  from.setDate(to.getDate() - diff)
+  const end = new Date(from)
+  end.setDate(from.getDate() + 6)
+  return [isoLocal(from), isoLocal(end)]
+}
+
+function currentMonthRange(): [string, string] {
+  const to = new Date()
+  const from = new Date(to.getFullYear(), to.getMonth(), 1)
+  const end = new Date(to.getFullYear(), to.getMonth() + 1, 0)
+  return [isoLocal(from), isoLocal(end)]
+}
+
+function currentYearRange(): [string, string] {
+  const to = new Date()
+  return [
+    isoLocal(new Date(to.getFullYear(), 0, 1)),
+    isoLocal(new Date(to.getFullYear(), 11, 31)),
+  ]
+}
+
+function lastNDaysRange(n: number): [string, string] {
+  const to = new Date()
+  const from = new Date(to)
+  from.setDate(to.getDate() - (n - 1))
+  return [isoLocal(from), isoLocal(to)]
+}
+
+function lastMonthsRange(n: number): [string, string] {
+  const to = new Date()
+  return [isoLocal(addMonths(to, -n)), isoLocal(to)]
+}
+
+function lastYearsRange(n: number): [string, string] {
+  const to = new Date()
+  const from = new Date(to)
+  from.setFullYear(to.getFullYear() - n)
+  return [isoLocal(from), isoLocal(to)]
+}
+
+const periodPresets: PeriodPreset[] = [
+  { label: 'Посл. 30 дней', range: () => lastNDaysRange(30) },
+  { label: 'Эта неделя', range: thisWeekRange },
+  { label: 'Этот месяц', range: currentMonthRange },
+  { label: 'Этот год', range: currentYearRange },
+  { label: 'Неделя', range: () => lastNDaysRange(7) },
+  { label: 'Месяц', range: () => lastMonthsRange(1) },
+  { label: 'Год', range: () => lastYearsRange(1) },
+  { label: 'Всё время', range: () => null },
+]
+
+function activePreset(preset: PeriodPreset): boolean {
+  const r = preset.range()
+  if (r === null) return !hasRange.value
+  const cur = dateRange.value
+  return !!(cur && cur[0] === r[0] && cur[1] === r[1])
 }
 
 function rangeParams(): { date_from?: string; date_to?: string } {
@@ -355,10 +437,16 @@ watch(() => route.query.page, () => loadList())
 
 .journal-controls {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.preset-row {
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-bottom: 16px;
+  gap: 8px 10px;
 }
 
 .control-group {
