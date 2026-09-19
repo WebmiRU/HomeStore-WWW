@@ -551,8 +551,8 @@ watch(() => route.query.page, () => loadList())
 
 /* --- датапикер в тёмной теме --- */
 .date-group :deep(.dp__input) {
+  --dp-input-padding: 4px 10px 4px 42px;
   height: 30px;
-  padding: 0 10px;
   background: #2a2a2a;
   color: #ddd;
   border: 1px solid #444;
