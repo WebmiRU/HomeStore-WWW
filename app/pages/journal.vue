@@ -36,7 +36,7 @@
           </ClientOnly>
         </div>
 
-        <div class="control-group">
+        <div class="control-group" v-if="activeTab === 'analytics'">
           <span class="control-label">Шаг:</span>
           <button
             v-for="g in granularities"
@@ -62,10 +62,13 @@
       </div>
     </div>
 
-    <div v-if="statsLoading" class="loading">Загрузка статистики...</div>
-    <div v-else-if="statsError" class="error">{{ statsError }}</div>
+    <TabBar :tabs="tabDefs" />
 
-    <div v-else class="charts-grid">
+    <template v-if="activeTab === 'analytics'">
+      <div v-if="statsLoading" class="loading">Загрузка статистики...</div>
+      <div v-else-if="statsError" class="error">{{ statsError }}</div>
+
+      <div v-else class="charts-grid">
       <section class="chart-card chart-card--wide">
         <div class="chart-head">
           <h4 class="chart-title">Активность и действия</h4>
@@ -85,19 +88,18 @@
         </p>
         <AuditActivityChart :points="entitySeries" :labels="ENTITY_LABELS" />
       </section>
-    </div>
-
-    <hr class="section-divider" />
-
-    <div class="journal-table-head">
-      <h3 class="page-title">Записи</h3>
-      <span class="total" v-if="meta.total">Всего: {{ meta.total }}</span>
-    </div>
-
-    <div v-if="listLoading" class="loading">Загрузка записей...</div>
-    <div v-else-if="listError" class="error">{{ listError }}</div>
+      </div>
+    </template>
 
     <template v-else>
+      <div class="journal-table-head">
+        <span class="total" v-if="meta.total">Всего записей: {{ meta.total }}</span>
+      </div>
+
+      <div v-if="listLoading" class="loading">Загрузка записей...</div>
+      <div v-else-if="listError" class="error">{{ listError }}</div>
+
+      <template v-else>
       <table class="journal-table" v-if="entries.length">
         <thead>
           <tr>
@@ -153,6 +155,7 @@
           Вперёд →
         </button>
       </div>
+      </template>
     </template>
   </div>
 </template>
@@ -179,6 +182,17 @@ const VueDatepicker = defineAsyncComponent(() =>
 const { $api } = useNuxtApp()
 const route = useRoute()
 const router = useRouter()
+
+// ---- табы ----
+const tabDefs = [
+  { key: 'analytics', label: 'Аналитика' },
+  { key: 'journal', label: 'Журнал действий' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  return typeof q === 'string' && tabDefs.some((t) => t.key === q) ? q : tabDefs[0]?.key ?? 'analytics'
+})
 
 // ---- объекты (фильтр) ----
 const ENTITY_FILTER_OPTIONS: Record<string, string> = {
@@ -394,8 +408,12 @@ async function loadList() {
 
 function reloadAll() {
   router.push({ query: { ...route.query, page: undefined } })
-  loadStats()
-  loadList()
+  loadActive()
+}
+
+function loadActive() {
+  if (activeTab.value === 'analytics') loadStats()
+  else loadList()
 }
 
 function setGranularity(value: 'day' | 'hour') {
@@ -412,11 +430,11 @@ function goToPage(page: number) {
 }
 
 onMounted(() => {
-  loadStats()
-  loadList()
+  loadActive()
 })
 
 watch(() => route.query.page, () => loadList())
+watch(activeTab, () => loadActive())
 </script>
 
 <style scoped>
