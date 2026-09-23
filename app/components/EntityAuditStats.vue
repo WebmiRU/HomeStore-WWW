@@ -195,7 +195,7 @@ function activePreset(preset: PeriodPreset): boolean {
 function rangeParams(): { date_from?: string; date_to?: string } {
   const r = dateRange.value
   if (!r || !r[0] || !r[1]) return {}
-  return { date_from: r[0], date_to: r[1] + 'T23:59:59' }
+  return { date_from: new Date(r[0] + 'T00:00:00').toISOString(), date_to: new Date(r[1] + 'T23:59:59').toISOString() }
 }
 
 function requestBase() {
@@ -203,6 +203,7 @@ function requestBase() {
     entity_type: props.entityType,
     entity_id: props.entityId,
     granularity: granularity.value,
+    tz_offset: new Date().getTimezoneOffset() * -1,
     ...rangeParams(),
   }
 }
