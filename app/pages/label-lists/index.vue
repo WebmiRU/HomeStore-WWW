@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { LabelListResponse } from '~/repository/modules/labelList'
-import { formatApiError } from '~/composables/formatApiError'
+import { formatApiError, readBlobApiError } from '~/composables/formatApiError'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
@@ -148,7 +148,7 @@ async function downloadPdf(id: number) {
     URL.revokeObjectURL(url)
     $notify.add('Документ отправлен на загрузку', { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+    $notify.add(await readBlobApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
   } finally {
     downloading.value = null
   }
