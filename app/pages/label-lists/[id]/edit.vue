@@ -115,7 +115,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
 import type { ItemResponse } from '~/repository/modules/item'
 import type { StoreResponse } from '~/repository/modules/store'
-import { formatApiError } from '~/composables/formatApiError'
+import { formatApiError, readBlobApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
@@ -224,7 +224,7 @@ async function downloadPdf() {
     URL.revokeObjectURL(url)
     $notify.add('Документ отправлен на загрузку', { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+    $notify.add(await readBlobApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
   } finally {
     downloading.value = false
   }
