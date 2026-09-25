@@ -49,7 +49,7 @@
               <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteList(list.id)">
+              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteList(list)">
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
               <a
@@ -162,11 +162,21 @@ async function downloadPdf(id: number) {
   }
 }
 
-async function deleteList(id: number) {
-  if (!confirm('Удалить список?')) return
+async function deleteList(list: LabelListResponse) {
+  // Набор с кодами удаляется не вместе с кодами: наклейки уже наклеены.
+  // Без этой оговорки выглядит так, будто мы только что потеряли кусок
+  // этикеток, который печатали специально.
+  const question = list.codes_count
+    ? `Удалить набор «${list.title}»?\n\n`
+      + `С ${list.codes_count} безымянными кодами набора ничего не случится — `
+      + `наклейки останутся рабочими. Позже их можно убрать в разделе «Чистка кодов».`
+    : `Удалить набор «${list.title}»?`
+
+  if (!confirm(question)) return
+
   try {
-    await $api.labelList.delete(id)
-    $notify.add('Список удалён', { type: 'success' })
+    await $api.labelList.delete(list.id)
+    $notify.add('Набор удалён', { type: 'success' })
     await loadLists(meta.value.current_page)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })

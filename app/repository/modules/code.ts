@@ -69,6 +69,32 @@ export type CodeSearchBlank = {
 
 export type CodeSearchResponse = CodeSearchSingle | CodeSearchAmbiguous | CodeSearchBlank
 
+/**
+ * Возрастная корзина для выбора удаляемого. days = 0 — без ограничения
+ * по возрасту. Список приходит с сервера: набор порогов влияет на то,
+ * что страница вообще предложит удалить, и не должен расходиться с бэком.
+ */
+export type OrphanAgeBucket = {
+  days: number
+  label: string
+  count: number
+}
+
+export type OrphanedCodesSummary = {
+  total: number
+  oldest: string | null
+  newest: string | null
+  buckets: OrphanAgeBucket[]
+}
+
+export type OrphanedCodesPreview = {
+  blob: Blob
+  /** Сколько кодов попало в выборку. */
+  total: number
+  /** Сколько из них реально отрисовано (может быть меньше при обрезке). */
+  rendered: number
+}
+
 export type FulltextSearchResult = {
   type: 'item' | 'store'
   rank: number
@@ -116,6 +142,45 @@ class CodeModule extends FetchFactory<CodeSearchResponse> {
       return (result as { data: FulltextSearchResult[] }).data
     }
     return []
+  }
+
+  /** Сводка по кодам, потерявшим связь с набором этикеток. */
+  async orphanedCodes(): Promise<OrphanedCodesSummary> {
+    const result = await this.call('GET', `${this.baseUrl}/orphans`)
+    return (result as unknown as OrphanedCodesSummary) ?? { total: 0, oldest: null, newest: null, buckets: [] }
+  }
+
+  /**
+   * PDF с кодами, которые удалит deleteOrphanedCodes с тем же фильтром.
+   * Нужен, чтобы увидеть, что именно удаляется, и сверить с бумагой.
+   */
+  async orphanedCodesPreview(days: number): Promise<OrphanedCodesPreview> {
+    let total = 0
+    let rendered = 0
+
+    const blob = await this.call(
+      'GET',
+      `${this.baseUrl}/orphans/preview`,
+      undefined,
+      {
+        params: { older_than_days: days },
+        responseType: 'blob',
+        onResponse({ response }) {
+          total = Number(response.headers.get('x-codes-total') ?? 0)
+          rendered = Number(response.headers.get('x-codes-rendered') ?? 0)
+        },
+      }
+    )
+
+    return { blob: blob as unknown as Blob, total, rendered }
+  }
+
+  /** Массовое удаление осиротевших кодов; возвращает количество удалённых. */
+  async deleteOrphanedCodes(days: number): Promise<number> {
+    const result = await this.call('DELETE', `${this.baseUrl}/orphans`, undefined, {
+      params: { older_than_days: days },
+    })
+    return Number((result as unknown as { deleted?: number })?.deleted ?? 0)
   }
 }
 
