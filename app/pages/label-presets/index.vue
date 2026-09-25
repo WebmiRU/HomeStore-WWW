@@ -25,9 +25,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in presets" :key="p.id" @dblclick="openRow($event, `/label-presets/${p.id}/edit`)">
+          <tr
+            v-for="p in presets"
+            :key="p.id"
+            @dblclick="p.is_system ? null : openRow($event, `/label-presets/${p.id}/edit`)"
+          >
             <td data-label="ID">{{ p.id }}</td>
-            <td data-label="Название">{{ p.title }}</td>
+            <td data-label="Название">
+              {{ p.title }}
+              <span v-if="p.is_system" class="system-badge" title="Общий шаблон. Правке и удалению не подлежит.">
+                системный
+              </span>
+            </td>
             <td data-label="Страница">{{ p.page_width }}×{{ p.page_height }}</td>
             <td data-label="Ячейка">{{ p.cell_width }}×{{ p.cell_height }}</td>
             <td data-label="Этикеток/лист">{{ p.labels_per_sheet }}</td>
@@ -42,12 +51,21 @@
               <span v-else>—</span>
             </td>
             <td class="actions">
-              <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deletePreset(p.id)">
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
+              <!-- Системный шаблон только для просмотра: править и удалять
+                   его нельзя, поэтому и ссылок на эти действия не показываем. -->
+              <template v-if="p.is_system">
+                <span class="action-lock" title="Системный шаблон — только просмотр">
+                  <img src="/img/icon/view.svg" class="action-icon" alt="" />
+                </span>
+              </template>
+              <template v-else>
+                <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                  <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+                </NuxtLink>
+                <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deletePreset(p.id)">
+                  <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+                </a>
+              </template>
             </td>
           </tr>
         </tbody>
@@ -238,6 +256,33 @@ watch(() => route.query.page, (newPage) => {
 
 .action-del:hover {
   color: #f88;
+}
+
+.action-lock {
+  color: #6a6a8a;
+  cursor: default;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.action-lock img.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  opacity: 0.7;
+}
+
+.system-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: #cbb8e8;
+  background: #241a33;
+  border: 1px solid #5a4480;
+  border-radius: 3px;
+  vertical-align: middle;
+  cursor: help;
 }
 
 .pagination {

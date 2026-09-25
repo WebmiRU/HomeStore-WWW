@@ -106,6 +106,10 @@
             <input v-model.number="form.barcode_size" type="number" class="field-input" min="1" step="0.1" required />
           </label>
         </div>
+        <label class="field field-check">
+          <input v-model="form.show_text" type="checkbox" class="field-checkbox" />
+          <span class="field-label">Печатать подпись (название) под кодом</span>
+        </label>
       </fieldset>
 
       <!-- Шрифт -->
@@ -173,6 +177,7 @@ const form = reactive({
   barcode_position: 'left' as 'left' | 'right' | 'top' | 'bottom',
   barcode_text_gap: 1,
   barcode_size: 8,
+  show_text: true,
   font_id: null as number | null,
   font_size_min: 8,
   font_size_max: 14,
@@ -272,6 +277,22 @@ async function save() {
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
+}
+
+.field-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-check .field-label {
+  margin-bottom: 0;
+}
+
+.field-checkbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .form-actions {

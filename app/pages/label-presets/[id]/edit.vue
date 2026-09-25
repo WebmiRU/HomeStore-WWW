@@ -8,8 +8,15 @@
     <template v-else>
       <TabBar :tabs="tabs" class="edit-tabs" />
 
+      <div v-if="readonly" class="readonly-notice">
+        Системный шаблон — только просмотр. Правке и удалению не подлежит.
+      </div>
+
       <form @submit.prevent="save" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
+          <!-- disabled у fieldset гасит все поля разом, включая те,
+               что появятся ниже, — править системный шаблон нельзя. -->
+          <fieldset :disabled="readonly" class="fieldset-plain">
           <!-- Основное -->
           <fieldset class="fieldset">
             <legend class="legend">Основное</legend>
@@ -111,6 +118,10 @@
                 <input v-model.number="form.barcode_size" type="number" class="field-input" min="1" step="0.1" required />
               </label>
             </div>
+            <label class="field field-check">
+              <input v-model="form.show_text" type="checkbox" class="field-checkbox" />
+              <span class="field-label">Печатать подпись (название) под кодом</span>
+            </label>
           </fieldset>
 
           <!-- Шрифт -->
@@ -141,6 +152,7 @@
               </label>
             </div>
           </fieldset>
+          </fieldset>
         </section>
 
         <section v-if="activeTab === 'stats'" class="tab-section">
@@ -148,8 +160,10 @@
         </section>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-          <NuxtLink to="/label-presets" class="btn-cancel">Отмена</NuxtLink>
+          <button v-if="!readonly" type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <NuxtLink to="/label-presets" class="btn-cancel">
+            {{ readonly ? 'Назад' : 'Отмена' }}
+          </NuxtLink>
         </div>
       </form>
     </template>
@@ -181,6 +195,7 @@ const activeTab = computed(() => {
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
+const readonly = ref(false)
 
 const form = reactive({
   title: '',
@@ -199,6 +214,7 @@ const form = reactive({
   barcode_position: 'left' as 'left' | 'right' | 'top' | 'bottom',
   barcode_text_gap: 0,
   barcode_size: 0,
+  show_text: true,
   font_id: null as number | null,
   font_size_min: 0,
   font_size_max: 0,
@@ -211,6 +227,7 @@ async function load() {
   loadError.value = null
   try {
     const preset = await $api.labelPreset.get(Number(id))
+    readonly.value = !!preset.is_system
     form.title = preset.title
     form.page_width = preset.page_width
     form.page_height = preset.page_height
@@ -227,6 +244,7 @@ async function load() {
     form.barcode_position = preset.barcode_position
     form.barcode_text_gap = preset.barcode_text_gap
     form.barcode_size = preset.barcode_size
+    form.show_text = preset.show_text !== false
     form.font_id = preset.font_id
     form.font_size_min = preset.font_size_min
     form.font_size_max = preset.font_size_max
@@ -240,6 +258,7 @@ async function load() {
 }
 
 async function save() {
+  if (readonly.value) return
   saving.value = true
   try {
     await $api.labelPreset.update(Number(id), { ...form })
@@ -277,6 +296,25 @@ onMounted(load)
 
 .edit-tabs {
   margin: 14px 0 20px;
+}
+
+.readonly-notice {
+  margin-bottom: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #cbb8e8;
+  background: #241a33;
+  border: 1px solid #5a4480;
+  border-radius: 6px;
+}
+
+/* Обёртка только ради disabled: рамки и отступы задаёт вложенный
+   .fieldset, свой border/padding сбросили бы. */
+.fieldset-plain {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 
 .fieldset {
@@ -329,6 +367,28 @@ onMounted(load)
 .field-input:focus,
 .field-select:focus {
   border-color: #666;
+}
+
+.field-input:disabled,
+.field-select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.field-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-check .field-label {
+  margin-bottom: 0;
+}
+
+.field-checkbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .field-select {

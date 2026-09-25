@@ -22,6 +22,9 @@ export type LabelPresetResponse = {
   barcode_position: 'left' | 'right' | 'top' | 'bottom'
   barcode_text_gap: number
   barcode_size: number
+  show_text: boolean
+  /** Системный шаблон: виден всем, но не редактируется и не удаляется. */
+  is_system: boolean
   font_id: number | null
   font_size_min: number
   font_size_max: number
