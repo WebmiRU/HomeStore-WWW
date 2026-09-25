@@ -16,6 +16,8 @@ export type LabelListResponse = {
   label_preset?: LabelPresetResponse | null
   items?: ItemResponse[]
   stores?: StoreResponse[]
+  /** Сколько кодов сгенерировано в наборе. Непустой — набор безымянных этикеток. */
+  codes_count?: number
 }
 
 export type LabelListCreateData = {
@@ -63,6 +65,18 @@ class LabelListModule extends FetchFactory<any> {
 
   async create(data: LabelListCreateData): Promise<LabelListResponse> {
     const result = await this.call('POST', this.baseUrl, data)
+    const unwrapped = (result as any)?.data ?? result
+    return unwrapped as LabelListResponse
+  }
+
+  /**
+   * Создаёт набор безымянных этикеток: столько свободных кодов, сколько
+   * помещается на лист по шаблону. Название назначает сервер.
+   */
+  async createBlank(labelPresetId: number): Promise<LabelListResponse> {
+    const result = await this.call('POST', `${this.baseUrl}/blank`, {
+      label_preset_id: labelPresetId,
+    })
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as LabelListResponse
   }

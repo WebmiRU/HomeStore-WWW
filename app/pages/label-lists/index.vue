@@ -2,7 +2,10 @@
   <div class="lists-page">
     <div class="page-header">
       <h3 class="page-title">Этикетки</h3>
-      <NuxtLink to="/label-lists/create" class="btn-add">Добавить</NuxtLink>
+      <div class="page-actions">
+        <BlankLabelButton @done="loadLists(meta.current_page)" />
+        <NuxtLink to="/label-lists/create" class="btn-add">Добавить</NuxtLink>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -25,7 +28,12 @@
         <tbody>
           <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}/edit`)">
             <td data-label="ID">{{ list.id }}</td>
-            <td data-label="Название">{{ list.title }}</td>
+            <td data-label="Название">
+              {{ list.title }}
+              <span v-if="list.codes_count" class="blank-badge" :title="`Сгенерировано кодов: ${list.codes_count}`">
+                без текста
+              </span>
+            </td>
             <td data-label="Шаблон">{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
             <td data-label="Создан">{{ formatDate(list.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(list.updated_at) }}</td>
@@ -205,6 +213,12 @@ watch(() => route.query.page, (newPage) => {
   background: #3a7a3a;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .loading,
 .error,
 .empty {
@@ -290,6 +304,18 @@ watch(() => route.query.page, (newPage) => {
 
 .action-del:hover {
   color: #f88;
+}
+
+.blank-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: #cbb8e8;
+  background: #241a33;
+  border: 1px solid #5a4480;
+  border-radius: 3px;
+  vertical-align: middle;
 }
 
 .pagination {
