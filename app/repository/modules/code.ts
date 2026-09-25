@@ -53,7 +53,21 @@ export type CodeSearchAmbiguous = {
   matches: CodeMatch[]
 }
 
-export type CodeSearchResponse = CodeSearchSingle | CodeSearchAmbiguous
+/**
+ * Код найден, но не привязан ни к предмету, ни к хранилищу: наклейка из
+ * сгенерированного набора, ещё не использованная. Это не ошибка, поэтому
+ * сервер отдаёт 200 с отдельным телом, а не 404.
+ */
+export type CodeSearchBlank = {
+  code: string
+  blank: true
+  label_set?: {
+    id: number
+    title: string
+  } | null
+}
+
+export type CodeSearchResponse = CodeSearchSingle | CodeSearchAmbiguous | CodeSearchBlank
 
 export type FulltextSearchResult = {
   type: 'item' | 'store'

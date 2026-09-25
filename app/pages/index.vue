@@ -133,6 +133,26 @@
       </NuxtLink>
     </div>
 
+    <!-- Безымянная этикетка: код в базе есть, но не привязан ни к чему.
+         Это не ошибка, поэтому тон и оформление — сиреневые, а не красные.
+         Дальше всё как у «не найдено»: можно завести предмет или хранилище. -->
+    <div v-else-if="activeMode === 'search' && blankCode" class="blank-label">
+      <div class="blank-label__text">Найдена безымянная этикетка</div>
+      <div v-if="blankCode.set" class="blank-label__set">Набор: {{ blankCode.set.title }}</div>
+      <div class="blank-label__ask">
+        Добавить
+        <NuxtLink :to="{ path: '/items/create', query: { code: blankCode.value } }" class="blank-label__link">
+          предмет
+        </NuxtLink>
+        или
+        <NuxtLink :to="{ path: '/stores/create', query: { code: blankCode.value } }" class="blank-label__link">
+          хранилище
+        </NuxtLink>
+        ?
+      </div>
+      <div class="blank-label__code">Код: {{ blankCode.value }}</div>
+    </div>
+
     <div v-else-if="activeMode === 'search' && notFoundCode" class="not-found">
       <div class="not-found__text">Код не найден в Базе.</div>
       <div class="not-found__ask">
@@ -307,7 +327,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { CodeMatch, CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
+import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
 import type { ChainCrumb } from '~/composables/useLocationChain'
@@ -355,6 +375,8 @@ const activeMode = ref<Mode>(savedMode.value)
 
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
+/** Найденная безымянная этикетка: код и набор, из которого он напечатан. */
+const blankCode = ref<{ value: string; set: { id: number; title: string } | null } | null>(null)
 const ambiguousMatches = ref<(CodeMatch & { payload: ItemPayload })[] | null>(null)
 const scanList = ref<ScanEntry[]>([])
 const foundChain = ref<ChainCrumb[]>([])
@@ -426,6 +448,7 @@ function setMode(mode: Mode) {
   persist(mode)
 
   notFoundCode.value = ''
+  blankCode.value = null
 
   if (prev === 'search') {
     // Поиск -> Пополнить/Списать: найденный предмет переносим в список,
@@ -479,6 +502,9 @@ async function refreshFoundItem(code: string) {
   try {
     const result = await $api.code.search(code)
     if (activeMode.value !== 'search') return
+    // Безымянная наклейка и неоднозначный код сюда не попадают: вызывающий
+    // уже показал нужный экран, перерисовывать его незачем.
+    if (isBlank(result) || isAmbiguous(result)) return
     if (result.type === 'item' && result.payload) {
       found.value = { type: 'item', payload: result.payload as ItemPayload, code: result.code }
       void refreshFoundChain()
@@ -509,10 +535,25 @@ async function handleScan(code: string) {
     foundChain.value = []
     ambiguousMatches.value = null
     notFoundCode.value = ''
+    blankCode.value = null
   }
 
   try {
     const result = await $api.code.search(code)
+
+    // Безымянная этикетка: код есть, привязки нет. В режиме поиска —
+    // отдельный экран с предложением завести предмет или хранилище;
+    // в режимах «Пополнить»/«Списать» она неприменима, там только
+    // списание предметов, и предмета у кода ещё не существует.
+    if (isBlank(result)) {
+      if (activeMode.value === 'search') {
+        blankCode.value = { value: result.code, set: result.label_set ?? null }
+      } else {
+        $notify.add('Это безымянная этикетка — создайте по ней предмет', { type: 'warning', timer: 6 })
+        handleCodeNotFound(code)
+      }
+      return
+    }
 
     if (isAmbiguous(result)) {
       const items = result.matches.filter(
@@ -573,6 +614,10 @@ async function handleScan(code: string) {
 
 function isAmbiguous(result: CodeSearchResponse): result is CodeSearchResponse & { ambiguous: true; matches: CodeMatch[] } {
   return (result as { ambiguous?: unknown }).ambiguous === true
+}
+
+function isBlank(result: CodeSearchResponse): result is CodeSearchBlank {
+  return (result as { blank?: unknown }).blank === true
 }
 
 function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload[]) {
@@ -737,6 +782,7 @@ function handleCodeNotFound(code: string) {
   scanChains.value = {}
   matchChains.value = {}
   notFoundCode.value = code
+  blankCode.value = null
 }
 
 function notifyStoreBlocked(store: StorePayload) {
