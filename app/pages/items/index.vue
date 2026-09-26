@@ -46,6 +46,13 @@
               />
             </th>
             <th>ID</th>
+            <!--
+              «Фото», а не «Изображение», как в выдаче поиска: здесь колонок десять,
+              и слово из одиннадцати букв отдавало картинке вдвое больше места, чем
+              она занимает, — колонка выходила 94px против 42px самой картинки, а
+              «Название» сжималось до 169px.
+            -->
+            <th class="img-col">Фото</th>
             <th>Название</th>
             <th>Категория</th>
             <th>Хранилище</th>
@@ -66,6 +73,9 @@
               />
             </td>
             <td data-label="ID">{{ item.payload.id }}</td>
+            <td class="img-col">
+              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" />
+            </td>
             <td data-label="Название">{{ item.payload.title }}</td>
             <td data-label="Категория">
               <NuxtLink v-if="item.category" :to="`/categories/${item.category.id}/edit`" class="row-link">
@@ -122,23 +132,11 @@
 
       <div v-else class="empty">Нет предметов</div>
 
-      <div class="pagination" v-if="meta.last_page > 1">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          @click="goToPage((meta.current_page || 1) - 1)"
-          class="page-btn"
-        >
-          ← Назад
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          @click="goToPage((meta.current_page || 1) + 1)"
-          class="page-btn"
-        >
-          Вперёд →
-        </button>
-      </div>
+      <TablePagination
+        :page="meta.current_page || 1"
+        :last-page="meta.last_page"
+        @go="goToPage"
+      />
     </template>
   </div>
 </template>
@@ -505,23 +503,7 @@ watch(
   opacity: 0.55;
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
 
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
-  border-radius: 4px;
-  cursor: pointer;
-}
 
 .page-btn:hover:not(:disabled) {
   background: #444;
@@ -532,10 +514,6 @@ watch(
   cursor: default;
 }
 
-.page-info {
-  font-size: 13px;
-  color: #888;
-}
 
 @media (max-width: 768px) {
   .page-header {
@@ -594,6 +572,23 @@ watch(
     width: auto;
     padding: 0;
     white-space: nowrap;
+  }
+
+  /* Картинка в узком экране встаёт в верхнюю полосу карточки рядом с
+     галочкой, а не отдельной строкой с подписью «Изображение»: подпись над
+     картинкой в тридцать пикселей читается как название, и строка получается
+     вдвое выше карточки. Полоса под это и отведена — 44px, из них на картинку
+     уходит 40. */
+  .items-table td.img-col {
+    position: absolute;
+    top: 1px;
+    left: 42px;
+    width: auto;
+    padding: 0;
+  }
+
+  .items-table td.img-col::before {
+    display: none;
   }
 
   .items-table td::before {

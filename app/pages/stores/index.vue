@@ -28,6 +28,7 @@
               />
             </th>
             <th>ID</th>
+            <th class="img-col">Фото</th>
             <th>Название</th>
             <th>Создан</th>
             <th>Обновлён</th>
@@ -36,7 +37,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="node in flatList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}/edit`)">
+          <tr v-for="node in pageList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}/edit`)">
             <td class="cb-col">
               <input
                 type="checkbox"
@@ -45,6 +46,9 @@
               />
             </td>
             <td data-label="ID">{{ node.store.id }}</td>
+            <td class="img-col">
+              <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="40" />
+            </td>
             <td data-label="Название">
               <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
               <span v-if="node.depth > 0" class="tree-space"> </span>
@@ -96,12 +100,14 @@
       </table>
 
       <div v-else class="empty">Нет хранилищ</div>
+
+      <TablePagination :page="page" :last-page="lastPage" @go="goToPage" />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
@@ -109,16 +115,47 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
 const { openRow } = useRowOpen()
+const route = useRoute()
+const router = useRouter()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
 const flatList = ref<{ store: StoreResponse; depth: number }[]>([])
 const selected = ref<Set<number>>(new Set())
 const storesInLists = ref<Set<number>>(new Set())
+const page = ref(1)
+
+// Хранилища приходят одним списком и тут же складываются в дерево, поэтому
+// постраничный вывод считается на развёрнутом дереве, а не на ответе сервера.
+// Иначе страница могла бы начаться с вложенного хранилища, родителя которого
+// осталось на предыдущей странице, — отступ-«ёлочка» смотрел бы в пустоту.
+// Отступ поэтому и показан: по нему видно, что запись вложена.
+const PER_PAGE = 10
+const lastPage = computed(() => Math.max(1, Math.ceil(flatList.value.length / PER_PAGE)))
+const pageList = computed(() =>
+  flatList.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE)
+)
+
+function goToPage(to: number) {
+  const target = Math.min(Math.max(1, to), lastPage.value)
+  router.push({ query: { ...route.query, page: target } })
+}
+
+// Номер страницы живёт в адресной строке, а не в памяти: перезагрузка и кнопка
+// «назад» должны возвращать ту же страницу, а не первую.
+//
+// Считывать его надо и при загрузке списка, а не только по смене адреса:
+// при прямом заходе на ?page=2 адрес с момента появления страницы не менялся,
+// и подписка молчала — список открывался на первой странице, а в адресной
+// строке стояло 2. Расхождение выглядело как сбой пагинации.
+function syncPage() {
+  page.value = Math.min(Math.max(1, Number(route.query.page) || 1), lastPage.value)
+}
 
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
-const allSelected = computed(() => flatList.value.length > 0 && flatList.value.every(n => selected.value.has(n.store.id)))
+// «Выделить все» отмечает то, что видно на странице, а не всё дерево разом.
+const allSelected = computed(() => pageList.value.length > 0 && pageList.value.every(n => selected.value.has(n.store.id)))
 const showOwnerColumn = computed(() => flatList.value.some(n => n.store.user && n.store.user.id))
 
 const rightsOf = (store: StoreResponse): AccessRight[] => store.rights ?? []
@@ -129,7 +166,7 @@ function toggleAll() {
   if (allSelected.value) {
     selected.value = new Set()
   } else {
-    selected.value = new Set(flatList.value.map(n => n.store.id))
+    selected.value = new Set(pageList.value.map(n => n.store.id))
   }
 }
 
@@ -211,6 +248,9 @@ async function load() {
     const tree = buildTree(stores)
     flatList.value = flattenTree(tree)
     selected.value = new Set()
+    // Читаем страницу из адреса после того, как известно общее число записей:
+    // хранилище могли удалить, и страниц могло остаться больше, чем есть.
+    syncPage()
     await loadLabelListInfo()
   } catch (err: any) {
     error.value = err?.data?.error || err?.message || String(err)
@@ -248,6 +288,10 @@ async function deleteStore(id: number) {
 }
 
 onMounted(load)
+
+onMounted(load)
+
+watch(() => route.query.page, syncPage)
 </script>
 
 <style scoped>
@@ -443,6 +487,22 @@ onMounted(load)
   .stores-table td.cb-col input[type="checkbox"] {
     width: 20px;
     height: 20px;
+  }
+
+  /* Картинка в узком экране встаёт в верхнюю полосу карточки рядом с галочкой,
+     а не отдельной строкой с подписью «Фото»: подпись над картинкой в сорок
+     пикселей читается как название, и строка получается вдвое выше карточки.
+     Полоса под это и отведена — 44px, из них на картинку уходит 40. */
+  .stores-table td.img-col {
+    position: absolute;
+    top: 1px;
+    left: 42px;
+    width: auto;
+    padding: 0;
+  }
+
+  .stores-table td.img-col::before {
+    display: none;
   }
 
   .stores-table td.actions {

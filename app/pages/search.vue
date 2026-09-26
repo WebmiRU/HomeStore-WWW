@@ -30,13 +30,13 @@
                 @change="toggleAll"
               />
             </th>
-            <th class="img-col">Изображение</th>
+            <th class="img-col">Фото</th>
             <th>Тип</th>
             <th>Название</th>
             <th></th>
           </tr>
         </thead>
-        <template v-for="r in results" :key="`${r.type}-${r.payload.id}`">
+        <template v-for="r in pageResults" :key="`${r.type}-${r.payload.id}`">
           <tbody class="result-group">
             <tr>
               <td class="cb-col">
@@ -46,8 +46,13 @@
                 @change="toggleOne(r)"
               />
             </td>
-            <td class="img-col" data-label="Изображение">
-              <ItemPhoto :images="r.payload.images" :alt="r.payload.title" />
+            <td class="img-col" data-label="Фото">
+              <!-- Размер здесь больше, чем в списке предметов: в поиске смотрят
+                   сами находки, а не список, и картинка нужна, чтобы узнать
+                   предмет. При этом она всё равно много компактнее прежних
+                   84px по умолчанию — те растягивали строку и съедали
+                   «Название». -->
+              <ItemPhoto :images="r.payload.images" :alt="r.payload.title" :size="72" />
             </td>
             <td data-label="Тип">
               <span v-if="r.type === 'item'" class="type-badge type-item">Предмет</span>
@@ -134,6 +139,8 @@
           </tbody>
         </template>
       </table>
+
+      <TablePagination :page="page" :last-page="lastPage" @go="goToPage" />
     </template>
   </div>
 </template>
@@ -159,6 +166,29 @@ const storesInLists = ref<Set<number>>(new Set())
 
 const resultChains = ref<Record<string, ChainCrumb[]>>({})
 
+// Поиск отдаёт все совпадения разом — одним запросом сразу по предметам и
+// хранилищам, и постранично делить его на сервере не выйдет, не разрезав
+// запрос на части. Поэтому постраничный вывод считается здесь, на том же
+// списке, что пришёл: колонка и пагинация у всех таблиц одни и те же.
+const PER_PAGE = 10
+const page = ref(1)
+const lastPage = computed(() => Math.max(1, Math.ceil(results.value.length / PER_PAGE)))
+const pageResults = computed(() =>
+  results.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE)
+)
+
+function goToPage(to: number) {
+  const target = Math.min(Math.max(1, to), lastPage.value)
+  router.push({ query: { ...route.query, page: target } })
+}
+
+// Как и в списке хранилищ, номер страницы берётся из адресной строки, причём
+// не только по смене адреса, но и при загрузке: при прямом заходе на ?page=2
+// подписка молчала, и список открывался на первой странице.
+function syncPage() {
+  page.value = Math.min(Math.max(1, Number(route.query.page) || 1), lastPage.value)
+}
+
 function keyFor(r: FulltextSearchResult): string {
   return `${r.type}-${r.payload.id}`
 }
@@ -166,7 +196,11 @@ function keyFor(r: FulltextSearchResult): string {
 const selectedItemIds = computed(() => [...selectedItems.value])
 const selectedStoreIds = computed(() => [...selectedStores.value])
 const someSelected = computed(() => selectedItems.value.size > 0 || selectedStores.value.size > 0)
-const allSelected = computed(() => results.value.length > 0 && results.value.every(r => isSelected(r)))
+// «Выделить все» отмечает то, что видно на странице, а не все совпадения
+// сразу: иначе на второй странице нажатая галочка отмечала бы строки, которых
+// на экране нет. Так же ведёт себя список предметов, где сервер отдаёт только
+// текущую страницу.
+const allSelected = computed(() => pageResults.value.length > 0 && pageResults.value.every(r => isSelected(r)))
 
 function canEdit(r: FulltextSearchResult): boolean {
   return r.payload.rights?.includes('edit') ?? false
@@ -189,7 +223,7 @@ function toggleAll() {
   } else {
     const itemIds = new Set<number>()
     const storeIds = new Set<number>()
-    for (const r of results.value) {
+    for (const r of pageResults.value) {
       if (r.type === 'item') itemIds.add(r.payload.id)
       else storeIds.add(r.payload.id)
     }
@@ -257,12 +291,24 @@ async function search() {
     return
   }
 
+  const previousQuery = query.value
   query.value = q
   loading.value = true
   error.value = null
   results.value = []
   try {
     results.value = await $api.code.fulltextSearch(q)
+    if (previousQuery !== q) {
+      // Другой запрос — всегда с первой страницы: номер из адресной строки
+      // относился к прошлому результату, где строк могло быть больше.
+      page.value = 1
+      if (route.query.page !== undefined) {
+        router.replace({ query: { ...route.query, page: undefined } })
+      }
+    } else {
+      // Тот же запрос, пришли по ссылке или кнопкой «назад» — держим страницу.
+      syncPage()
+    }
     selectedItems.value = new Set()
     selectedStores.value = new Set()
     await Promise.all([loadChains(), loadLabelListInfo()])
@@ -313,6 +359,8 @@ watch(() => route.query.q, () => {
   search()
 })
 
+watch(() => route.query.page, syncPage)
+
 watch(trigger, () => {
   search()
 })
@@ -353,10 +401,7 @@ watch(trigger, () => {
   color: #888;
 }
 
-.img-col {
-  width: 1px;
-  white-space: nowrap;
-}
+/* Ширина колонки с картинкой — в template.sass, колонка нужна не только здесь. */
 
 .error {
   color: #f88;
