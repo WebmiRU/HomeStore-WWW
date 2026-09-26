@@ -12,7 +12,6 @@
         <section v-if="activeTab === 'main'" class="tab-section">
           <div class="logo-block">
             <VendorLogo
-              :logo-url="logoUrl"
               :logo-sha="logoSha"
               :title="form.title || 'Производитель'"
               :size="120"
@@ -89,11 +88,12 @@ const removing = ref(false)
 const logoInput = ref<HTMLInputElement | null>(null)
 
 // Логотип держим отдельно от формы: он грузится отдельным запросом и
-// сохраняется сразу, а не по кнопке «Сохранить».
-const logoUrl = ref<string | null>(null)
+// сохраняется сразу, а не по кнопке «Сохранить». Держим только sha256 —
+// по нему и браузер, и компонент логотипа берут миниатюру; оригинал в
+// интерфейсе не используется.
 const logoSha = ref<string | null>(null)
 
-const hasLogo = computed(() => Boolean(logoUrl.value || logoSha.value))
+const hasLogo = computed(() => Boolean(logoSha.value))
 
 const form = reactive({
   title: '',
@@ -110,8 +110,7 @@ const tabs = computed(() => {
 
 const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'))
 
-function applyLogo(vendor: { logo_url: string | null; logo_sha: string | null }) {
-  logoUrl.value = vendor.logo_url ?? null
+function applyLogo(vendor: { logo_sha: string | null }) {
   logoSha.value = vendor.logo_sha ?? null
 }
 
@@ -171,7 +170,6 @@ async function removeLogo() {
   removing.value = true
   try {
     await $api.vendor.deleteLogo(Number(id))
-    logoUrl.value = null
     logoSha.value = null
     $notify.add('Логотип убран', { type: 'success' })
   } catch (err: any) {

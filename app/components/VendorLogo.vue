@@ -1,6 +1,6 @@
 <template>
   <span class="m-logo" :style="{ width: px, height: px }" :title="title">
-    <!-- Спиннер показывается, пока не пришла картинка: смена логотипа
+    <!-- Спиннер показывается, пока не пришла миниатюра: смена логотипа
          оставляет рамку с буквой-заглушкой на всё время запроса, и без
          индикатора не видно, идёт загрузка или она уже отвалилась. -->
     <span v-if="src && loading" class="m-logo__spinner" aria-hidden="true" />
@@ -11,7 +11,7 @@
       :class="{ 'm-logo__img--loading': loading }"
       class="m-logo__img"
       @load="onLoad"
-      @error="onError"
+      @error="failed = true"
     />
     <span v-else class="m-logo__fallback" :style="fallbackStyle">{{ initial }}</span>
   </span>
@@ -22,7 +22,6 @@ import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    logoUrl?: string | null
     logoSha?: string | null
     title?: string | null
     size?: number
@@ -39,7 +38,7 @@ const props = withDefaults(
 const { thumbUrl } = useThumbnail()
 
 /**
- * Сколько ждать картинку, прежде чем перестать ждать.
+ * Сколько ждать миниатюру, прежде чем перестать ждать.
  *
  * Спиннер без предела — это не спиннер, а пустое место: запрос к хранилищу
  * изредка не обрывается ошибкой, а просто висит, и картинка не приходит
@@ -50,25 +49,21 @@ const WAIT_MS = 8000
 
 const failed = ref(false)
 const loading = ref(false)
-const attempt = ref(0)
 
 /**
- * Что пробуем по порядку: сперва миниатюра, потом — оригинал целиком.
+ * Только миниатюра, и никогда — оригинал.
  *
- * Второй адрес на случай, если миниатюра не получилась: логотип лучше
- * тяжёлой картинки, чем заглушка с буквой.
+ * Логотип рисуют мелко: в списке это 40px, в карточке 120px. Оригинал
+ * логотипа — это обычно PNG на полторы тысячи пикселей, и грузить его
+ * ради рамки такого размера незачем: он весит в разы больше миниатюры, а на
+ * экране всё равно ужимается браузером. Если миниатюры нет — показываем
+ * первую букву названия, это честнее битой картинки.
  */
-const candidates = computed<string[]>(() => {
-  const thumb = thumbUrl(props.logoSha, props.thumbKey)
+const src = computed<string | null>(() => {
+  if (failed.value) return null
 
-  return [...new Set([thumb, props.logoUrl ?? ''].filter((url) => url !== ''))]
+  return thumbUrl(props.logoSha, props.thumbKey)
 })
-
-// После неудачи адреса src становится пустым: браузер показал бы битую
-// картинку, а заглушка с буквой читается как «логотипа нет».
-const src = computed<string | null>(() =>
-  failed.value ? null : (candidates.value[attempt.value] ?? null),
-)
 
 let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -79,13 +74,12 @@ function stopWaiting() {
   }
 }
 
-/** Смена логотипа: сбросить попытки и снова показать спиннер. */
+/** Смена логотипа: снова показываем спиннер, пока не придёт миниатюра. */
 watch(
-  () => `${props.logoSha ?? ''}|${props.logoUrl ?? ''}`,
+  () => props.logoSha,
   () => {
     stopWaiting()
     failed.value = false
-    attempt.value = 0
     loading.value = src.value !== null
   },
   { immediate: true },
@@ -95,28 +89,16 @@ watch(loading, (value) => {
   stopWaiting()
 
   if (value) {
-    timer = setTimeout(giveUp, WAIT_MS)
+    timer = setTimeout(() => {
+      loading.value = false
+      failed.value = true
+    }, WAIT_MS)
   }
 })
 
 function onLoad() {
   stopWaiting()
   loading.value = false
-}
-
-/** Отказ от текущего адреса: следующий по списку, а если он последний — заглушка. */
-function giveUp() {
-  if (attempt.value < candidates.value.length - 1) {
-    attempt.value += 1
-    return
-  }
-
-  loading.value = false
-  failed.value = true
-}
-
-function onError() {
-  giveUp()
 }
 
 const px = computed(() => `${props.size}px`)
