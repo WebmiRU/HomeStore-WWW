@@ -47,13 +47,14 @@
             </th>
             <th>ID</th>
             <!--
-              «Фото», а не «Изображение», как в выдаче поиска: здесь колонок десять,
-              и слово из одиннадцати букв отдавало картинке вдвое больше места, чем
-              она занимает, — колонка выходила 94px против 42px самой картинки, а
-              «Название» сжималось до 169px.
+              «Фото», а не «Изображение», как в выдаче поиска: колонок здесь больше
+              десяти, и слово из одиннадцати букв отдавало картинке вдвое больше
+              места, чем она занимает, — колонка выходила 94px против 42px самой
+              картинки, а «Название» сжималось до 169px.
             -->
             <th class="img-col">Фото</th>
             <th>Название</th>
+            <th>Производитель</th>
             <th>Категория</th>
             <th>Хранилище</th>
             <th>Количество</th>
@@ -77,6 +78,12 @@
               <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" />
             </td>
             <td data-label="Название">{{ item.payload.title }}</td>
+            <td data-label="Производитель">
+              <NuxtLink v-if="item.vendor" :to="`/vendors/${item.vendor.id}/edit`" class="row-link">
+                {{ item.vendor.title }}
+              </NuxtLink>
+              <span v-else class="muted">—</span>
+            </td>
             <td data-label="Категория">
               <NuxtLink v-if="item.category" :to="`/categories/${item.category.id}/edit`" class="row-link">
                 {{ item.category.title }}
