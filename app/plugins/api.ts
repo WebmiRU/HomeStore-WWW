@@ -3,13 +3,18 @@ import type { FetchOptions } from 'ofetch'
 import AccessModule from '~/repository/modules/access'
 import AuditLogModule from '~/repository/modules/auditLog'
 import AuthModule from '~/repository/modules/auth'
+import CategoryModule from '~/repository/modules/category'
 import CodeModule from '~/repository/modules/code'
+import DictionaryModule from '~/repository/modules/dictionary'
 import ImageModule from '~/repository/modules/image'
 import ItemModule from '~/repository/modules/item'
 import LabelListModule from '~/repository/modules/labelList'
 import LabelPresetModule from '~/repository/modules/labelPreset'
 import OperationModule from '~/repository/modules/operation'
+import PropertyGroupModule from '~/repository/modules/propertyGroup'
+import PropertyModule from '~/repository/modules/property'
 import StoreModule from '~/repository/modules/store'
+import UnitModule from '~/repository/modules/unit'
 import UserProfileModule from '~/repository/modules/userProfile'
 import WarehouseModule from '~/repository/modules/warehouse'
 
@@ -17,13 +22,18 @@ interface IApiInstance {
   access: AccessModule
   auditLog: AuditLogModule
   auth: AuthModule
+  category: CategoryModule
   code: CodeModule
+  dictionary: DictionaryModule
   item: ItemModule
   image: ImageModule
   labelList: LabelListModule
   labelPreset: LabelPresetModule
   operation: OperationModule
+  property: PropertyModule
+  propertyGroup: PropertyGroupModule
   store: StoreModule
+  unit: UnitModule
   userProfile: UserProfileModule
   warehouse: WarehouseModule
 }
@@ -73,13 +83,18 @@ export default defineNuxtPlugin(() => {
     access: new AccessModule(apiFetcher),
     auditLog: new AuditLogModule(apiFetcher),
     auth: new AuthModule(apiFetcher),
+    category: new CategoryModule(apiFetcher),
     code: new CodeModule(apiFetcher),
+    dictionary: new DictionaryModule(apiFetcher),
     item: new ItemModule(apiFetcher),
     image: new ImageModule(apiFetcher),
     labelList: new LabelListModule(apiFetcher),
     labelPreset: new LabelPresetModule(apiFetcher),
     operation: new OperationModule(apiFetcher),
+    property: new PropertyModule(apiFetcher),
+    propertyGroup: new PropertyGroupModule(apiFetcher),
     store: new StoreModule(apiFetcher),
+    unit: new UnitModule(apiFetcher),
     userProfile: new UserProfileModule(apiFetcher),
     warehouse: new WarehouseModule(apiFetcher),
   }

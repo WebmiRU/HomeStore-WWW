@@ -38,6 +38,11 @@
     <nav class="entity-nav">
       <NuxtLink to="/" class="entity-link">Главная</NuxtLink>
       <NuxtLink to="/items" class="entity-link">Предметы</NuxtLink>
+      <NuxtLink to="/categories" class="entity-link">Категории</NuxtLink>
+      <NuxtLink to="/properties" class="entity-link">Свойства</NuxtLink>
+      <NuxtLink to="/property-groups" class="entity-link">Группы свойств</NuxtLink>
+      <NuxtLink to="/dictionaries" class="entity-link">Справочники</NuxtLink>
+      <NuxtLink to="/units" class="entity-link">Ед. изм.</NuxtLink>
       <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
       <NuxtLink to="/warehouses" class="entity-link">Склады</NuxtLink>
       <NuxtLink to="/access" class="entity-link">Доступ</NuxtLink>

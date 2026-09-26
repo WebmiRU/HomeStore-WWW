@@ -36,6 +36,17 @@
           </label>
 
           <label class="field">
+            <span class="field-label">Категория</span>
+            <select v-model="form.category_id" class="field-select" :disabled="!canEdit" @change="onCategoryChange">
+              <option :value="null">[НЕТ]</option>
+              <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
+                {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
+              </option>
+            </select>
+            <span class="field-hint">Задаёт набор свойств по умолчанию на вкладке «Свойства»</span>
+          </label>
+
+          <label class="field">
             <span class="field-label">Код</span>
             <div class="code-field">
               <input
@@ -63,6 +74,19 @@
           </label>
         </section>
 
+        <section v-if="activeTab === 'properties'" class="tab-section">
+          <div v-if="propertiesLoading" class="loading">Загрузка свойств...</div>
+          <ItemPropertiesEditor
+            v-else
+            v-model="properties"
+            :defaultProperties="categoryProperties"
+            :availableProperties="allProperties"
+            :dictionaries="dictionaries"
+            :resetKey="propertiesKey"
+            :readonly="!canEdit"
+          />
+        </section>
+
         <section v-if="activeTab === 'images'" class="tab-section">
           <ImagesTable v-model="images" entity="item" :entity-id="Number(id)" :readonly="!canEdit" />
         </section>
@@ -85,8 +109,10 @@
                 copy_title: form.title,
                 copy_title_print: form.title_print,
                 copy_store_id: form.store_id,
+                copy_category_id: form.category_id,
                 copy_code: form.code,
                 copy_quantity: quantityInput,
+                copy_properties: JSON.stringify(properties),
               },
             }"
             class="btn-copy"
@@ -101,10 +127,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
-import type { ItemResponse } from '~/repository/modules/item'
+import type { ItemResponse, ItemPropertyInput } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
+import type { CategoryResponse } from '~/repository/modules/category'
+import type { DictionaryResponse } from '~/repository/modules/dictionary'
+import type { PropertyResponse } from '~/repository/modules/property'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
+import { categorySelectOptions } from '~/composables/categorySelectOptions'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
@@ -123,6 +153,7 @@ const canEdit = computed(() => itemEntity.value?.rights?.includes('edit') ?? fal
 
 const tabs = [
   { key: 'main', label: 'Основные параметры' },
+  { key: 'properties', label: 'Свойства' },
   { key: 'images', label: 'Картинки' },
   { key: 'balance', label: 'Остатки' },
   { key: 'stats', label: 'Статистика' },
@@ -137,15 +168,26 @@ const activeTab = computed(() => {
 })
 
 const stores = ref<StoreResponse[]>([])
+const categories = ref<CategoryResponse[]>([])
+const dictionaries = ref<DictionaryResponse[]>([])
+const allProperties = ref<PropertyResponse[]>([])
 
 const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(stores.value, itemEntity.value?.payload?.store_id ?? null))
+
+const categoryOptions = computed(() => categorySelectOptions(categories.value))
 
 const form = reactive({
   title: '',
   title_print: '',
   store_id: null as number | null,
+  category_id: null as number | null,
   code: '',
 })
+
+const properties = ref<ItemPropertyInput[]>([])
+const categoryProperties = ref<PropertyResponse[]>([])
+const propertiesLoading = ref(false)
+const propertiesKey = ref('')
 
 const codeChanged = computed(() => originalCode.value !== '' && form.code !== originalCode.value)
 
@@ -153,24 +195,72 @@ function resetCode() {
   form.code = originalCode.value
 }
 
+/** Приводит ответ сервера к виду, который принимает редактор. */
+function toPropertyInputs(rows: ItemResponse['properties']): ItemPropertyInput[] {
+  const byProperty = new Map<number, ItemPropertyInput>()
+
+  for (const row of rows ?? []) {
+    const entry = byProperty.get(row.property_id) ?? { property_id: row.property_id, values: [] }
+    entry.values.push(
+      row.dictionary_value_id !== null
+        ? { value: null, dictionary_value_id: row.dictionary_value_id }
+        : { value: row.value, dictionary_value_id: null },
+    )
+    byProperty.set(row.property_id, entry)
+  }
+
+  return [...byProperty.values()]
+}
+
+async function loadProperties(categoryId: number | null) {
+  propertiesLoading.value = true
+  try {
+    categoryProperties.value = categoryId === null ? [] : await $api.category.properties(categoryId)
+    propertiesKey.value = String(categoryId)
+  } catch (err: any) {
+    categoryProperties.value = []
+    $notify.add(formatApiError(err, 'Ошибка загрузки свойств категории'), { type: 'error', timer: 10 })
+  } finally {
+    propertiesLoading.value = false
+  }
+}
+
+/**
+ * Смена категории меняет только набор по умолчанию. Заведённые вручную
+ * свойства и их значения остаются: набор по умолчанию — подсказка, а не
+ * ограничение, и стирать из-за него руками введённое незачем.
+ */
+async function onCategoryChange() {
+  await loadProperties(form.category_id)
+}
+
 async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [item, list] = await Promise.all([
+    const [item, list, all, dicts, props] = await Promise.all([
       $api.item.get(Number(id)),
       $api.store.list(),
+      $api.category.all(),
+      $api.dictionary.all(),
+      $api.property.all(),
     ])
 
     stores.value = list
+    categories.value = all
+    dictionaries.value = dicts
+    allProperties.value = props
     itemEntity.value = item
     form.title = item.payload.title
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id
+    form.category_id = item.payload.category_id
     form.code = item.code ?? ''
     originalCode.value = item.code ?? ''
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
     images.value = item.images ?? []
+    properties.value = toPropertyInputs(item.properties)
+    await loadProperties(form.category_id)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -181,11 +271,13 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const payload: Partial<ItemPayload> & { code?: string | null } = {
+    const payload: Partial<ItemPayload> & { code?: string | null; properties?: ItemPropertyInput[] } = {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
+      category_id: form.category_id,
       code: form.code.trim() || null,
+      properties: properties.value,
     }
     const qty = String(quantityInput.value).trim()
     if (qty !== '') {

@@ -12,6 +12,23 @@
       </div>
     </div>
 
+    <div class="filter-bar">
+      <label class="filter">
+        <span class="filter-label">Категория</span>
+        <select :value="categoryFilter" class="filter-select" @change="onCategoryChange">
+          <option :value="null">[ВСЕ]</option>
+          <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
+            {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
+          </option>
+        </select>
+      </label>
+
+      <span class="filter-hint">
+        Вместе с вложенными категориями.
+        <a v-if="categoryFilter" href="#" class="filter-reset" @click.prevent="onCategoryChange($event, null)">Сбросить</a>
+      </span>
+    </div>
+
     <div v-if="loading" class="loading">Загрузка...</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -30,6 +47,7 @@
             </th>
             <th>ID</th>
             <th>Название</th>
+            <th>Категория</th>
             <th>Хранилище</th>
             <th>Количество</th>
             <th>Создан</th>
@@ -49,6 +67,12 @@
             </td>
             <td data-label="ID">{{ item.payload.id }}</td>
             <td data-label="Название">{{ item.payload.title }}</td>
+            <td data-label="Категория">
+              <NuxtLink v-if="item.category" :to="`/categories/${item.category.id}/edit`" class="row-link">
+                {{ item.category.title }}
+              </NuxtLink>
+              <span v-else class="muted">—</span>
+            </td>
             <td data-label="Хранилище">{{ item.store?.[0]?.title ?? '—' }}</td>
             <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>
             <td data-label="Создан">{{ formatDate(item.payload.created_at) }}</td>
@@ -122,8 +146,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
+import type { CategoryResponse } from '~/repository/modules/category'
 import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
+import { categorySelectOptions } from '~/composables/categorySelectOptions'
 
 const { $api, $notify } = useNuxtApp()
 const { isOwner } = useCurrentUser()
@@ -132,11 +158,21 @@ const route = useRoute()
 const router = useRouter()
 
 const items = ref<ItemResponse[]>([])
+const categories = ref<CategoryResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 const selected = ref<Set<number>>(new Set())
 const itemsInLists = ref<Set<number>>(new Set())
+
+/** Фильтр живёт в адресе: ссылку на «предметы категории» можно переслать. */
+const categoryFilter = computed<number | null>(() => {
+  const value = Number(route.query.category_id)
+
+  return Number.isFinite(value) && value > 0 ? value : null
+})
+
+const categoryOptions = computed(() => categorySelectOptions(categories.value))
 
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
@@ -195,7 +231,7 @@ async function loadItems(page?: number) {
   loading.value = true
   error.value = null
   try {
-    const result = await $api.item.list(page)
+    const result = await $api.item.list(page, categoryFilter.value)
     items.value = result.data
     meta.value = {
       current_page: result.meta.current_page,
@@ -226,7 +262,14 @@ async function loadLabelListInfo() {
 }
 
 function goToPage(page: number) {
-  router.push({ query: { page } })
+  router.push({ query: { ...route.query, page } })
+}
+
+function onCategoryChange(event: Event, value: number | null = null) {
+  const raw = value !== null ? value : Number((event.target as HTMLSelectElement).value)
+  const query = { ...route.query, page: undefined, category_id: raw > 0 ? raw : undefined }
+
+  router.push({ query })
 }
 
 async function deleteItem(id: number) {
@@ -242,15 +285,19 @@ async function deleteItem(id: number) {
   }
 }
 
-onMounted(() => {
-  const page = Number(route.query.page) || 1
-  loadItems(page)
+onMounted(async () => {
+  try {
+    categories.value = await $api.category.all()
+  } catch {
+    // Список предметов отфильтровать нечем, но сам он показывается.
+  }
+  loadItems(Number(route.query.page) || 1)
 })
 
-watch(() => route.query.page, (newPage) => {
-  const page = Number(newPage) || 1
-  loadItems(page)
-})
+watch(
+  () => [route.query.page, route.query.category_id],
+  () => loadItems(Number(route.query.page) || 1),
+)
 </script>
 
 <style scoped>
@@ -275,6 +322,70 @@ watch(() => route.query.page, (newPage) => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.filter-select {
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  outline: none;
+}
+
+.filter-select:focus {
+  border-color: #666;
+}
+
+.filter-hint {
+  font-size: 12px;
+  color: #777;
+}
+
+.filter-reset {
+  color: #88a;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.filter-reset:hover {
+  color: #aaf;
+  text-decoration: underline;
+}
+
+.row-link {
+  color: #88a;
+  text-decoration: none;
+}
+
+.row-link:hover {
+  color: #aaf;
+  text-decoration: underline;
+}
+
+.muted {
+  color: #666;
 }
 
 .btn-add {

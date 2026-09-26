@@ -207,6 +207,12 @@ const ENTITY_FILTER_OPTIONS: Record<string, string> = {
   warehouse: 'Склады',
   label_preset: 'Шаблоны',
   label_list: 'Этикетки',
+  category: 'Категории',
+  property: 'Свойства',
+  property_group: 'Группы свойств',
+  dictionary: 'Справочники',
+  dictionary_value: 'Значения справочников',
+  unit: 'Единицы измерения',
   access_grant: 'Доступ',
   user: 'Пользователи',
 }

@@ -16,6 +16,24 @@ export const ACTION_LABELS: Record<string, string> = {
   'label_list.created': 'Список создан',
   'label_list.updated': 'Список изменён',
   'label_list.deleted': 'Список удалён',
+  'category.created': 'Категория создана',
+  'category.updated': 'Категория изменена',
+  'category.deleted': 'Категория удалена',
+  'property.created': 'Свойство создано',
+  'property.updated': 'Свойство изменено',
+  'property.deleted': 'Свойство удалено',
+  'property_group.created': 'Группа свойств создана',
+  'property_group.updated': 'Группа свойств изменена',
+  'property_group.deleted': 'Группа свойств удалена',
+  'dictionary.created': 'Справочник создан',
+  'dictionary.updated': 'Справочник изменён',
+  'dictionary.deleted': 'Справочник удалён',
+  'dictionary_value.created': 'Значение справочника добавлено',
+  'dictionary_value.updated': 'Значение справочника изменено',
+  'dictionary_value.deleted': 'Значение справочника удалено',
+  'unit.created': 'Единица измерения создана',
+  'unit.updated': 'Единица измерения изменена',
+  'unit.deleted': 'Единица измерения удалена',
   'access_grant.created': 'Доступ выдан',
   'access_grant.updated': 'Доступ изменён',
   'access_grant.deleted': 'Доступ отозван',
@@ -39,6 +57,12 @@ export const ENTITY_LABELS: Record<string, string> = {
   warehouse: 'Склады',
   label_preset: 'Шаблоны',
   label_list: 'Этикетки',
+  category: 'Категории',
+  property: 'Свойства',
+  property_group: 'Группы свойств',
+  dictionary: 'Справочники',
+  dictionary_value: 'Значения справочников',
+  unit: 'Единицы измерения',
   access_grant: 'Доступ',
   user: 'Пользователи',
   none: 'Без объекта',
@@ -85,6 +109,14 @@ export function summarize(entry: AuditLogEntry): string {
       return parts.join(' · ')
     }
     return title
+  }
+  // У единицы измерения нет title: у неё обозначение и полное название,
+  // а в журнале они лежат в снапшоте — иначе строка вышла бы пустой.
+  const short = snapshot?.title_short ?? p.title_short
+  if (short) {
+    const full = snapshot?.title_full ?? p.title_full
+
+    return full ? `${short} — ${full}` : short
   }
   if (entry.action === 'label.generate' && p.count != null) return `этикеток: ${p.count}`
   if (entry.action === 'auth.login') return p.method ?? ''
