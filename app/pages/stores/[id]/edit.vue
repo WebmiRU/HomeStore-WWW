@@ -44,7 +44,7 @@
 
           <label class="field">
             <span class="field-label">Код</span>
-            <input v-model="form.code" type="text" class="field-input" maxlength="256" :readonly="!canEdit" />
+            <input v-model="form.code" type="text" class="field-input" maxlength="256" :readonly="!canEdit" @keydown="onKeydown" />
           </label>
         </section>
 
@@ -83,9 +83,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
+import { useScanIntoField } from '~/composables/useScanIntoField'
 
 const { $api, $notify } = useNuxtApp()
 const route = useRoute()
+
+const { onKeydown } = useScanIntoField()
 
 const id = route.params.id as string
 

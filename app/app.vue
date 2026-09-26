@@ -8,6 +8,8 @@
         :message="item.message"
         :type="item.type"
         :timer="item.timer"
+        :links="item.links"
+        :more="item.more"
         @close="removeNotify"
       />
     </div>
@@ -37,6 +39,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import { keyToLatin } from '~/utils/scanKey'
 
 const { $api, $notify } = useNuxtApp()
 const { items, remove: removeNotify } = $notify
@@ -61,60 +64,14 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
 }
 
-// Символ, который физическая клавиша даёт в американской раскладке:
-// [без Shift, с Shift]. e.code не зависит от раскладки клавиатуры,
-// поэтому символы ()/:., — не превращаются в Ж/ю/б при русском языке.
-const KEY_SYMBOLS: Record<string, [string, string]> = {
-  Minus: ['-', '_'],
-  Equal: ['=', '+'],
-  BracketLeft: ['[', '{'],
-  BracketRight: [']', '}'],
-  Backslash: ['\\', '|'],
-  Semicolon: [';', ':'],
-  Quote: ["'", '"'],
-  Backquote: ['`', '~'],
-  Comma: [',', '<'],
-  Period: ['.', '>'],
-  Slash: ['/', '?'],
-  Space: [' ', ' '],
-}
-
-const SHIFT_DIGITS = [')', '!', '@', '#', '$', '%', '^', '&', '*', '(']
-
-function keyToLatin(e: KeyboardEvent): string {
-  const code = e.code
-  const shifted = e.shiftKey
-
-  // Буквы: физическая клавиша 'KeyA'..'KeyZ' — латинская буква по определению.
-  if (code.startsWith('Key')) {
-    const latin = code.slice(3) // 'A'..'Z'
-    return shifted ? latin.toUpperCase() : latin.toLowerCase()
-  }
-
-  // Цифры: 'Digit0'..'Digit9'.
-  if (code.startsWith('Digit')) {
-    const digit = code.slice(5) // '0'..'9'
-    if (digit.length === 1) {
-      const i = digit.charCodeAt(0) - 48
-      return shifted ? SHIFT_DIGITS[i]! : digit
-    }
-  }
-
-  const pair = KEY_SYMBOLS[code]
-  if (pair) {
-    return shifted ? pair[1] : pair[0]
-  }
-
-  // Непечатные клавиши (Enter, Tab, стрелки и т.д.) — игнорируем.
-  return ''
-}
-
 function onKeydown(e: KeyboardEvent) {
   if (isEditableTarget(e.target)) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
 
+  // keyToLatin вернёт пустую строку для непечатных клавиш (Enter, Tab,
+  // стрелки): key у них многобайтный, и длина тут не равна единице.
   const key = keyToLatin(e)
-  if (key.length !== 1) return
+  if (key === '') return
 
   buffer += key
   if (buffer.length > MAX_CODE_LEN) {
@@ -211,6 +168,35 @@ body {
 
 .notification > span + span {
   margin-top: 6px;
+}
+
+/*
+ * Ссылки внутри уведомления. Уведомление может перечислять предметы — с
+ * коллизиями по кодам, — и без перехода по ссылке название пришлось бы искать
+ * в списке вручную. Отступ как у строк текста, иначе список прилипает к
+ * заголовку.
+ */
+.notification__link {
+  display: block;
+  margin-top: 4px;
+  color: #6cb6ff;
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification__link:hover {
+  color: #9ccdff;
+  text-decoration: underline;
+}
+
+.notification__more {
+  margin-top: 4px;
+  color: #7d8590;
+  font-size: 12px;
 }
 
 .notification--success {

@@ -27,6 +27,15 @@
               <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.title }}</option>
             </select>
           </label>
+          <label class="field field--check">
+            <input v-model="form.print_all_codes" type="checkbox" class="field-check" />
+            <span>Печатать все коды предмета</span>
+            <span class="field-hint">
+              По умолчанию на этикетку идёт главный код — верхний в списке на карточке
+              предмета. Крыжик нужен, когда на вещь наклеено несколько этикеток и
+              распечатать надо все.
+            </span>
+          </label>
         </fieldset>
 
         <div class="form-actions">
@@ -150,6 +159,7 @@ const downloading = ref(false)
 const form = reactive({
   title: '',
   label_preset_id: 0,
+  print_all_codes: false,
 })
 
 async function load() {
@@ -162,6 +172,7 @@ async function load() {
     ])
     form.title = list.title
     form.label_preset_id = list.label_preset_id
+    form.print_all_codes = list.print_all_codes ?? false
     presets.value = presetsResult.data
     listItems.value = list.items ?? []
     listStores.value = list.stores ?? []
@@ -175,7 +186,11 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    await $api.labelList.update(Number(id), { title: form.title, label_preset_id: form.label_preset_id })
+    await $api.labelList.update(Number(id), {
+      title: form.title,
+      label_preset_id: form.label_preset_id,
+      print_all_codes: form.print_all_codes,
+    })
     $notify.add('Список сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
@@ -308,6 +323,35 @@ onMounted(load)
   font-size: 13px;
   color: #888;
   margin-bottom: 4px;
+}
+
+/*
+ * Крыжик — не поле, а строка из трёх частей: сам checkbox, подпись и
+ * пояснение под ними. Поэтому здесь flex, а не block, как у .field-label
+ * над input'ами: иначе подпись встала бы в строку с квадратиком, а
+ * пояснение — под всем рядом, и строка расползлась бы на две лишние.
+ */
+.field--check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.field-check {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #3a7a3a;
+  cursor: pointer;
+}
+
+.field-hint {
+  flex: 1 1 100%;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
 }
 
 .field-input {

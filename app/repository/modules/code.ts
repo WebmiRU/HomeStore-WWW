@@ -96,6 +96,28 @@ export type OrphanedCodesPreview = {
   rendered: number
 }
 
+/**
+ * Код, по которым предметов больше одного.
+ *
+ * Коллизии законны (один штрихкод на несколько экземпляров), поэтому это не
+ * ошибка, а повод разобраться: при сканировании такого кода предмет придётся
+ * выбирать.
+ */
+export type CodeConflict = {
+  code: string
+  items: Array<{ id: number; title: string }>
+}
+
+export type CodeConflictsPage = {
+  data: CodeConflict[]
+  meta: {
+    current_page: number
+    per_page: number
+    total: number
+    last_page: number
+  }
+}
+
 export type FulltextSearchResult = {
   type: 'item' | 'store'
   rank: number
@@ -143,6 +165,17 @@ class CodeModule extends FetchFactory<CodeSearchResponse> {
       return (result as { data: FulltextSearchResult[] }).data
     }
     return []
+  }
+
+  /**
+   * Коды, по которым предметов больше одного, — коллизии. Страница нужна,
+   * чтобы найти и починить дубли, не сканируя каждый код руками.
+   */
+  async conflicts(page?: number): Promise<CodeConflictsPage> {
+    const result = await this.call('GET', `${this.baseUrl}/conflicts`, undefined, {
+      params: page && page > 1 ? { page } : undefined,
+    })
+    return (result as unknown as CodeConflictsPage) ?? { data: [], meta: { current_page: 1, per_page: 25, total: 0, last_page: 1 } }
   }
 
   /** Сводка по кодам, потерявшим связь с набором этикеток. */

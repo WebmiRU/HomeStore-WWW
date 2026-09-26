@@ -46,20 +46,11 @@
             <span class="field-hint">Задаёт набор свойств по умолчанию на вкладке «Свойства»</span>
           </label>
 
-          <label class="field">
-            <span class="field-label">Код</span>
-            <div class="code-field">
-              <input
-                v-model="form.code"
-                type="text"
-                class="field-input"
-                :class="{ 'field-input--changed': codeChanged }"
-                maxlength="256"
-                :readonly="!canEdit"
-              />
-              <button v-if="codeChanged && canEdit" type="button" class="btn-reset-code" @click="resetCode">Сброс</button>
-            </div>
-          </label>
+          <div class="field">
+            <span class="field-label">Коды</span>
+            <ItemCodesEditor v-model="codes" :readonly="!canEdit" />
+            <button v-if="codesChanged && canEdit" type="button" class="btn-reset-code" @click="resetCodes">Сброс</button>
+          </div>
 
           <label class="field">
             <span class="field-label">Количество</span>
@@ -114,7 +105,7 @@
                 copy_title_print: form.title_print,
                 copy_store_id: form.store_id,
                 copy_category_id: form.category_id,
-                copy_code: form.code,
+                copy_codes: JSON.stringify(filledCodes()),
                 copy_quantity: quantityInput,
                 copy_properties: JSON.stringify(properties),
               },
@@ -139,8 +130,10 @@ import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
+import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
+const { notifyCodeConflicts } = useCodeConflictNotice()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -148,7 +141,6 @@ const id = route.params.id as string
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
-const originalCode = ref('')
 const quantityInput = ref('')
 const images = ref<ImageResponse[]>([])
 const itemEntity = ref<ItemResponse | null>(null)
@@ -186,18 +178,40 @@ const form = reactive({
   title_print: '',
   store_id: null as number | null,
   category_id: null as number | null,
-  code: '',
 })
+
+const codes = ref<string[]>([''])
+/** Коды как их отдал сервер: по ним считается «изменились» и работает «Сброс». */
+const originalCodes = ref<string[]>([''])
 
 const properties = ref<ItemPropertyInput[]>([])
 const categoryProperties = ref<PropertyResponse[]>([])
 const propertiesLoading = ref(false)
 const propertiesKey = ref('')
 
-const codeChanged = computed(() => originalCode.value !== '' && form.code !== originalCode.value)
+/**
+ * «Сброс» показывается только когда есть что сбрасывать.
+ *
+ * Пустая строка в списке — это не изменение: такая строка означает
+ * «придумай код», а не «удали мой». Иначе кнопка вылезла бы сразу после
+ * открытия карточки и путала с пустым полем, в которое просто прицеливаются
+ * сканером.
+ */
+const codesChanged = computed(() => normalizedCodes(codes.value) !== normalizedCodes(originalCodes.value))
 
-function resetCode() {
-  form.code = originalCode.value
+function normalizedCodes(list: string[]): string {
+  // Разделитель нужен, чтобы «ab» + «c» и «a» + «bc» не сравнились как
+  // равные: без него это один и тот же ключ от двух разных списков.
+  return list.map((c) => c.trim()).filter((c) => c !== '').join('|')
+}
+
+/** Коды, которые действительно поедут на сервер: без пустых строк. */
+function filledCodes(): string[] {
+  return codes.value.map((c) => c.trim()).filter((c) => c !== '')
+}
+
+function resetCodes() {
+  codes.value = [...originalCodes.value]
 }
 
 /** Приводит ответ сервера к виду, который принимает редактор. */
@@ -260,8 +274,8 @@ async function load() {
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id
     form.category_id = item.payload.category_id
-    form.code = item.code ?? ''
-    originalCode.value = item.code ?? ''
+    codes.value = (item.codes ?? []).length > 0 ? [...item.codes!] : ['']
+    originalCodes.value = [...codes.value]
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
     images.value = item.images ?? []
     properties.value = toPropertyInputs(item.properties)
@@ -276,20 +290,21 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const payload: Partial<ItemPayload> & { code?: string | null; properties?: ItemPropertyInput[] } = {
+    const payload: Partial<ItemPayload> & { codes?: string[]; properties?: ItemPropertyInput[] } = {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
       category_id: form.category_id,
-      code: form.code.trim() || null,
+      codes: filledCodes(),
       properties: properties.value,
     }
     const qty = String(quantityInput.value).trim()
     if (qty !== '') {
       payload.quantity = Number(qty)
     }
-    await $api.item.update(Number(id), payload)
+    const saved = await $api.item.update(Number(id), payload)
     $notify.add('Предмет сохранён', { type: 'success' })
+    notifyCodeConflicts(saved)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {

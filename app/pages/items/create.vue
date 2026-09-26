@@ -45,10 +45,10 @@
           <span class="field-hint">Задаёт набор свойств по умолчанию на вкладке «Свойства»</span>
         </label>
 
-        <label class="field">
-          <span class="field-label">Код</span>
-          <input v-model="form.code" type="text" class="field-input" maxlength="256" />
-        </label>
+        <div class="field">
+          <span class="field-label">Коды</span>
+          <ItemCodesEditor v-model="codes" />
+        </div>
 
         <label class="field">
           <span class="field-label">Количество</span>
@@ -92,8 +92,10 @@ import type { PropertyResponse } from '~/repository/modules/property'
 import type { ItemPropertyInput } from '~/repository/modules/item'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
+import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
+const { notifyCodeConflicts } = useCodeConflictNotice()
 const router = useRouter()
 const route = useRoute()
 
@@ -101,12 +103,43 @@ const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
 const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
 const copyStoreId = typeof route.query.copy_store_id === 'string' ? Number(route.query.copy_store_id) : null
-const copyCode = typeof route.query.copy_code === 'string' ? route.query.copy_code : ''
 const copyQuantity = typeof route.query.copy_quantity === 'string' ? route.query.copy_quantity : ''
 // Копия предмета наследует категорию и заполненные ею свойства: иначе
 // после «создать копию» пришлось бы вбивать всё заново.
 const copyCategoryId = typeof route.query.copy_category_id === 'string' ? Number(route.query.copy_category_id) : null
 const copyProperties = parseCopiedProperties(route.query.copy_properties)
+const copyCodes = parseCopiedCodes(route.query.copy_codes, route.query.code)
+
+/**
+ * Коды копии — из ?copy_codes, а если его нет, из прежнего ?copy_code.
+ *
+ * Второе нужно не для красоты: ссылку «создать копию» могли сохранить
+ * закладкой или передать в мессенджере до того, как появился список, и
+ * такой ссылкой ещё пользуются.
+ */
+function parseCopiedCodes(raw: unknown, scanned: string): string[] {
+  if (typeof raw === 'string' && raw !== '') {
+    try {
+      const parsed = JSON.parse(raw)
+
+      if (Array.isArray(parsed)) {
+        const list = parsed.filter((c): c is string => typeof c === 'string')
+
+        if (list.length > 0) {
+          return list
+        }
+      }
+    } catch {
+      // Ссылка могла прийти обрезанной — падаем на пустой список.
+    }
+  }
+
+  if (scanned !== '') {
+    return [scanned]
+  }
+
+  return ['']
+}
 
 function parseCopiedProperties(raw: unknown): ItemPropertyInput[] {
   if (typeof raw !== 'string' || raw === '') return []
@@ -145,8 +178,17 @@ const form = reactive({
   title_print: copyTitlePrint,
   store_id: copyStoreId,
   category_id: copyCategoryId !== null && Number.isFinite(copyCategoryId) ? copyCategoryId : null,
-  code: copyCode !== '' ? copyCode : scannedCode,
 })
+
+/**
+ * Коды приходят из трёх источников, и все три равноправны: скан на главной
+ * открывает эту форму уже с кодом в ?code=, «создать копию» передаёт коды
+ * оригинала, а дальше список пополняется кнопками.
+ *
+ * Строка в списке всегда есть, даже когда пустая: пустое поле нужно, чтобы
+ * было куда прицелиться сканером, а на сервер пустые строки не уходят.
+ */
+const codes = ref<string[]>(copyCodes)
 
 const quantityInput = ref(copyQuantity)
 
@@ -210,13 +252,18 @@ async function onCategoryChange() {
   await loadProperties(form.category_id)
 }
 
+/** Пустые строки на сервер не уходят: он сам придумает код, если не пришлют ни одного. */
+function filledCodes(): string[] {
+  return codes.value.map((c) => c.trim()).filter((c) => c !== '')
+}
+
 function itemPayload() {
   return {
     title: form.title,
     title_print: form.title_print || null,
     store_id: form.store_id,
     category_id: form.category_id,
-    code: form.code.trim() || null,
+    codes: filledCodes(),
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
   }
@@ -227,6 +274,10 @@ async function save() {
   try {
     const created = await $api.item.create(itemPayload())
     $notify.add('Предмет создан', { type: 'success' })
+    // Коллизии по кодам предупреждаем до перехода: после перехода на карточку
+    // уведомление ещё висит, а если человек уйдёт дальше — предупреждение о
+    // совпадении кода уже не увидит.
+    notifyCodeConflicts(created)
     router.push(`/items/${created.payload.id}/edit`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
@@ -247,7 +298,11 @@ async function saveAndCopy() {
         copy_title_print: form.title_print,
         copy_store_id: form.store_id,
         copy_category_id: form.category_id,
-        copy_code: form.code,
+        // Все коды, а не только главный. Как и раньше, значения просто
+        // переносятся в форму: сервер заведёт копии строк кода, и эти
+        // значения станут общими у двух предметов — то же, что делало
+        // «создать копию» с единственным кодом.
+        copy_codes: JSON.stringify(filledCodes()),
         copy_quantity: quantityInput.value,
         copy_properties: JSON.stringify(properties.value),
       },

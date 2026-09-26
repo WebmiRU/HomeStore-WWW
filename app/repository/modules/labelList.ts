@@ -11,6 +11,11 @@ export type LabelListResponse = {
   user?: UserBrief | null
   title: string
   label_preset_id: number
+  /**
+   * Печатать все коды предмета, а не только главный. Без этого набор
+   * выдаёт по одной этикетке на предмет.
+   */
+  print_all_codes?: boolean
   created_at: string
   updated_at: string
   label_preset?: LabelPresetResponse | null
@@ -23,6 +28,7 @@ export type LabelListResponse = {
 export type LabelListCreateData = {
   title: string
   label_preset_id: number
+  print_all_codes?: boolean
 }
 
 type PaginatedResponse<T> = {

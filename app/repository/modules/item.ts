@@ -46,7 +46,7 @@ export type ItemPropertyInput = {
 }
 
 export type ItemData = Partial<ItemPayload> & {
-  code?: string | null
+  codes?: string[]
   category_id?: number | null
   properties?: ItemPropertyInput[]
 }
@@ -57,7 +57,15 @@ export type ItemResponse = {
   is_owner?: boolean
   can_edit?: boolean
   can_delete?: boolean
+  /** Главный код: первый в codes, он же печатается на этикетку по умолчанию. */
   code: string | null
+  /** Все коды предмета, от главного к прочим. Есть у карточки и ответа на сохранение. */
+  codes?: string[]
+  /**
+   * Коды, по которым тот же предмет есть у других. Приходит только в ответе
+   * на сохранение: дубль не запрещается, но о нём стоит сказать.
+   */
+  conflicts?: Record<string, Array<{ id: number; title: string }>>
   payload: ItemPayload
   store: StorePayload[] | null
   category?: CategoryBrief | null

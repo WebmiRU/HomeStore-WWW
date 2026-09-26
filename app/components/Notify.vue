@@ -3,6 +3,14 @@
     <div v-if="visible" :class="`notification--${type}`" class="notification">
       <button class="delete" @click="close"></button>
       <span v-for="(line, idx) in messageLines" :key="idx">{{ line }}</span>
+      <NuxtLink
+        v-for="(link, idx) in links"
+        :key="`l${idx}`"
+        :to="link.to"
+        class="notification__link"
+        @click="close"
+      >{{ link.label }}</NuxtLink>
+      <span v-if="more" class="notification__more">{{ more }}</span>
       <div v-if="timer" class="progress" :style="{ animationDuration: timer + 's' }"></div>
     </div>
   </Transition>
@@ -25,6 +33,19 @@ const props = defineProps({
   timer: {
     type: Number,
     default: 5,
+  },
+  /**
+   * Ссылки под текстом. Нужны уведомлениям, в которых перечисляют предметы:
+   * названия без возможности на них перейти пришлось бы искать вручную.
+   */
+  links: {
+    type: Array as PropType<Array<{ label: string; to: string }>>,
+    default: () => [],
+  },
+  /** Подпись про то, что список не показан целиком, например «…». */
+  more: {
+    type: String,
+    default: '',
   },
 })
 

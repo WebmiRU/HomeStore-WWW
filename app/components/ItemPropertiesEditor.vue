@@ -435,6 +435,31 @@ watch(
 </script>
 
 <style scoped>
+/*
+ * Заголовок и подсказка в шапке блока — теми же правилами, что на странице
+ * правки предмета, и по той же причине здесь свои: .field-label и .field-hint
+ * описаны в scoped-блоках страниц, а до разметки дочернего компонента они не
+ * достают. Без них подсказка остаётся с браузерными 16px и светлым цветом и на
+ * тёмном фоне читается как основной текст.
+ *
+ * Селектор узкий — шапка: у подсказки под выбором свойства своя правильная
+ * (.props-picker__hint), и общее правило на неё залезло бы, отобрав у неё
+ * отступ снизу.
+ */
+.props-editor__head .field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #888;
+}
+
+.props-editor__head .field-hint {
+  display: block;
+  margin: 0;
+  font-size: 12px;
+  color: #777;
+}
+
 .props-editor {
   border: 1px solid #2f2f2f;
   border-radius: 6px;
@@ -448,171 +473,6 @@ watch(
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 10px;
-}
-
-/*
- * InputGroup по образцу Bootstrap 5.3: поле, единица измерения и кнопки стоят
- * в один ряд, скруглены только внешние углы, управление — справа от поля.
- *
- * У самой группы рамки нет, как и в Bootstrap: её несёт поле, а кнопки обводятся
- * собственным цветом. Общая серая рамка вокруг всей группы облекала каждую
- * кнопку серым контуром, и зелёная заливка внутри него читалась как картинка в
- * рамочке.
- */
-.input-group {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  min-width: 0;
-}
-
-.input-group__control {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 15px;
-  font-family: inherit;
-  color: #ddd;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px 0 0 4px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.input-group__control:disabled {
-  color: #777;
-}
-
-.input-group:focus-within .input-group__control {
-  border-color: #666;
-}
-
-/* Правый край скруглён только у последнего сегмента. */
-.input-group > :last-child {
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-}
-
-/*
- * Единица измерения — приложенная подпись, а не кнопка: нейтральный цвет, чтобы
- * не спорить с действиями. Левую границу отдаёт поле, иначе между сегментами
- * выходит двойная линия.
- */
-.input-group-text {
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-size: 13px;
-  color: #9a9a9a;
-  background: #2e2e2e;
-  border: 1px solid #444;
-  border-left: none;
-  white-space: nowrap;
-}
-
-/*
- * Кнопки плоские, ровно как «Сохранить»: сплошная заливка, рамка светлее неё
- * и никакого градиента — он и читался как «украшенная» рамка вокруг кнопки.
- * Зелёный — у всех кнопок «добавить», красный — у «убрать».
- */
-.input-group__btn {
-  flex-shrink: 0;
-  padding: 0 14px;
-  font-size: 14px;
-  font-family: inherit;
-  color: #cfc;
-  background: #2a5a2a;
-  border: 1px solid #3a7a3a;
-  border-left: none;
-  border-radius: 0;
-  cursor: pointer;
-}
-
-.input-group__btn:hover:not(:disabled) {
-  background: #3a7a3a;
-}
-
-.input-group__btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.input-group__btn--icon {
-  min-width: 38px;
-  padding: 0 10px;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/*
- * «+» есть только в последней строке свойства, поэтому в верхних строках «×»
- * растянут ровно на две кнопки — столько же, сколько «×» и «+» занимают
- * вместе. Так ширина поля одинакова во всех строках, и это получается
- * по построению, а не подгонкой скрытых кнопок-пустышек.
- */
-.input-group__btn--wide {
-  min-width: 76px;
-}
-
-/*
- * Сиреневый — чтобы «+» не сливался с зелёным «Добавить» и читался как
- * отдельное действие. Своё правило, а не переопределение базового: иначе цвет
- * зависел бы от порядка строк в таблице стилей.
- */
-.input-group__btn--add {
-  color: #f0ebfb;
-  background: #4b3b73;
-  border-color: #6a549b;
-}
-
-.input-group__btn--add:hover:not(:disabled) {
-  background: #5a4889;
-}
-
-/*
- * «-» убирает значение, «+» добавляет. Разводить их двумя холодными оттенками
- * не зачем: сине-чёрный и сиреневый рядом сливались в одно серое пятно, а
- * добавлять третий оттенок — значит получить в строке зелёное «Сохранить»,
- * сиреневый «+», красный «×» и ещё один цвет. Рябь.
- *
- * Бирюза приглушённая. Тёмная насыщенная стояла рядом с сиреневым «+» в одной
- * гамме, а осветлённая до циана — наоборот, перетягивала на себя взгляд. Здесь
- * тот же тёмный тон, но разбавленный к фону и с неярким знаком: кнопка
- * выглядит полупрозрачной и отступает, оставляя «+» главным действием.
- *
- * По образцу остальных кнопок приложения: тёмная заливка, рамка её
- * собственного цвета на пару тонов светлее, светлый знак — контраст 5.6.
- * Заливка поэтому не чернильная: в черноте рамке негде поместиться, и мы
- * возвращались к этому уже дважды.
- */
-.input-group__btn--minus {
-  color: #9cb8ba;
-  background: #1b3d40;
-  border-color: #2e5b5f;
-  border-left: 1px solid #2e5b5f;
-}
-
-.input-group__btn--minus:hover:not(:disabled) {
-  background: #23494c;
-}
-
-/*
- * Рамка слева от «-» — его собственного цвета, а не серая. Но просто отдать
- * кнопке левую границу мало: поле перед ней тоже несёт свою правую границу, и
- * между ними оказалось бы две линии — серая и синяя. Поэтому поле (или единица
- * измерения, если она есть) отдаёт правую границу кнопке, и на стыке остаётся
- * ровно одна линия цвета «-».
- */
-.input-group__control:has(+ .input-group__btn--minus),
-.input-group-text:has(+ .input-group__btn--minus) {
-  border-right-color: transparent;
-}
-
-.input-group__btn--primary {
-  padding: 0 20px;
 }
 
 .props-picker {

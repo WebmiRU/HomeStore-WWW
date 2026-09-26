@@ -1,7 +1,8 @@
 <template>
   <div v-if="chain.length" class="location-chain">
     <template v-for="(crumb, i) in chain" :key="`${crumb.type}-${crumb.id}`">
-      <NuxtLink :to="crumbLink(crumb)" class="crumb__link">{{ crumb.title }}</NuxtLink>
+      <span v-if="plain" class="crumb__plain">{{ crumb.title }}</span>
+      <NuxtLink v-else :to="crumbLink(crumb)" class="crumb__link">{{ crumb.title }}</NuxtLink>
       <span v-if="i < chain.length - 1" class="crumb__sep">›</span>
     </template>
   </div>
@@ -12,6 +13,15 @@ import type { ChainCrumb } from '~/composables/useLocationChain'
 
 defineProps<{
   chain: ChainCrumb[]
+  /**
+   * Без ссылок, просто текст.
+   *
+   * Нужен там, где цепочка лежит внутри кнопки: ссылка внутри button —
+   * невалидная вёрстка, и нажать на неё нельзя отдельно от кнопки. В окне
+   * выбора предмета цепочка отвечает на вопрос «где лежит», а переходить по
+   * ней оттуда незачем.
+   */
+  plain?: boolean
 }>()
 
 function crumbLink(crumb: ChainCrumb): string {
@@ -41,6 +51,11 @@ function crumbLink(crumb: ChainCrumb): string {
 .crumb__link:hover {
   color: #aaf;
   border-bottom-color: #3a3a5a;
+}
+
+.crumb__plain {
+  color: #777;
+  white-space: nowrap;
 }
 
 .crumb__sep {

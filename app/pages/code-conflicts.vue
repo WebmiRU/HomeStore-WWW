@@ -1,0 +1,259 @@
+<template>
+  <div class="conflicts-page">
+    <div class="page-header">
+      <h3 class="page-title">Коллизии кодов</h3>
+      <NuxtLink to="/orphan-codes" class="btn-back">К очистке кодов</NuxtLink>
+    </div>
+
+    <div v-if="loading" class="loading">Загрузка...</div>
+
+    <div v-else-if="error" class="error">{{ error }}</div>
+
+    <template v-else>
+      <!--
+        Что считается коллизией. Формулировка важна: страница выглядит как
+        список претензий, а повторяющиеся коды здесь разрешены — один
+        штрихкод на несколько экземпляров это обычное дело. Проблема не в
+        самом повторе, а в том, что при сканировании предмет приходится
+        выбирать.
+      -->
+      <div class="explain">
+        <p>
+          Здесь собраны коды, которые заведены больше чем на одном предмете. Так бывает
+          намеренно: один штрихкод на несколько одинаковых вещей — обычное дело.
+        </p>
+        <p>
+          <strong>Что с этим делать.</strong> При сканировании такого кода приложение
+          предложит выбрать предмет. Если коды совпали случайно, оставьте нужный предмет,
+          а лишний код уберите в его карточке. Списывать и пополнять можно спокойно:
+          приложение спросит, к какому предмету относится штука.
+        </p>
+      </div>
+
+      <div v-if="rows.length === 0" class="empty">
+        Коллизий нет — каждый код принадлежит одному предмету.
+      </div>
+
+      <template v-else>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Код</th>
+              <th>Предметы с этим кодом</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in rows" :key="row.code">
+              <td class="cell-code">{{ row.code }}</td>
+              <td>
+                <ul class="items">
+                  <li v-for="item in row.items" :key="item.id">
+                    <NuxtLink :to="`/items/${item.id}/edit`" class="item-link">{{ item.title }}</NuxtLink>
+                    <span class="item-id">#{{ item.id }}</span>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="meta.last_page > 1" class="pager">
+          <button type="button" class="pager__btn" :disabled="page <= 1" @click="go(page - 1)">← Назад</button>
+          <span class="pager__label">Страница {{ page }} из {{ meta.last_page }} · всего кодов: {{ meta.total }}</span>
+          <button type="button" class="pager__btn" :disabled="page >= meta.last_page" @click="go(page + 1)">Вперёд →</button>
+        </div>
+      </template>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import type { CodeConflict } from '~/repository/modules/code'
+import { formatApiError } from '~/composables/formatApiError'
+
+const { $api } = useNuxtApp()
+
+const loading = ref(true)
+const error = ref<string | null>(null)
+const rows = ref<CodeConflict[]>([])
+const meta = ref({ current_page: 1, per_page: 25, total: 0, last_page: 1 })
+const page = ref(1)
+
+async function load(target: number) {
+  loading.value = true
+  error.value = null
+  try {
+    const result = await $api.code.conflicts(target)
+    rows.value = result.data
+    meta.value = result.meta
+    page.value = result.meta.current_page
+  } catch (err: any) {
+    error.value = formatApiError(err, 'Ошибка загрузки коллизий')
+  } finally {
+    loading.value = false
+  }
+}
+
+function go(target: number) {
+  if (target < 1 || target > meta.value.last_page) return
+  void load(target)
+}
+
+onMounted(() => load(1))
+</script>
+
+<style scoped>
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  color: #ccc;
+}
+
+.btn-back {
+  padding: 6px 14px;
+  font-size: 13px;
+  background: #333;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.btn-back:hover {
+  background: #444;
+}
+
+.loading,
+.error,
+.empty {
+  padding: 20px;
+  color: #888;
+}
+
+.error {
+  color: #f88;
+  background: #3a1a1a;
+  border-radius: 4px;
+}
+
+/* Жёлтый — язык коллизий, тот же, что метка на строке сканирования:
+   страница тоже про «здесь угадали, разберись», а не про ошибку. */
+.explain {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d9c48a;
+  background: #221d10;
+  border: 1px solid #4a3d1c;
+  border-radius: 4px;
+}
+
+.explain p {
+  margin: 0 0 8px;
+}
+
+.explain p:last-child {
+  margin-bottom: 0;
+}
+
+.explain strong {
+  color: #f0cd77;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.table th {
+  color: #888;
+  font-weight: normal;
+  font-size: 12px;
+}
+
+/* Код — моноширинный и не рвётся: длинная строка без переноса, иначе
+   таблицу растягивает один нечитаемый столбец. */
+.cell-code {
+  width: 40%;
+  font-family: monospace;
+  color: #9ab8d8;
+  word-break: break-all;
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.items li + li {
+  margin-top: 4px;
+}
+
+.item-link {
+  color: #6cb6ff;
+  text-decoration: none;
+}
+
+.item-link:hover {
+  text-decoration: underline;
+}
+
+.item-id {
+  margin-left: 6px;
+  color: #666;
+  font-size: 12px;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pager__btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #2a2a2a;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pager__btn:hover:not(:disabled) {
+  background: #3a3a3a;
+}
+
+.pager__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pager__label {
+  color: #888;
+  font-size: 13px;
+}
+</style>

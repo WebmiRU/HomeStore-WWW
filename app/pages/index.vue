@@ -66,38 +66,20 @@
       </button>
     </div>
 
-    <!-- Режим «Поиск» -->
-    <div v-if="activeMode === 'search' && found" class="found-card">
-      <div class="found-card__header">
-        <span class="found-card__badge" :class="`found-card__badge--${found.type}`">
-          {{ found.type === 'item' ? 'Предмет' : 'Хранилище' }}
-        </span>
-        <NuxtLink :to="editLink" class="found-card__link">Открыть</NuxtLink>
-      </div>
-
-      <div class="found-card__body">
-        <ItemPhoto :images="found.payload.images" :alt="foundTitlePrint || found.payload.title" />
-
-        <div class="found-card__info">
-          <div class="found-card__title">{{ found.payload.title }}</div>
-          <div v-if="foundTitlePrint" class="found-card__print">
-            {{ foundTitlePrint }}
-          </div>
-          <div class="found-card__code">Код: {{ found.code }}</div>
-          <div class="found-card__meta">Создано: {{ formatDate(found.payload.created_at) }}</div>
-        </div>
-
-        <div v-if="found.type === 'item'" class="found-card__action">
-          <div v-if="foundQuantity !== null" class="found-card__quantity">
-            В наличии: {{ foundQuantity }}
-          </div>
-          <span v-else class="found-card__whole">1 шт.</span>
-        </div>
-      </div>
-
-      <div v-if="foundChain.length" class="found-card__chain">
-        <LocationChain :chain="foundChain" />
-      </div>
+    <!-- Режим «Поиск»: код найден ровно у одного предмета или хранилища -->
+    <!--
+      Та же карточка (ItemCard), что в строке сканирования и в модалке выбора.
+      Отличие одно: в правой колонке — там, где в операции стоит счётчик, —
+      кнопка «Открыть». Раньше здесь была отдельная вёрстка с шапкой, своей
+      сеткой и полем количества, и карточка выдачи поиска выглядела иначе,
+      хотя показывала тот же предмет.
+    -->
+    <div v-if="activeMode === 'search' && found" class="found">
+      <ItemCard :item="found.payload" :code="found.code" :kind="found.type" :chain="foundChain">
+        <template #side>
+          <NuxtLink class="item-card__open" :to="editLink">Открыть</NuxtLink>
+        </template>
+      </ItemCard>
     </div>
 
     <!-- Несколько предметов с одним кодом: показываем все варианты -->
@@ -105,32 +87,27 @@
       <div class="ambiguous-list__title">
         Код найден у {{ ambiguousMatches.length }} {{ plural(ambiguousMatches.length, 'предмет', 'предмета', 'предметов') }} — выберите нужный:
       </div>
-      <NuxtLink
+      <!--
+        Карточка предмета — общая (ItemCard), ровно как в модалке выбора при
+        сканировании. Оба экрана показывают один и тот же список, и держать
+        для них две разные карточки значит получить расхождение: выбрал в
+        одном месте, сверился в другом — а выглядят они по-разному.
+
+        Вся карточка ссылкой не делается: в списке из нескольких предметов
+        клик мимо кнопки «Открыть» приводит к тому, что открылся не тот.
+      -->
+      <ItemCard
         v-for="m in ambiguousMatches"
         :key="m.payload.id"
-        :to="`/items/${m.payload.id}/edit`"
-        class="ambiguous-card"
+        :item="m.payload"
+        :code="m.code"
+        :collision-count="ambiguousMatches.length"
+        :chain="matchChains[m.payload.id] ?? []"
       >
-        <ItemPhoto :images="m.payload.images" :alt="m.payload.title_print || m.payload.title" />
-
-        <div class="ambiguous-card__info">
-          <div class="ambiguous-card__title">{{ m.payload.title }}</div>
-          <div v-if="m.payload.title_print" class="ambiguous-card__print">
-            {{ m.payload.title_print }}
-          </div>
-          <div v-if="m.payload.user" class="ambiguous-card__owner">
-            <span class="owner-name" :class="isOwner(m.payload.user) ? 'owner--me' : 'owner--other'">
-              {{ m.payload.user.name }}
-            </span>
-          </div>
-          <div v-if="matchChains[m.payload.id]" class="ambiguous-card__chain">
-            {{ matchChains[m.payload.id] }}
-          </div>
-          <div v-if="m.payload.quantity != null" class="ambiguous-card__stock">
-            В наличии: {{ m.payload.quantity }}
-          </div>
-        </div>
-      </NuxtLink>
+        <template #side>
+          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}/edit`">Открыть</NuxtLink>
+        </template>
+      </ItemCard>
     </div>
 
     <!-- Безымянная этикетка: код в базе есть, но не привязан ни к чему.
@@ -172,7 +149,12 @@
     <!-- Режимы «Пополнить» / «Списать» -->
     <div v-if="isListMode && scanList.length" class="scan-list">
       <div class="scan-list__title">{{ listTitle }}</div>
-      <div
+      <!--
+          Карточка предмета — общая (ItemCard), ровно та же, что в модалке
+          выбора при неоднозначном коде и в выдаче поиска. Здесь отличаются
+          только слоты: снизу состояние операции, справа счётчик и удаление.
+        -->
+      <ItemCard
         v-for="entry in scanList"
         :key="keyOf(entry)"
         class="scan-row"
@@ -180,42 +162,37 @@
           entry.done ? ['scan-row--done', `scan-row--done--${entry.doneMode}`] : '',
           !entry.done && entryProblem(entry) !== null ? 'scan-row--invalid' : '',
         ]"
+        :item="entry.payload"
+        :code="entry.code"
+        :collision-count="entry.matches.length"
+        :chain="scanChains[keyOf(entry)] ?? []"
       >
-        <ItemPhoto :images="entry.payload.images" :alt="entry.payload.title_print || entry.payload.title" />
+          <template #foot>
+            <div v-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
+              В наличии: {{ entry.payload.quantity }}
+            </div>
+            <div v-else-if="entry.done" class="item-card__stock">
+              <span
+                class="scan-row__done"
+                :class="`scan-row__done--${entry.doneMode}`"
+                :title="`Выполнено: ${formatDate(entry.doneAt)}`"
+              >
+                {{ entry.doneMode === 'replenish' ? 'Пополнено' : 'Списано' }}
+              </span>
+              <span class="scan-row__residue">
+                Остаток: {{ entry.payload.quantity }}
+                ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
+              </span>
+            </div>
+            <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
+              Единичный предмет — операция на 1 шт.
+            </div>
+            <div v-if="!entry.done && entryProblem(entry) !== null" class="scan-row__hint scan-row__hint--error">
+              {{ entryProblem(entry) }}
+            </div>
+          </template>
 
-        <div class="scan-row__info">
-          <div class="scan-row__title">{{ entry.payload.title }}</div>
-          <div v-if="entry.payload.title_print" class="scan-row__print">
-            {{ entry.payload.title_print }}
-          </div>
-          <div class="scan-row__code">Код: {{ entry.code }}</div>
-          <div v-if="!entry.done && entry.payload.quantity != null" class="scan-row__stock">
-            В наличии: {{ entry.payload.quantity }}
-          </div>
-          <div v-else-if="entry.done" class="scan-row__stock">
-            <span
-              class="scan-row__done"
-              :class="`scan-row__done--${entry.doneMode}`"
-              :title="`Выполнено: ${formatDate(entry.doneAt)}`"
-            >
-              {{ entry.doneMode === 'replenish' ? 'Пополнено' : 'Списано' }}
-            </span>
-            <span class="scan-row__residue">
-              Остаток: {{ entry.payload.quantity }}
-              ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
-            </span>
-          </div>
-          <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
-            Единичный предмет — операция на 1 шт.
-          </div>
-          <div v-if="!entry.done && entryProblem(entry) !== null" class="scan-row__hint scan-row__hint--error">
-            {{ entryProblem(entry) }}
-          </div>
-          <div class="scan-row__meta">Создано: {{ formatDate(entry.payload.created_at) }}</div>
-        </div>
-
-        <div class="scan-row__right">
-            <div class="scan-row__top">
+          <template #side>
             <div class="scan-row__action">
               <template v-if="!entry.done">
                 <input
@@ -249,54 +226,8 @@
                 <line x1="18" y1="6" x2="6" y2="18" />
               </svg>
             </button>
-          </div>
-        </div>
-
-        <div class="scan-row__chain">
-          <div class="scan-row__where">
-            <span v-if="entry.payload.user && !entry.selectOpen" class="scan-row__owner">
-              <span
-                class="owner-name"
-                :class="isOwner(entry.payload.user) ? 'owner--me' : 'owner--other'"
-              >{{ entry.payload.user.name }}</span>
-            </span>
-
-            <div
-              v-if="entry.selectOpen && !entry.done"
-              :ref="(el) => setSelectRef(entry, el)"
-              class="scan-row__select"
-            >
-              <button
-                v-for="m in entry.matches"
-                :key="m.id"
-                type="button"
-                class="scan-match"
-                :class="{ 'scan-match--active': m.id === activeMatchId(entry) }"
-                @mouseenter="entry.activeId = m.id"
-                @click="applyMatch(entry, m)"
-              >{{ selectLabel(m) }}</button>
-            </div>
-
-            <LocationChain
-              v-else-if="!entry.selectOpen && scanChains[keyOf(entry)]?.length"
-              :chain="scanChains[keyOf(entry)]"
-            />
-            <span v-else class="scan-row__none">Без склада</span>
-
-            <button
-              v-if="!entry.done"
-              type="button"
-              class="scan-pick"
-              :disabled="entry.matches.length < 2"
-              :title="entry.matches.length < 2 ? 'Выбирать нечего' : 'Выбрать предмет'"
-              @mousedown.prevent
-              @click="togglePick(entry)"
-            >
-              ▾ Выбрать
-            </button>
-          </div>
-        </div>
-      </div>
+          </template>
+      </ItemCard>
 
       <div class="scan-comment">
         <label class="scan-comment__label" for="scan-comment-input">
@@ -340,11 +271,18 @@
         </button>
       </div>
     </div>
+
+    <CodeAmbiguityDialog
+      :request="currentAmbiguity"
+      :pendingCount="ambiguityPending"
+      @choose="onAmbiguityChosen"
+      @cancel="onAmbiguityCancelled"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
@@ -365,8 +303,6 @@ interface ScanEntry {
   doneAt: string
   doneDelta: number
   doneMode: Mode | null
-  selectOpen: boolean
-  activeId: number | null
 }
 
 const { $api, $notify } = useNuxtApp()
@@ -375,7 +311,6 @@ const router = useRouter()
 
 const { mode: savedMode, persist } = useOperationMode()
 const { chainForStore } = useLocationChain()
-const { isOwner } = useCurrentUser()
 
 // Акцент активной кнопки включаем только на клиенте после гидрации:
 // SSR и первичный client-render отрисовывают кнопки без «активной» рамки
@@ -396,10 +331,22 @@ const notFoundCode = ref('')
 /** Найденная безымянная этикетка: код и набор, из которого он напечатан. */
 const blankCode = ref<{ value: string; set: { id: number; title: string } | null } | null>(null)
 const ambiguousMatches = ref<(CodeMatch & { payload: ItemPayload })[] | null>(null)
+/**
+ * Что человек выбрал руками для неоднозначного кода: код -> id предмета.
+ *
+ * Живёт отдельно от scanList, а не берётся оттуда: строка может быть
+ * убрана, а сканы этого кода продолжатся. Именно эта память делает серию
+ * сканирований предсказуемой — см. onAmbiguityChosen.
+ */
+const chosenMatchByCode = ref<Record<string, number>>({})
+
+// Тип запроса выбора импортируется из компонента окна: он и есть контракт
+// между страницей и окном, и объявлять его второй раз здесь не нужно.
+import type { AmbiguityRequest } from '~/components/CodeAmbiguityDialog.vue'
 const scanList = ref<ScanEntry[]>([])
 const foundChain = ref<ChainCrumb[]>([])
 const scanChains = ref<Record<string, ChainCrumb[]>>({})
-const matchChains = ref<Record<number, string>>({})
+const matchChains = ref<Record<number, ChainCrumb[]>>({})
 const submitting = ref(false)
 
 // Комментарий на всю операцию: пользователь сканирует пачку кодов и объясняет
@@ -436,8 +383,6 @@ function entryProblem(entry: ScanEntry): string | null {
   return null
 }
 
-const invalidRows = computed(() => scanList.value.filter((entry) => entryProblem(entry) !== null))
-
 const isListMode = computed(
   () => activeMode.value === 'replenish' || activeMode.value === 'writeoff',
 )
@@ -451,16 +396,6 @@ const editLink = computed(() => {
   return found.value.type === 'item'
     ? `/items/${found.value.payload.id}/edit`
     : `/stores/${found.value.payload.id}/edit`
-})
-
-const foundTitlePrint = computed(() =>
-  found.value?.type === 'item' ? (found.value.payload as ItemPayload).title_print : '',
-)
-
-const foundQuantity = computed<number | null>(() => {
-  if (found.value?.type !== 'item') return null
-  const quantity = (found.value.payload as ItemPayload).quantity
-  return quantity ?? null
 })
 
 function setMode(mode: Mode) {
@@ -599,7 +534,18 @@ async function handleScan(code: string) {
         handleCodeNotFound(code)
         return
       }
-      addToScanList(result.code, items[0]!.payload, items.map((m) => m.payload))
+      // Неоднозначный код в режимах операций требует выбора: молча поставить
+      // «первый» предмет — это тихое списание не того, а человек узнаёт об
+      // ошибке из остатков через месяц. Сканы, пришедшие пока окно открыто,
+      // встают в очередь и разбираются по одному.
+      ambiguityQueue.value = [
+        ...ambiguityQueue.value,
+        {
+          code: result.code,
+          items: items.map((m) => m.payload),
+          preselectedId: chosenMatchByCode.value[result.code] ?? null,
+        },
+      ]
       return
     }
 
@@ -644,6 +590,51 @@ function isBlank(result: CodeSearchResponse): result is CodeSearchBlank {
   return (result as { blank?: unknown }).blank === true
 }
 
+/**
+ * Очередь неоднозначных сканов: окно выбора открыто на один, остальные ждут.
+ *
+ * Порядок сохраняется, поэтому счёт «сколько отсканировал» совпадает с тем,
+ * что человек видит. Пропущенный запрос не занимает очередь: человек его
+ * отменил осознанно.
+ */
+const ambiguityQueue = ref<AmbiguityRequest[]>([])
+
+/** Первое из ожидающих — его и показываем. */
+const currentAmbiguity = computed<AmbiguityRequest | null>(() => ambiguityQueue.value[0] ?? null)
+
+/** Сколько ещё ждёт после текущего: подсказка в окне, что работа не кончилась. */
+const ambiguityPending = computed(() => Math.max(ambiguityQueue.value.length - 1, 0))
+
+/** Выбор в окне: предмет попадает в список обычным путём, как при точном скане. */
+function onAmbiguityChosen(item: ItemPayload) {
+  const request = currentAmbiguity.value
+  if (!request) return
+
+  ambiguityQueue.value = ambiguityQueue.value.slice(1)
+  // Выбор запоминается и подсвечивается в следующем окне того же кода:
+  // подтверждать одно и то же второй раз — по кнопке, а не по размышлению.
+  chosenMatchByCode.value = { ...chosenMatchByCode.value, [request.code]: item.id }
+  addToScanList(request.code, item, request.items)
+}
+
+/**
+ * Отмена выбора: предмет в список не попадает.
+ *
+ * Добавить «невыбранный» строку значило бы списать что-то наугад — ровно то,
+ * ради чего окно и открывается. Штука остаётся на месте, её можно
+ * отсканировать снова.
+ */
+function onAmbiguityCancelled() {
+  const request = currentAmbiguity.value
+  if (!request) return
+
+  ambiguityQueue.value = ambiguityQueue.value.slice(1)
+  $notify.add(
+    `Код ${request.code}: предмет не выбран, штука не учтена. Отсканируйте ещё раз.`,
+    { type: 'warning', timer: 6 },
+  )
+}
+
 function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload[]) {
   const matchList = matches && matches.length > 0 ? matches : [payload]
   const key = `${code}|${payload.id}`
@@ -666,8 +657,6 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
     doneAt: '',
     doneDelta: 0,
     doneMode: null,
-    selectOpen: false,
-    activeId: null,
   })
   void setScanChain(key, payload)
   if (matchList.length > 1) void loadMatchChains(matchList)
@@ -688,6 +677,10 @@ function clearList() {
   scanList.value = []
   scanChains.value = {}
   matchChains.value = {}
+  // Выборы относятся к этой же сессии: следующая пачка — другая работа, и
+  // тянуть в неё решения, принятые по другой коллизии, незачем.
+  chosenMatchByCode.value = {}
+  ambiguityQueue.value = []
   comment.value = ''
 }
 
@@ -702,98 +695,14 @@ function removeFromScanList(entry: ScanEntry) {
   entry.matches.forEach((m) => delete matchChains.value[m.id])
 }
 
-// Цепочка каждого кандидата для селекта: «Склад → … → Шкаф» (или «Без склада»).
+// Цепочка хранения каждого кандидата — для карточки выдачи поиска. Хранится
+// именно цепочкой, а не готовой строкой: карточка рисует её сама, через
+// LocationChain, как и строка сканирования.
 async function loadMatchChains(matchList: ItemPayload[]) {
   for (const m of matchList) {
     if (matchChains.value[m.id]) continue
-    const chain = await chainForStore(m.store_id)
-    matchChains.value[m.id] = chain.length
-      ? chain.map((c) => c.title).join(' → ')
-      : 'Без склада'
+    matchChains.value[m.id] = await chainForStore(m.store_id)
   }
-}
-
-function matchOwnerName(m: ItemPayload): string {
-  if (m.user?.name) return m.user.name
-  if (m.user?.email) return m.user.email
-  return m.user_id != null ? `Пользователь #${m.user_id}` : '—'
-}
-
-function selectLabel(m: ItemPayload): string {
-  return `[${matchOwnerName(m)}] ${matchChains.value[m.id] ?? '…'}`
-}
-
-function togglePick(entry: ScanEntry) {
-  if (entry.matches.length < 2 || entry.done) return
-
-  if (entry.selectOpen) {
-    entry.selectOpen = false
-    return
-  }
-
-  entry.selectOpen = true
-  entry.activeId = entry.item_id
-  void loadMatchChains(entry.matches)
-}
-
-const selectRefs = new Map<string, HTMLElement>()
-
-function setSelectRef(entry: ScanEntry, el: unknown) {
-  const key = keyOf(entry)
-  if (el instanceof HTMLElement) {
-    selectRefs.set(key, el)
-  } else {
-    selectRefs.delete(key)
-  }
-}
-
-function activeMatchId(entry: ScanEntry): number {
-  return entry.activeId ?? entry.item_id
-}
-
-// Клик вне раскрытого списка подтверждает текущий активный пункт —
-// строка переходит в состояние «выбрано» (чип владельца + цепочка).
-function onDocumentPointerDown(event: PointerEvent) {
-  const target = event.target as HTMLElement | null
-
-  // Кнопку «Выбрать» обрабатывает её собственный @click.
-  if (target?.closest('.scan-pick')) return
-
-  for (const entry of scanList.value) {
-    if (!entry.selectOpen) continue
-    const el = selectRefs.get(keyOf(entry))
-    if (el && target && (el === target || el.contains(target))) continue
-    commitCurrentOption(entry)
-  }
-}
-
-function commitCurrentOption(entry: ScanEntry) {
-  const match = entry.matches.find((m) => m.id === activeMatchId(entry))
-  if (match) {
-    applyMatch(entry, match)
-  } else {
-    entry.selectOpen = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('pointerdown', onDocumentPointerDown, true)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', onDocumentPointerDown, true)
-})
-
-function applyMatch(entry: ScanEntry, match: ItemPayload) {
-  entry.selectOpen = false
-  entry.activeId = null
-  if (entry.item_id === match.id) return
-  const oldKey = keyOf(entry)
-  entry.item_id = match.id
-  entry.payload = match
-  entry.count = 1
-  delete scanChains.value[oldKey]
-  void setScanChain(keyOf(entry), match)
 }
 
 // Код не найден: переключаемся в «Поиск» и показываем предложение
