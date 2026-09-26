@@ -11,6 +11,7 @@ import type LabelPresetModule from '../repository/modules/labelPreset'
 import type OperationModule from '../repository/modules/operation'
 import type PropertyGroupModule from '../repository/modules/propertyGroup'
 import type PropertyModule from '../repository/modules/property'
+import type StockOperationModule from '../repository/modules/stockOperation'
 import type StoreModule from '../repository/modules/store'
 import type UnitModule from '../repository/modules/unit'
 import type UserProfileModule from '../repository/modules/userProfile'
@@ -32,6 +33,7 @@ interface ApiModules {
   operation: OperationModule
   property: PropertyModule
   propertyGroup: PropertyGroupModule
+  stockOperation: StockOperationModule
   store: StoreModule
   unit: UnitModule
   userProfile: UserProfileModule

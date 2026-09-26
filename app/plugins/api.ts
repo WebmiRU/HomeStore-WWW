@@ -13,6 +13,7 @@ import LabelPresetModule from '~/repository/modules/labelPreset'
 import OperationModule from '~/repository/modules/operation'
 import PropertyGroupModule from '~/repository/modules/propertyGroup'
 import PropertyModule from '~/repository/modules/property'
+import StockOperationModule from '~/repository/modules/stockOperation'
 import StoreModule from '~/repository/modules/store'
 import UnitModule from '~/repository/modules/unit'
 import UserProfileModule from '~/repository/modules/userProfile'
@@ -32,6 +33,7 @@ interface IApiInstance {
   operation: OperationModule
   property: PropertyModule
   propertyGroup: PropertyGroupModule
+  stockOperation: StockOperationModule
   store: StoreModule
   unit: UnitModule
   userProfile: UserProfileModule
@@ -93,6 +95,7 @@ export default defineNuxtPlugin(() => {
     operation: new OperationModule(apiFetcher),
     property: new PropertyModule(apiFetcher),
     propertyGroup: new PropertyGroupModule(apiFetcher),
+    stockOperation: new StockOperationModule(apiFetcher),
     store: new StoreModule(apiFetcher),
     unit: new UnitModule(apiFetcher),
     userProfile: new UserProfileModule(apiFetcher),

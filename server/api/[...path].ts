@@ -1,6 +1,8 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const apiBaseUrl = import.meta.dev ? 'http://localhost' : config.public.apiBaseUrl
+  // В dev адрес бэкенда задаётся переменной окружения (по умолчанию — локальный
+  // контейнер на 18080), в сборке — публичной конфигурацией для reverse proxy.
+  const apiBaseUrl = import.meta.dev ? config.devApiBaseUrl : config.public.apiBaseUrl
 
   // event.context.params.path содержит остаток пути после /api/
   const path = event.context.params?.path ?? ''

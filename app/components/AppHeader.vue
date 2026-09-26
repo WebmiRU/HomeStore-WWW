@@ -36,27 +36,91 @@
     </div>
 
     <nav class="entity-nav">
-      <NuxtLink to="/" class="entity-link">Главная</NuxtLink>
-      <NuxtLink to="/items" class="entity-link">Предметы</NuxtLink>
-      <NuxtLink to="/categories" class="entity-link">Категории</NuxtLink>
-      <NuxtLink to="/properties" class="entity-link">Свойства</NuxtLink>
-      <NuxtLink to="/property-groups" class="entity-link">Группы свойств</NuxtLink>
-      <NuxtLink to="/dictionaries" class="entity-link">Справочники</NuxtLink>
-      <NuxtLink to="/units" class="entity-link">Ед. изм.</NuxtLink>
-      <NuxtLink to="/stores" class="entity-link">Хранилища</NuxtLink>
-      <NuxtLink to="/warehouses" class="entity-link">Склады</NuxtLink>
-      <NuxtLink to="/access" class="entity-link">Доступ</NuxtLink>
-      <NuxtLink to="/journal" class="entity-link">Журнал</NuxtLink>
-      <NuxtLink to="/label-presets" class="entity-link">Шаблоны</NuxtLink>
-      <NuxtLink to="/label-lists" class="entity-link">Этикетки</NuxtLink>
-      <NuxtLink to="/orphan-codes" class="entity-link">Чистка кодов</NuxtLink>
-      <NuxtLink to="/users" class="entity-link">Пользователи</NuxtLink>
+      <template v-for="entry in navTree" :key="entry.label">
+        <NuxtLink v-if="!isGroup(entry)" :to="entry.to" class="entity-link">
+          {{ entry.label }}
+        </NuxtLink>
+
+        <div
+          v-else
+          class="entity-group"
+          :class="{
+            'entity-group--open': openGroup === entry.label,
+            'entity-group--active': isGroupActive(entry),
+          }"
+        >
+          <button
+            type="button"
+            class="entity-link entity-group__toggle"
+            :aria-expanded="openGroup === entry.label"
+            aria-haspopup="true"
+            @click="toggleGroup(entry.label)"
+          >
+            {{ entry.label }}
+            <span class="entity-group__caret" aria-hidden="true">▾</span>
+          </button>
+
+          <div v-if="openGroup === entry.label" class="entity-group__menu">
+            <NuxtLink v-for="item in entry.items" :key="item.to" :to="item.to" class="entity-group__item">
+              {{ item.label }}
+            </NuxtLink>
+          </div>
+        </div>
+      </template>
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+
+type NavItem = { label: string; to: string }
+type NavGroup = { label: string; items: NavItem[] }
+type NavEntry = NavItem | NavGroup
+
+/**
+ * Меню описано данными, а не разметкой: пункты наращиваются пачками, и
+ * вложенность не должна требовать копирования вёрстки. Раскрытая группа одна
+ * за раз, иначе в шапке превращается в кашу.
+ */
+const navTree: NavEntry[] = [
+  { label: 'Главная', to: '/' },
+  { label: 'Предметы', to: '/items' },
+  { label: 'Хранилища', to: '/stores' },
+  { label: 'Склады', to: '/warehouses' },
+  { label: 'Категории', to: '/categories' },
+  {
+    label: 'Свойства',
+    items: [
+      { label: 'Свойства', to: '/properties' },
+      { label: 'Группы свойств', to: '/property-groups' },
+      { label: 'Ед. изм.', to: '/units' },
+      // Справочник — такой же источник значений, как единица измерения: тип
+      // свойства ссылается на оба. Держать их порознь в шапке незачем.
+      { label: 'Справочники', to: '/dictionaries' },
+    ],
+  },
+  { label: 'Движения', to: '/stock-operations' },
+  {
+    label: 'Маркировка',
+    items: [
+      { label: 'Этикетки', to: '/label-lists' },
+      { label: 'Шаблоны', to: '/label-presets' },
+    ],
+  },
+  {
+    // Люди и их права — два раздела об одном, поэтому в шапке они одним пунктом.
+    // «Команда» короче «Пользователи и доступ» и звучит в том же просторе,
+    // что остальные пункты.
+    label: 'Команда',
+    items: [
+      { label: 'Пользователи', to: '/users' },
+      { label: 'Доступ', to: '/access' },
+    ],
+  },
+  { label: 'Журнал', to: '/journal' },
+  { label: 'Чистка кодов', to: '/orphan-codes' },
+]
 
 const emit = defineEmits<{
   search: [query: string]
@@ -70,6 +134,43 @@ const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
 
 const searchQuery = ref('')
 const loggingOut = ref(false)
+const openGroup = ref<string | null>(null)
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return 'items' in entry
+}
+
+function isGroupActive(group: NavGroup): boolean {
+  return group.items.some((item) => route.path === item.to || route.path.startsWith(`${item.to}/`))
+}
+
+function toggleGroup(label: string) {
+  openGroup.value = openGroup.value === label ? null : label
+}
+
+function closeGroup() {
+  openGroup.value = null
+}
+
+// Клик мимо группы и Escape закрывают меню: иначе оно остаётся висеть поверх
+// страницы после перехода.
+function onDocumentPointerDown(event: PointerEvent) {
+  if (openGroup.value === null) return
+  const target = event.target as HTMLElement | null
+  if (!target?.closest('.entity-group')) closeGroup()
+}
+
+function onDocumentKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeGroup()
+}
+
+// Любой переход закрывает раскрытую группу. Ориентироваться пользователю есть
+// чем: у родителя подсвечено активное состояние, а у пункта в самой группе —
+// подсветка по маршруту.
+watch(
+  () => route.fullPath,
+  closeGroup,
+)
 
 // Подставляем текущий запрос из URL (например, при открытии /search?q=...),
 // чтобы строка поиска отражала то, что уже ищем.
@@ -112,6 +213,13 @@ async function logout() {
 
 onMounted(() => {
   loadProfile()
+  document.addEventListener('pointerdown', onDocumentPointerDown)
+  document.addEventListener('keydown', onDocumentKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onDocumentPointerDown)
+  document.removeEventListener('keydown', onDocumentKeydown)
 })
 </script>
 
@@ -207,8 +315,15 @@ a.header-avatar:hover {
   flex-wrap: wrap;
 }
 
+/* Группа — обёртка с выпадающим списком, поэтому ей нужен собственный
+   контекст позиционирования для меню. */
+.entity-group {
+  position: relative;
+}
+
 .entity-link {
   font-size: 14px;
+  font-family: inherit;
   color: #88a;
   text-decoration: none;
   padding: 6px 12px;
@@ -226,6 +341,67 @@ a.header-avatar:hover {
   color: #aaf;
   background: #2a2a3a;
   border-color: #3a3a5a;
+}
+
+/* Родитель группы не ссылка, но должен выглядеть ровно так же — иначе
+   строка меню разъезжается. Плюс активное состояние, когда мы внутри. */
+.entity-group__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.entity-group__toggle.router-link-active,
+.entity-group--active > .entity-group__toggle {
+  color: #aaf;
+  background: #2a2a3a;
+  border-color: #3a3a5a;
+}
+
+.entity-group__caret {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+.entity-group--open .entity-group__caret {
+  transform: rotate(180deg);
+}
+
+.entity-group__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: #24242c;
+  border: 1px solid #444;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.entity-group__item {
+  padding: 7px 10px;
+  font-size: 14px;
+  color: #88a;
+  text-decoration: none;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.entity-group__item:hover {
+  background: #2f2f3a;
+  color: #aaf;
+}
+
+.router-link-active.entity-group__item {
+  background: #2a2a3a;
+  color: #aaf;
 }
 
 @media (max-width: 768px) {

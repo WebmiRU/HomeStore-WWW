@@ -103,7 +103,7 @@
     <!-- Несколько предметов с одним кодом: показываем все варианты -->
     <div v-else-if="activeMode === 'search' && ambiguousMatches && ambiguousMatches.length" class="ambiguous-list">
       <div class="ambiguous-list__title">
-        Код найден у {{ ambiguousMatches.length }} {{ pluralItems(ambiguousMatches.length) }} — выберите нужный:
+        Код найден у {{ ambiguousMatches.length }} {{ plural(ambiguousMatches.length, 'предмет', 'предмета', 'предметов') }} — выберите нужный:
       </div>
       <NuxtLink
         v-for="m in ambiguousMatches"
@@ -298,6 +298,24 @@
         </div>
       </div>
 
+      <div class="scan-comment">
+        <label class="scan-comment__label" for="scan-comment-input">
+          Комментарий
+          <span class="scan-comment__hint">(необязательно)</span>
+        </label>
+        <input
+          id="scan-comment-input"
+          v-model.trim="comment"
+          type="text"
+          class="scan-comment__input"
+          :placeholder="activeMode === 'replenish'
+            ? 'Например: приход от поставщика, заявка №12'
+            : 'Например: ремонт в мастерской, брак'"
+          :disabled="submitting"
+          @keyup.enter="submitList"
+        />
+      </div>
+
       <div class="scan-controls">
         <button
           type="button"
@@ -383,6 +401,12 @@ const foundChain = ref<ChainCrumb[]>([])
 const scanChains = ref<Record<string, ChainCrumb[]>>({})
 const matchChains = ref<Record<number, string>>({})
 const submitting = ref(false)
+
+// Комментарий на всю операцию: пользователь сканирует пачку кодов и объясняет
+// её одним текстом — «куда списали». После отправки очищается: следующая пачка
+// скорее всего имеет другую причину, иначе один текст молча приклеился бы к
+// нескольким операциям подряд.
+const comment = ref('')
 
 // Уникальный ключ строки скана: один и тот же код у разных предметов —
 // это разные строки (замесы не сливаются), у одного предмета две метки
@@ -664,6 +688,7 @@ function clearList() {
   scanList.value = []
   scanChains.value = {}
   matchChains.value = {}
+  comment.value = ''
 }
 
 async function setScanChain(key: string, payload: ItemPayload) {
@@ -824,7 +849,11 @@ async function submitList() {
 
   submitting.value = true
   try {
-    const result = await $api.operation.store({ type, payload: rows })
+    const result = await $api.operation.store({
+      type,
+      payload: rows,
+      comment: comment.value || null,
+    })
     const rowsByKey = new Map((result?.rows ?? []).map((row) => [`${row.code}|${row.item_id}`, row]))
     const now = new Date().toISOString()
 
@@ -847,12 +876,21 @@ async function submitList() {
     }
 
     const deltaSum = rows.reduce((sum, row) => sum + row.quantity, 0)
-    const sign = isReplenish ? '+' : '&minus;'
+    // Уведомление выводится текстом, а не HTML, поэтому здесь нужен настоящий
+    // знак «минус», а не сущность &minus; — она попадала в текст как есть.
+    const sign = isReplenish ? '+' : '−'
     const verb = isReplenish ? 'Пополнено' : 'Списано'
-    $notify.add(`${verb}: ${rows.length} ${pluralItems(rows.length)} (${sign}${deltaSum} шт.)`, {
-      type: 'success',
-      timer: 6,
-    })
+    comment.value = ''
+    // «позиция» — это строка операции, «шт.» — единицы внутри неё. Раньше здесь
+    // стояло «предмет», и при списании одного наименования пачкой сообщение
+    // читалось как противоречие: «1 предмет (−10 шт.)».
+    $notify.add(
+      `${verb}: ${rows.length} ${plural(rows.length, 'позиция', 'позиции', 'позиций')} (${sign}${deltaSum} шт.)`,
+      {
+        type: 'success',
+        timer: 6,
+      }
+    )
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка операции'), { type: 'error', timer: 10 })
   } finally {
@@ -860,12 +898,17 @@ async function submitList() {
   }
 }
 
-function pluralItems(n: number): string {
+/**
+ * Согласование существительного с числом: 1 предмет, 2 предмета, 5 предметов.
+ * Русские правила не сводятся к «последняя цифра»: 11, 12, 13, 14 уходят
+ * в форму множественного, хотя оканчиваются на 1-4.
+ */
+function plural(n: number, one: string, few: string, many: string): string {
   const mod10 = n % 10
   const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return 'предмет'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'предмета'
-  return 'предметов'
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
 }
 
 function formatDate(iso: string): string {

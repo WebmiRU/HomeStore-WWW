@@ -536,8 +536,54 @@
 .scan-row__residue
   color: #d4d4d4
 
-.scan-controls
+// Комментарий к операции — на всю пачку кодов, поэтому стоит отдельной строкой
+// над кнопками, а не внутри их ряда: иначе поле отжимало бы у «Пополнить»
+// место, ради которого список и сканировали.
+.scan-comment
   margin-top: 16px
+  display: flex
+  flex-direction: column
+  gap: 6px
+
+.scan-comment__label
+  font-size: 13px
+  color: #9a9a9a
+  display: flex
+  align-items: baseline
+  gap: 8px
+
+.scan-comment__hint
+  font-size: 12px
+  color: #6b6b6b
+
+.scan-comment__input
+  width: 100%
+  box-sizing: border-box
+  padding: 12px 14px
+  font-size: 16px
+  font-family: inherit
+  color: #e6e6e6
+  background: #1a1a1a
+  border: 1px solid #3a3a3a
+  border-radius: 10px
+  transition: border-color 0.15s ease
+
+.scan-comment__input::placeholder
+  color: #6b6b6b
+
+.scan-comment__input:hover:not(:disabled)
+  border-color: #555
+
+.scan-comment__input:focus
+  outline: none
+  border-color: #5a5a5a
+
+.scan-comment__input:disabled
+  opacity: 0.55
+  cursor: default
+
+.scan-controls
+  margin-top: 12px
   display: flex
   align-items: stretch
   gap: 12px

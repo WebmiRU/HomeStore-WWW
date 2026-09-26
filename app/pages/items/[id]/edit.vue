@@ -95,6 +95,10 @@
           <EntityBalanceChart entity-type="item" :entity-id="Number(id)" />
         </section>
 
+        <section v-if="activeTab === 'movements'" class="tab-section">
+          <ItemMovementsList :item-id="Number(id)" />
+        </section>
+
         <section v-if="activeTab === 'stats'" class="tab-section">
           <EntityAuditStats entity-type="item" :entity-id="Number(id)" />
         </section>
@@ -156,6 +160,7 @@ const tabs = [
   { key: 'properties', label: 'Свойства' },
   { key: 'images', label: 'Картинки' },
   { key: 'balance', label: 'Остатки' },
+  { key: 'movements', label: 'Движения' },
   { key: 'stats', label: 'Статистика' },
 ]
 

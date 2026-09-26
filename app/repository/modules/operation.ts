@@ -12,6 +12,8 @@ export type OperationRow = {
 export type OperationRequest = {
   type: OperationType
   payload: OperationRow[]
+  /** Комментарий один на операцию: «куда списали» / «откуда пополнили». */
+  comment?: string | null
 }
 
 export type OperationRowResult = {
@@ -25,6 +27,8 @@ export type OperationRowResult = {
 
 export type OperationStoreResult = {
   type: OperationType
+  comment: string | null
+  operation: { id: number; comment: string | null } | null
   payload: OperationRow[]
   rows: OperationRowResult[]
 }
