@@ -8,6 +8,7 @@ import type ImageModule from '../repository/modules/image'
 import type ItemModule from '../repository/modules/item'
 import type LabelListModule from '../repository/modules/labelList'
 import type LabelPresetModule from '../repository/modules/labelPreset'
+import type VendorModule from '../repository/modules/vendor'
 import type OperationModule from '../repository/modules/operation'
 import type PropertyGroupModule from '../repository/modules/propertyGroup'
 import type PropertyModule from '../repository/modules/property'
@@ -30,6 +31,7 @@ interface ApiModules {
   item: ItemModule
   labelList: LabelListModule
   labelPreset: LabelPresetModule
+  vendor: VendorModule
   operation: OperationModule
   property: PropertyModule
   propertyGroup: PropertyGroupModule

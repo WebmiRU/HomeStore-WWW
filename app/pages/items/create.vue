@@ -20,6 +20,17 @@
         </label>
 
         <label class="field">
+          <span class="field-label">Производитель</span>
+          <select v-model="form.vendor_id" class="field-select">
+            <option :value="null">[НЕТ]</option>
+            <option v-for="option in vendorOptions" :key="option.id" :value="option.id">
+              {{ option.title }}
+            </option>
+          </select>
+          <span class="field-hint">Кто выпустил предмет: Bosch, Makita, собственный бренд</span>
+        </label>
+
+        <label class="field">
           <span class="field-label">Хранилище</span>
           <select v-model.number="form.store_id" class="field-select">
             <option :value="null">[НЕТ]</option>
@@ -87,11 +98,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { CategoryResponse } from '~/repository/modules/category'
+import type { VendorResponse } from '~/repository/modules/vendor'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
 import type { ItemPropertyInput } from '~/repository/modules/item'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
+import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
 import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
@@ -103,6 +116,7 @@ const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
 const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
 const copyStoreId = typeof route.query.copy_store_id === 'string' ? Number(route.query.copy_store_id) : null
+const copyVendorId = typeof route.query.copy_vendor_id === 'string' ? Number(route.query.copy_vendor_id) : null
 const copyQuantity = typeof route.query.copy_quantity === 'string' ? route.query.copy_quantity : ''
 // Копия предмета наследует категорию и заполненные ею свойства: иначе
 // после «создать копию» пришлось бы вбивать всё заново.
@@ -177,6 +191,7 @@ const form = reactive({
   title: copyTitle,
   title_print: copyTitlePrint,
   store_id: copyStoreId,
+  vendor_id: copyVendorId !== null && Number.isFinite(copyVendorId) ? copyVendorId : null,
   category_id: copyCategoryId !== null && Number.isFinite(copyCategoryId) ? copyCategoryId : null,
 })
 
@@ -196,10 +211,13 @@ const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(sto
 
 const stores = ref<StoreResponse[]>([])
 const categories = ref<CategoryResponse[]>([])
+const vendors = ref<VendorResponse[]>([])
 const dictionaries = ref<DictionaryResponse[]>([])
 const allProperties = ref<PropertyResponse[]>([])
 
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
+
+const vendorOptions = computed(() => vendorSelectOptions(vendors.value))
 
 const properties = ref<ItemPropertyInput[]>(copyProperties)
 const categoryProperties = ref<PropertyResponse[]>([])
@@ -211,14 +229,16 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [list, all, dicts, props] = await Promise.all([
+    const [list, all, dicts, props, vendorList] = await Promise.all([
       $api.store.list(),
       $api.category.all(),
       $api.dictionary.all(),
       $api.property.all(),
+      $api.vendor.all(),
     ])
     stores.value = list
     categories.value = all
+    vendors.value = vendorList
     dictionaries.value = dicts
     allProperties.value = props
     if (form.category_id !== null) {
@@ -263,6 +283,7 @@ function itemPayload() {
     title_print: form.title_print || null,
     store_id: form.store_id,
     category_id: form.category_id,
+    vendor_id: form.vendor_id,
     codes: filledCodes(),
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
@@ -298,6 +319,7 @@ async function saveAndCopy() {
         copy_title_print: form.title_print,
         copy_store_id: form.store_id,
         copy_category_id: form.category_id,
+        copy_vendor_id: form.vendor_id,
         // Все коды, а не только главный. Как и раньше, значения просто
         // переносятся в форму: сервер заведёт копии строк кода, и эти
         // значения станут общими у двух предметов — то же, что делало

@@ -10,6 +10,7 @@ import ImageModule from '~/repository/modules/image'
 import ItemModule from '~/repository/modules/item'
 import LabelListModule from '~/repository/modules/labelList'
 import LabelPresetModule from '~/repository/modules/labelPreset'
+import VendorModule from '~/repository/modules/vendor'
 import OperationModule from '~/repository/modules/operation'
 import PropertyGroupModule from '~/repository/modules/propertyGroup'
 import PropertyModule from '~/repository/modules/property'
@@ -30,6 +31,7 @@ interface IApiInstance {
   image: ImageModule
   labelList: LabelListModule
   labelPreset: LabelPresetModule
+  vendor: VendorModule
   operation: OperationModule
   property: PropertyModule
   propertyGroup: PropertyGroupModule
@@ -92,6 +94,7 @@ export default defineNuxtPlugin(() => {
     image: new ImageModule(apiFetcher),
     labelList: new LabelListModule(apiFetcher),
     labelPreset: new LabelPresetModule(apiFetcher),
+    vendor: new VendorModule(apiFetcher),
     operation: new OperationModule(apiFetcher),
     property: new PropertyModule(apiFetcher),
     propertyGroup: new PropertyGroupModule(apiFetcher),

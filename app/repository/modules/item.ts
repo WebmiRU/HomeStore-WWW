@@ -2,6 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { ImageResponse } from './image'
 import type { CategoryBrief } from './category'
+import type { VendorBrief } from './vendor'
 import type { PropertyType } from './property'
 import type { ItemPayload, StorePayload } from './code'
 import type { AccessRight } from './access'
@@ -48,6 +49,7 @@ export type ItemPropertyInput = {
 export type ItemData = Partial<ItemPayload> & {
   codes?: string[]
   category_id?: number | null
+  vendor_id?: number | null
   properties?: ItemPropertyInput[]
 }
 
@@ -69,6 +71,7 @@ export type ItemResponse = {
   payload: ItemPayload
   store: StorePayload[] | null
   category?: CategoryBrief | null
+  vendor?: VendorBrief | null
   images: ImageResponse[] | null
   /** Есть только у карточки и ответа на сохранение, не у строки списка. */
   properties?: ItemPropertyResponse[]

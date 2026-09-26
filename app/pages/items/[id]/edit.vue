@@ -21,6 +21,17 @@
           </label>
 
           <label class="field">
+            <span class="field-label">Производитель</span>
+            <select v-model="form.vendor_id" class="field-select" :disabled="!canEdit">
+              <option :value="null">[НЕТ]</option>
+              <option v-for="option in vendorOptions" :key="option.id" :value="option.id">
+              {{ option.title }}
+              </option>
+            </select>
+            <span class="field-hint">Кто выпустил предмет: Bosch, Makita, собственный бренд</span>
+          </label>
+
+          <label class="field">
             <span class="field-label">Хранилище</span>
             <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
@@ -105,6 +116,7 @@
                 copy_title_print: form.title_print,
                 copy_store_id: form.store_id,
                 copy_category_id: form.category_id,
+                copy_vendor_id: form.vendor_id,
                 copy_codes: JSON.stringify(filledCodes()),
                 copy_quantity: quantityInput,
                 copy_properties: JSON.stringify(properties),
@@ -126,10 +138,12 @@ import type { ItemResponse, ItemPropertyInput } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { CategoryResponse } from '~/repository/modules/category'
+import type { VendorResponse } from '~/repository/modules/vendor'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
+import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
 import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
@@ -166,6 +180,7 @@ const activeTab = computed(() => {
 
 const stores = ref<StoreResponse[]>([])
 const categories = ref<CategoryResponse[]>([])
+const vendors = ref<VendorResponse[]>([])
 const dictionaries = ref<DictionaryResponse[]>([])
 const allProperties = ref<PropertyResponse[]>([])
 
@@ -173,11 +188,14 @@ const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(sto
 
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
 
+const vendorOptions = computed(() => vendorSelectOptions(vendors.value))
+
 const form = reactive({
   title: '',
   title_print: '',
   store_id: null as number | null,
   category_id: null as number | null,
+  vendor_id: null as number | null,
 })
 
 const codes = ref<string[]>([''])
@@ -257,16 +275,18 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    const [item, list, all, dicts, props] = await Promise.all([
+    const [item, list, all, dicts, props, vendorList] = await Promise.all([
       $api.item.get(Number(id)),
       $api.store.list(),
       $api.category.all(),
       $api.dictionary.all(),
       $api.property.all(),
+      $api.vendor.all(),
     ])
 
     stores.value = list
     categories.value = all
+    vendors.value = vendorList
     dictionaries.value = dicts
     allProperties.value = props
     itemEntity.value = item
@@ -274,6 +294,7 @@ async function load() {
     form.title_print = item.payload.title_print ?? ''
     form.store_id = item.payload.store_id
     form.category_id = item.payload.category_id
+    form.vendor_id = item.payload.vendor_id ?? null
     codes.value = (item.codes ?? []).length > 0 ? [...item.codes!] : ['']
     originalCodes.value = [...codes.value]
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
@@ -295,6 +316,7 @@ async function save() {
       title_print: form.title_print || null,
       store_id: form.store_id,
       category_id: form.category_id,
+      vendor_id: form.vendor_id,
       codes: filledCodes(),
       properties: properties.value,
     }

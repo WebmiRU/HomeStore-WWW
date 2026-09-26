@@ -213,6 +213,7 @@ const ENTITY_FILTER_OPTIONS: Record<string, string> = {
   dictionary: 'Справочники',
   dictionary_value: 'Значения справочников',
   unit: 'Единицы измерения',
+  vendor: 'Поставщики',
   access_grant: 'Доступ',
   user: 'Пользователи',
 }

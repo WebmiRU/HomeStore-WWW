@@ -89,6 +89,7 @@ const navTree: NavEntry[] = [
   { label: 'Хранилища', to: '/stores' },
   { label: 'Склады', to: '/warehouses' },
   { label: 'Категории', to: '/categories' },
+  { label: 'Поставщики', to: '/vendors' },
   {
     label: 'Свойства',
     items: [
