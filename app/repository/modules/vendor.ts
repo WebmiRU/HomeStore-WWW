@@ -2,7 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { UserBrief } from './code'
 
-/** Короткая ссылка на поставщика — как её отдают вперемешку с предметом. */
+/** Короткая ссылка на производителя — как её отдают вперемешку с предметом. */
 export type VendorBrief = {
   id: number
   title: string

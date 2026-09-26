@@ -1,6 +1,6 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление поставщика</h3>
+    <h3 class="page-title">Добавление производителя</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
@@ -54,7 +54,7 @@ async function save() {
       title: form.title,
       description: form.description,
     })
-    $notify.add('Поставщик создан', { type: 'success' })
+    $notify.add('Производитель создан', { type: 'success' })
     router.push(`/vendors/${created.id}/edit`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })

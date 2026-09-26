@@ -240,7 +240,7 @@
           type="text"
           class="scan-comment__input"
           :placeholder="activeMode === 'replenish'
-            ? 'Например: приход от поставщика, заявка №12'
+            ? 'Например: приход от производителя, заявка №12'
             : 'Например: ремонт в мастерской, брак'"
           :disabled="submitting"
           @keyup.enter="submitList"

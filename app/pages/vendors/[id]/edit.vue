@@ -1,6 +1,6 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Поставщик #{{ id }}</h3>
+    <h3 class="page-title">Производитель #{{ id }}</h3>
 
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
@@ -14,7 +14,7 @@
             <VendorLogo
               :logo-url="logoUrl"
               :logo-sha="logoSha"
-              :title="form.title || 'Поставщик'"
+              :title="form.title || 'Производитель'"
               :size="120"
               thumb-key="150x150_contain"
             />
@@ -124,7 +124,7 @@ async function load() {
     form.description = vendor.description ?? ''
     applyLogo(vendor)
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки поставщика')
+    loadError.value = formatApiError(err, 'Ошибка загрузки производителя')
   } finally {
     loading.value = false
   }
@@ -138,7 +138,7 @@ async function save() {
       description: form.description,
     })
     form.description = updated.description ?? ''
-    $notify.add('Поставщик сохранён', { type: 'success' })
+    $notify.add('Производитель сохранён', { type: 'success' })
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
   } finally {

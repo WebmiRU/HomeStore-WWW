@@ -1,7 +1,7 @@
 <template>
   <div class="vendors-page">
     <div class="page-header">
-      <h3 class="page-title">Поставщики</h3>
+      <h3 class="page-title">Производители</h3>
       <NuxtLink to="/vendors/create" class="btn-add">Добавить</NuxtLink>
     </div>
 
@@ -56,7 +56,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет поставщиков</div>
+      <div v-else class="empty">Нет производителей</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -103,7 +103,7 @@ async function load(page?: number) {
     vendors.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки поставщиков')
+    error.value = formatApiError(err, 'Ошибка загрузки производителей')
   } finally {
     loading.value = false
   }
@@ -114,11 +114,11 @@ function goToPage(page: number) {
 }
 
 async function deleteVendor(m: VendorResponse) {
-  if (!confirm(`Удалить поставщика «${m.title}»?`)) return
+  if (!confirm(`Удалить производителя «${m.title}»?`)) return
 
   try {
     await $api.vendor.delete(m.id)
-    $notify.add('Поставщик удалён', { type: 'success' })
+    $notify.add('Производитель удалён', { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
