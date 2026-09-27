@@ -28,6 +28,10 @@
           </div>
         </section>
 
+        <section v-if="activeTab === 'contents'" class="tab-section">
+          <ContentsTree kind="warehouse" :entity-id="Number(id)" />
+        </section>
+
         <section v-if="activeTab === 'rights'" class="tab-section">
           <AccessGrants :scoped-warehouse="warehouse" />
         </section>
@@ -67,6 +71,7 @@ const form = reactive({
 const tabs = computed(() => {
   const base = [{ key: 'main', label: 'Основные параметры' }]
   const isOwner = currentUserId.value !== null && warehouse.value?.user_id === currentUserId.value
+  base.push({ key: 'contents', label: 'Содержимое' })
   if (isOwner) {
     base.push({ key: 'rights', label: 'Права' })
   }

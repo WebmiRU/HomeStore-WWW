@@ -51,6 +51,10 @@
           </label>
         </section>
 
+        <section v-if="activeTab === 'contents'" class="tab-section">
+          <ContentsTree kind="store" :entity-id="Number(id)" />
+        </section>
+
         <section v-if="activeTab === 'images'" class="tab-section">
           <ImagesTable v-model="images" entity="store" :entity-id="Number(id)" :readonly="!canEdit" />
         </section>
@@ -115,6 +119,7 @@ const deletedWarehouse = computed(() =>
 
 const tabs = [
   { key: 'main', label: 'Основные параметры' },
+  { key: 'contents', label: 'Содержимое' },
   { key: 'images', label: 'Картинки' },
   { key: 'stats', label: 'Статистика' },
 ]

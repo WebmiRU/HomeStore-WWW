@@ -2,6 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { AccessRight } from './access'
 import type { UserProfileResponse } from './userProfile'
+import type { ContentsNode } from './store'
 
 export type WarehouseResponse = {
   id: number
@@ -50,6 +51,12 @@ class WarehouseModule extends FetchFactory<any> {
   async all(): Promise<WarehouseResponse[]> {
     const result = await this.call('GET', `${this.baseUrl}/all`)
     return (result as any)?.data ?? result
+  }
+
+  /** Дерево содержимого склада: хранилища склада с предметами. */
+  async contents(id: number): Promise<ContentsNode> {
+    const result = await this.call('GET', `${this.baseUrl}/${id}/contents`)
+    return ((result as any)?.data ?? result) as ContentsNode
   }
 
   async get(id: number): Promise<WarehouseResponse> {

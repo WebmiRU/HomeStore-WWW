@@ -34,6 +34,33 @@ export type StoreResponse = {
   images?: ImageResponse[] | null
 }
 
+/** Предмет в узле дерева содержимого. */
+export type ContentsItem = {
+  id: number
+  title: string
+}
+
+/**
+ * Узел дерева содержимого.
+ *
+ * Три счётчика, а не один: items_count — сколько лежит прямо в узле,
+ * items_hidden — сколько из них спрятано под «показать все», items_total —
+ * сколько во всём поддереве. По одному числу не отличить «здесь ничего не
+ * лежит, всё в детях» от «здесь пусто вообще».
+ */
+export type ContentsNode = {
+  id: number
+  title: string
+  kind: 'store' | 'warehouse'
+  /** Хранилище удалено мягко: предметы в нём живые, поэтому узел остаётся. */
+  deleted: boolean
+  items_count: number
+  items: ContentsItem[]
+  items_hidden: number
+  items_total: number
+  children: ContentsNode[]
+}
+
 class StoreModule extends FetchFactory<any> {
   private readonly baseUrl = '/store'
 
@@ -45,6 +72,18 @@ class StoreModule extends FetchFactory<any> {
     // store/all отдаёт все записи без пагинации (удобно для построения дерева)
     const result = await this.call('GET', `${this.baseUrl}/all`)
     return (result as any)?.data ?? result
+  }
+
+  /** Дерево содержимого хранилища: вложенные хранилища и предметы. */
+  async contents(id: number): Promise<ContentsNode> {
+    const result = await this.call('GET', `${this.baseUrl}/${id}/contents`)
+    return ((result as any)?.data ?? result) as ContentsNode
+  }
+
+  /** Все предметы хранилища — для кнопки «показать все» под списком. */
+  async contentsItems(id: number): Promise<ContentsItem[]> {
+    const result = await this.call('GET', `${this.baseUrl}/${id}/contents/items`)
+    return ((result as any)?.data ?? result) as ContentsItem[]
   }
 
   async get(id: number): Promise<StoreResponse> {
