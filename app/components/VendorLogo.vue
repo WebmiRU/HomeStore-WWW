@@ -1,12 +1,12 @@
 <template>
   <component
-    :is="lightbox ? 'button' : 'span'"
+    :is="openable ? 'button' : 'span'"
     class="m-logo"
-    :class="{ 'm-logo--openable': lightbox }"
+    :class="{ 'm-logo--openable': openable }"
     :style="{ width: px, height: px }"
-    :type="lightbox ? 'button' : undefined"
-    :title="lightbox ? 'Открыть логотип' : title"
-    :aria-label="lightbox ? `Открыть логотип: ${title ?? ''}` : undefined"
+    :type="openable ? 'button' : undefined"
+    :title="openable ? 'Открыть логотип' : title"
+    :aria-label="openable ? `Открыть логотип: ${title ?? ''}` : undefined"
     @click="openViewer"
   >
     <!-- Спиннер показывается, пока не пришла миниатюра: смена логотипа
@@ -74,12 +74,6 @@ const lightboxImages = computed(() =>
     : [],
 )
 
-function openViewer() {
-  if (!props.lightbox || !props.logoSha) return
-
-  viewerOpen.value = true
-}
-
 /**
  * Только миниатюра, и никогда — оригинал.
  *
@@ -94,6 +88,21 @@ const src = computed<string | null>(() => {
 
   return thumbUrl(props.logoSha, props.thumbKey)
 })
+
+/**
+ * Кнопка-просмотр — только когда есть что показывать.
+ *
+ * Производитель без логотипа показывает букву-заглушку: лупа обещала бы
+ * увеличение того, чего нет. Битая картинка — тоже: после неудачи показан
+ * прочерк, а не фото.
+ */
+const openable = computed(() => props.lightbox === true && src.value !== null)
+
+function openViewer() {
+  if (!openable.value) return
+
+  viewerOpen.value = true
+}
 
 let timer: ReturnType<typeof setTimeout> | null = null
 

@@ -4,12 +4,12 @@
     карточке аватар — часть интерфейса, где клик открывает другое.
   -->
   <component
-    :is="lightbox ? 'button' : 'div'"
+    :is="openable ? 'button' : 'div'"
     class="avatar"
-    :class="{ 'avatar--openable': lightbox }"
+    :class="{ 'avatar--openable': openable }"
     :style="{ width: px, height: px }"
-    :type="lightbox ? 'button' : undefined"
-    :aria-label="lightbox ? `Открыть аватар: ${user.name ?? ''}` : undefined"
+    :type="openable ? 'button' : undefined"
+    :aria-label="openable ? `Открыть аватар: ${user.name ?? ''}` : undefined"
     @click="openViewer"
   >
     <img
@@ -56,8 +56,17 @@ const lightboxImages = computed(() =>
     : [],
 )
 
+/**
+ * Кнопка-просмотр — только когда есть что показывать.
+ *
+ * Пользователь без аватара (и пользователь, у которого картинка не
+ * загрузилась) показывает букву-заглушку: лупа и кнопка там обещали бы
+ * увеличение того, чего нет.
+ */
+const openable = computed(() => props.lightbox === true && lightboxImages.value.length > 0)
+
 function openViewer() {
-  if (!props.lightbox || lightboxImages.value.length === 0) return
+  if (!openable.value) return
 
   viewerOpen.value = true
 }
