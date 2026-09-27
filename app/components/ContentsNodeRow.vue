@@ -1,28 +1,37 @@
 <template>
   <!--
     isLast нужен ради линии: вертикаль рисует каждый узел сам, и у последнего
-    ребёнка она обрывается на середине строки, иначе она уходит ниже последнего
-    потомка и дерево выглядит так, будто у него есть ещё дети.
+    ребёнка она обрывается на середине строки, иначе ушла бы ниже последнего
+    потомка и дерево выглядело бы так, будто у него есть ещё дети.
   -->
   <div
     class="cnode"
-    :class="{ 'cnode--last': isLast, 'cnode--root': isRoot }"
+    :class="{
+      'cnode--last': isLast,
+      'cnode--root': isRoot,
+      'cnode--leaf': isLeaf,
+      'cnode--closed': isClosed,
+    }"
     :style="{ '--depth': depth }"
   >
     <div class="cnode__head">
-      <!-- Стрелка только у хранилищ с потомками: у листа её нажатие ничего
-           не делало бы, а место занимало бы. -->
+      <!--
+        Квадратик с плюсом/минусом — как в «Проводнике»: он стоит прямо на
+        линии дерева и ею же перечёркнут, поэтому вложенность читается и без
+        чтения отступов. У листа место под квадратик остаётся — иначе строки
+        наезжали бы друг на друга.
+      -->
       <button
         v-if="node.children.length"
         type="button"
-        class="cnode__caret"
+        class="cnode__toggle"
         :aria-expanded="isOpen"
         :aria-label="isOpen ? 'Свернуть' : 'Развернуть'"
         @click="$emit('toggle', node.id)"
       >
-        {{ isOpen ? '▾' : '▸' }}
+        {{ isOpen ? '−' : '+' }}
       </button>
-      <span v-else class="cnode__caret cnode__caret--empty"></span>
+      <span v-else class="cnode__toggle cnode__toggle--empty"></span>
 
       <span class="cnode__photo">
         <ItemPhoto v-if="node.image" :images="[node.image]" :alt="node.title" :size="28" />
@@ -98,6 +107,15 @@ defineEmits<{
 }>()
 
 const isOpen = computed(() => props.expanded.has(props.node.id))
+/** Лист: потомков нет, а значит нет и вертикали, которая их соединяла бы. */
+const isLeaf = computed(() => props.node.children.length === 0)
+
+/**
+ * Свёрнутый узел с потомками: вертикаль ему тоже не нужна — соединять не
+ *чего, пока дети не показаны, и в свёрнутом виде она висела бы в воздухе
+ * слева от строки.
+ */
+const isClosed = computed(() => props.node.children.length > 0 && !isOpen.value)
 const isStore = computed(() => props.node.kind === 'store')
 const isShownAll = computed(() => props.shownItems[props.node.id] !== undefined)
 
@@ -124,25 +142,40 @@ const counts = computed(() => {
 
 <style scoped>
 /*
-  Линии дерева — как в истории коммитов: от строки родителя вниз, от этой
-  линии вбок к строке ребёнка.
+  Геометрия дерева держится на трёх числах:
 
-  Рисует каждый узел сам, а не контейнер потомков: вертикаль у последнего
-  ребёнка обрывается на середине его строки (--last), иначе она ушла бы
-  ниже последнего потомка и дерево выглядело бы так, будто у него есть ещё
-  дети. Отступ уровня и положение линий — одно и то же число (--indent),
-  иначе на втором уровне горизонтальный отрезок не дойдёт до строки.
+  --indent  — шаг вложенности: расстояние от вертикали узла до вертикали его
+              детей. Одновременно это и отступ содержимого узла;
+  --toggle  — сторона квадратика с плюсом, стоящего на линии;
+  --rowmid  — середина строки узла, к которой сходятся линии.
+
+  Отступ задаётся только через --indent, без умножения на глубину. Умножать
+  нельзя: вложенные узлы и так лежат в отступах родителей, и шаг
+  складывался бы с шагом — на пятом уровне линии расходились на 47, 63, 79 и
+  95 пикселей вместо ровных пятнадцати, и глубокие хранилища уезжали вправо.
+
+  Расстояния считаются от левой грани блока узла, а не от координаты уровня:
+  блок вложен в родителя, поэтому его левая грань уже сдвинута на все
+  предыдущие шаги.
 */
 .cnode {
-  --indent: 18px;
+  --indent: 15px;
+  --toggle: 14px;
+  --rowmid: 17px;
+  /* Предметы лежат В хранилище, а не под ним, поэтому их строки сдвинуты
+     влево от строки самого хранилища. Без этого список выглядит как
+     продолжение дерева — как будто предметы ещё один уровень вложенности. */
+  --inside: 8px;
   position: relative;
-  padding-left: calc(var(--depth) * var(--indent) + var(--indent));
+  padding-left: var(--indent);
 }
 
+/* Вертикаль узла — по его левой грани, от строки вниз через всех потомков.
+   У последнего ребёнка обрывается на середине строки. */
 .cnode::before {
   content: '';
   position: absolute;
-  left: calc(var(--depth) * var(--indent) + 6px);
+  left: 0;
   top: 0;
   bottom: 0;
   border-left: 1px solid #3a3a3a;
@@ -150,15 +183,36 @@ const counts = computed(() => {
 
 .cnode--last::before {
   bottom: auto;
-  height: 15px;
+  height: var(--rowmid);
 }
 
+/* У свёрнутого узла вертикали нет по той же причине, что у листа. */
+.cnode--closed::before {
+  display: none;
+}
+
+/* У листа вертикали нет вовсе: соединять нечего, а линия шла бы через его
+   собственную строку. Зато отрезок нужен до самого содержимого: квадратика у
+   листа не видно, и на его месте линия обрывалась бы в воздухе. */
+.cnode--leaf::before {
+  display: none;
+}
+
+.cnode--leaf .cnode__head::before {
+  width: calc(2 * var(--indent));
+}
+
+/* Горизонтальный отрезок: от вертикали родителя (она на indent левее блока
+   узла) к левой грани квадратика, центр которого совпадает с отрезком.
+   Ширина — indent минус половина квадратика: с запасом линия вылезала бы
+   справа из-под непрозрачного квадратика хвостиком, с недохватом не дошла бы
+   до него. */
 .cnode__head::before {
   content: '';
   position: absolute;
-  left: calc(var(--depth) * var(--indent) + 6px);
-  top: 14px;
-  width: calc(var(--indent) - 6px);
+  left: calc(-2 * var(--indent));
+  top: var(--rowmid);
+  width: calc(var(--indent) - var(--toggle) / 2);
   border-top: 1px solid #3a3a3a;
 }
 
@@ -167,40 +221,57 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 0;
+  min-height: 26px;
+  padding: 3px 0;
   border-bottom: 1px solid #2b2b2b;
 }
 
-/* Корень — сама карточка, и линий у него нет: они рисуются по горизонтали
-   относительно каждого уровня, и у корня отступ был бы лишней ступенькой. */
-.cnode--root {
-  padding-left: 0;
-}
-
-.cnode--root::before,
-.cnode--root .cnode__head::before {
-  display: none;
-}
-
-.cnode__caret {
-  width: 16px;
-  flex-shrink: 0;
-  align-self: center;
+/* Квадратик с плюсом/минусом стоит на линии и ею перечёркнут: отступ до него
+   считается от содержимого строки, а та начинается на indent правее линии. */
+.cnode__toggle {
+  position: absolute;
+  left: calc(-1 * (var(--indent) + var(--toggle) / 2));
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--toggle);
+  height: var(--toggle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
-  color: #888;
-  background: none;
-  border: none;
+  color: #aaa;
+  background: #24242c;
+  border: 1px solid #555;
+  border-radius: 2px;
   cursor: pointer;
 }
 
-.cnode__caret:hover {
-  color: #ccc;
+.cnode__toggle:hover {
+  color: #fff;
+  border-color: #8a8;
 }
 
-.cnode__caret--empty {
+/* У листа место под квадратик остаётся, чтобы строки стояли вровень, но сам
+   квадратик не рисуется: пустая рамка выглядит как неработающая кнопка. */
+.cnode__toggle--empty {
+  border-color: transparent;
+  background: none;
   cursor: default;
+}
+
+/* Корень — сама карточка: квадратика у него нет (он и так раскрыт) и отрезка
+   от собственной вертикали тоже. Вертикаль, наоборот, остаётся: к ней
+   крепятся все прямые дети, и без неё их отрезки висели бы в воздухе.
+
+   Важно: именно прямого потомка, а не любого вложенного. Корневой узел
+   оборачивает всё дерево, поэтому селектор-потомок `.cnode--root .cnode__toggle`
+   попадал во все вложенные узлы и гасил квадратики и отрезки по всему дереву —
+   визуально это выглядело как «дерево без раскрытий». */
+.cnode--root > .cnode__head::before,
+.cnode--root > .cnode__head > .cnode__toggle {
+  display: none;
 }
 
 .cnode__photo,
@@ -210,34 +281,13 @@ const counts = computed(() => {
   flex-shrink: 0;
 }
 
-/* Пустое место, где у сущности картинки нет: квадрат того же размера, что и
-   миниатюра, иначе строка дерева прыгает между узлами с картинкой и без. */
-.cnode__photo-empty {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #333;
-  border-radius: 4px;
-  background: #222;
-}
-
-.cnode__photo-empty--sm {
-  width: 22px;
-  height: 22px;
-}
-
-.cnode__items li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  /* Строки предметов слипались: между ними не было ни одного поля, и список
-     читался как сплошная полоса текста. */
-  padding: 2px 0;
-}
-
 .cnode__title {
   font-size: 15px;
   color: #cce;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cnode__title:hover {
@@ -251,12 +301,14 @@ const counts = computed(() => {
 }
 
 .cnode__deleted {
+  flex-shrink: 0;
   font-size: 12px;
   color: #b98;
 }
 
 .cnode__counts {
   margin-left: auto;
+  padding-left: 10px;
   font-size: 12px;
   color: #888;
   white-space: nowrap;
@@ -267,17 +319,29 @@ const counts = computed(() => {
 }
 
 .cnode__items {
-  margin: 6px 0 4px;
-  padding-left: 20px;
+  /* Влево от строки хранилища (--inside), а не вровень с ней: предмет лежит
+     внутри ячейки, а не на следующем уровне дерева. */
+  margin: 6px 0 4px calc(-1 * var(--inside));
+  padding-left: 0;
   list-style: none;
 }
 
+.cnode__items li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Строки предметов слипались: между ними не было ни одного поля, и список
+     читался как сплошная полоса текста. */
+  padding: 2px 0;
+}
+
 .cnode__item {
-  display: block;
-  padding: 3px 0;
   font-size: 14px;
   color: #aaa;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cnode__item:hover {
@@ -286,7 +350,7 @@ const counts = computed(() => {
 }
 
 .cnode__more {
-  margin: 4px 0 6px 24px;
+  margin: 4px 0 6px;
   padding: 4px 10px;
   font-size: 12px;
   font-family: inherit;
@@ -303,8 +367,7 @@ const counts = computed(() => {
 }
 
 @media (max-width: 768px) {
-  /* Уменьшаем отступ через ту же переменную, которой считаются линии: иначе
-     горизонтальный отрезок на телефоне перестал бы доходить до строки. */
+  /* Уменьшаем шаг через ту же переменную, которой считаются линии. */
   .cnode {
     --indent: 12px;
   }
