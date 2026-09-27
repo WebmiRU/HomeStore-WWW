@@ -12,6 +12,19 @@ export type ImageResponse = {
   created_at: string | null
 }
 
+/** Ответ на загрузку файла: сама картинка и что с ней сделали. */
+export type ImageUploadResult = {
+  image: ImageResponse
+  /**
+   * Создана ли новая привязка. false — картинка уже была у сущности: в
+   * список её добавлять нельзя, клиенту надо сказать об этом отдельно, иначе
+   * тишина выглядит как сбой загрузки.
+   */
+  attached: boolean
+  /** Сколько повторных привязок убрано, пока чистили дубли. */
+  duplicatesRemoved: number
+}
+
 class ImageModule extends FetchFactory<any> {
   private readonly baseUrl = '/image'
 
@@ -19,20 +32,26 @@ class ImageModule extends FetchFactory<any> {
     super(fetcher)
   }
 
-  async uploadForItem(itemId: number, file: File): Promise<ImageResponse> {
+  async uploadForItem(itemId: number, file: File): Promise<ImageUploadResult> {
     const form = new FormData()
     form.append('file', file)
     const result = await this.call('POST', `${this.baseUrl}/item/${itemId}`, form)
-    const unwrapped = (result as any)?.data ?? result
-    return unwrapped as ImageResponse
+    return this.unwrapUpload(result)
   }
 
-  async uploadForStore(storeId: number, file: File): Promise<ImageResponse> {
+  async uploadForStore(storeId: number, file: File): Promise<ImageUploadResult> {
     const form = new FormData()
     form.append('file', file)
     const result = await this.call('POST', `${this.baseUrl}/store/${storeId}`, form)
-    const unwrapped = (result as any)?.data ?? result
-    return unwrapped as ImageResponse
+    return this.unwrapUpload(result)
+  }
+
+  private unwrapUpload(result: any): ImageUploadResult {
+    return {
+      image: ((result as any)?.data ?? result) as ImageResponse,
+      attached: (result as any)?.attached !== false,
+      duplicatesRemoved: Number((result as any)?.duplicates_removed ?? 0),
+    }
   }
 
   async updateAltForItem(itemId: number, imageId: number, alt: string | null): Promise<ImageResponse> {

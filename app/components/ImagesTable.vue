@@ -279,12 +279,27 @@ async function onFileChange(event: Event) {
     progress.value = { ...progress.value, done: progress.value.done + 1 }
 
     try {
-      const img =
+      const uploaded =
         props.entity === 'item'
           ? await $api.image.uploadForItem(props.entityId, file)
           : await $api.image.uploadForStore(props.entityId, file)
 
-      items.value = [...items.value, { ...img, weight: sortedImages.value.length }]
+      // Дубль: картинка уже была в списке, сервер новую привязку не создал.
+      // В списке она уже есть, добавлять её второй раз нельзя — вместо
+      // молчания говорим, что произошло: иначе повтор выглядит как сбой.
+      if (!uploaded.attached) {
+        $notify.add(
+          `«${file.name}» уже был в списке — ${
+            uploaded.duplicatesRemoved > 1
+              ? `убрано дублей: ${uploaded.duplicatesRemoved}`
+              : 'дубль не добавлен'
+          }`,
+          { type: 'info' },
+        )
+        continue
+      }
+
+      items.value = [...items.value, { ...uploaded.image, weight: sortedImages.value.length }]
       emitItems()
       $notify.add(`Изображение «${file.name}» загружено`, { type: 'success' })
     } catch (err: any) {
