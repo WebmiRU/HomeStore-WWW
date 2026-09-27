@@ -7,11 +7,12 @@
         ref="fileInput"
         type="file"
         accept="image/png,image/jpeg,image/webp,image/avif"
+        multiple
         class="file-input"
         @change="onFileChange"
       />
       <button v-if="!readonly" type="button" class="btn-upload" :disabled="uploading" @click="fileInput?.click()">
-        {{ uploading ? 'Загрузка...' : 'Загрузить' }}
+        {{ uploading ? `Загрузка ${progress.done}/${progress.total}...` : 'Загрузить' }}
       </button>
     </div>
 
@@ -150,6 +151,8 @@ function onThumbError(event: Event, img: ImageResponse) {
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
+/** Счётчик для кнопки: «Загрузка 3/7...» — иначе при десяти файлах не видно, идёт ли загрузка. */
+const progress = ref({ done: 0, total: 0 })
 const removingId = ref<number | null>(null)
 const savingAltId = ref<number | null>(null)
 const reordering = ref(false)
@@ -247,29 +250,53 @@ function onDragEnd() {
   dragFromIndex.value = null
 }
 
+/**
+ * Загрузка выбранных файлов — по одному, с уведомлением по каждому.
+ *
+ * По очереди, а не пачкой запросов: загрузка идёт в хранилище, и десяток
+ * одновременных запросов на каждое фото растянул бы не столько саму загрузку,
+ * сколько ожидание. Уведомление получает каждый файл: иначе при десяти
+ * файлах непонятно, какой из них не загрузился, а различает их только имя
+ * файла в сообщении.
+ *
+ * Список пополняется после каждого файла, а не в конце пачки: так видно,
+ * что процесс идёт, и уже загруженное не теряется, если пачка прервётся
+ * на середине.
+ */
 async function onFileChange(event: Event) {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (props.readonly) {
+  const files = Array.from(input.files ?? [])
+
+  if (props.readonly || files.length === 0) {
     input.value = ''
     return
   }
-  if (!file) return
+
   uploading.value = true
-  try {
-    const img =
-      props.entity === 'item'
-        ? await $api.image.uploadForItem(props.entityId, file)
-        : await $api.image.uploadForStore(props.entityId, file)
-    items.value = [...items.value, { ...img, weight: sortedImages.value.length }]
-    emitItems()
-    $notify.add('Изображение загружено', { type: 'success' })
-  } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка загрузки'), { type: 'error', timer: 10 })
-  } finally {
-    uploading.value = false
-    input.value = ''
+  progress.value = { done: 0, total: files.length }
+
+  for (const file of files) {
+    progress.value = { ...progress.value, done: progress.value.done + 1 }
+
+    try {
+      const img =
+        props.entity === 'item'
+          ? await $api.image.uploadForItem(props.entityId, file)
+          : await $api.image.uploadForStore(props.entityId, file)
+
+      items.value = [...items.value, { ...img, weight: sortedImages.value.length }]
+      emitItems()
+      $notify.add(`Изображение «${file.name}» загружено`, { type: 'success' })
+    } catch (err: any) {
+      $notify.add(`«${file.name}»: ${formatApiError(err, 'ошибка загрузки')}`, { type: 'error', timer: 10 })
+    }
   }
+
+  uploading.value = false
+  progress.value = { done: 0, total: 0 }
+  // Сброс значения: без него повторный выбор того же файла не вызовет
+  // change, и вторую попытку человек бы не увидел.
+  input.value = ''
 }
 
 async function removeImage(imageId: number) {

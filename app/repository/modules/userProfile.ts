@@ -6,6 +6,11 @@ export type UserProfileResponse = {
   name: string
   email: string
   avatar_url: string | null
+  /**
+   * sha256 аватара: по нему берётся лёгкая миниатюра. Без него пришлось бы
+   * грузить оригинал целиком.
+   */
+  avatar_sha: string | null
   created_at: string
   updated_at: string
 }

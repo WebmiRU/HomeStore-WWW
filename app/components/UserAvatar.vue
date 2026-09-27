@@ -1,5 +1,17 @@
 <template>
-  <div class="avatar" :style="{ width: px, height: px }">
+  <!--
+    Обёртка становится кнопкой только когда включён просмотр: в шапке и в
+    карточке аватар — часть интерфейса, где клик открывает другое.
+  -->
+  <component
+    :is="lightbox ? 'button' : 'div'"
+    class="avatar"
+    :class="{ 'avatar--openable': lightbox }"
+    :style="{ width: px, height: px }"
+    :type="lightbox ? 'button' : undefined"
+    :aria-label="lightbox ? `Открыть аватар: ${user.name ?? ''}` : undefined"
+    @click="openViewer"
+  >
     <img
       v-if="src"
       :src="src"
@@ -8,7 +20,9 @@
       @error="onError"
     />
     <span v-else class="avatar__fallback" :style="fallbackStyle">{{ initial }}</span>
-  </div>
+  </component>
+
+  <ImageLightbox v-if="viewerOpen" :images="lightboxImages" @close="viewerOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -24,6 +38,8 @@ const props = withDefaults(
     } | null
     size?: number
     thumbKey?: string
+    /** Открывать ли аватар по клику в просмотре крупным кадром. */
+    lightbox?: boolean
   }>(),
   { size: 56, thumbKey: '100x100_cover' }
 )
@@ -31,6 +47,20 @@ const props = withDefaults(
 const { thumbUrl } = useThumbnail()
 
 const failed = ref(false)
+const viewerOpen = ref(false)
+
+/** Просмотр: у пользователя аватар один, стрелок в окне не будет. */
+const lightboxImages = computed(() =>
+  props.user?.avatar_sha || props.user?.avatar_url
+    ? [{ url: props.user?.avatar_url, sha256: props.user?.avatar_sha, alt: props.user?.name ?? 'Аватар' }]
+    : [],
+)
+
+function openViewer() {
+  if (!props.lightbox || lightboxImages.value.length === 0) return
+
+  viewerOpen.value = true
+}
 
 watch(
   () => props.user?.avatar_sha,
@@ -77,6 +107,17 @@ const fallbackStyle = computed(() => {
   justify-content: center;
   background: #2a2a2a;
   border: 1px solid #444;
+}
+
+/* Кнопка-просмотр: круглая рамка и фон те же, что у обёртки, отличается
+   только курсором. */
+.avatar--openable {
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.avatar--openable:hover {
+  border-color: #4a7a4a;
 }
 
 .avatar__img {

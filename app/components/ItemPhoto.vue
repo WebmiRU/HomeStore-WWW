@@ -1,5 +1,19 @@
 <template>
-  <div v-if="src && !failed" class="item-photo-wrap" :style="frameStyle">
+  <!--
+    Обёртка становится кнопкой только когда включён просмотр: в строке
+    сканирования и в диалогах фото — часть карточки, и клик по ней должен
+    выбирать предмет, а не открывать модалку.
+  -->
+  <component
+    :is="lightbox ? 'button' : 'div'"
+    v-if="src && !failed"
+    class="item-photo-wrap"
+    :class="{ 'item-photo-wrap--openable': lightbox }"
+    :style="frameStyle"
+    :type="lightbox ? 'button' : undefined"
+    :aria-label="lightbox ? `Открыть фото: ${alt ?? ''}` : undefined"
+    @click="openViewer"
+  >
     <span v-if="loading" class="item-photo-spinner" aria-hidden="true" />
     <img
       class="item-photo"
@@ -10,8 +24,10 @@
       @load="onLoad"
       @error="onError"
     />
-  </div>
+  </component>
   <ItemPhotoPlaceholder v-else :size="size" />
+
+  <ImageLightbox v-if="viewerOpen" :images="lightboxImages" @close="viewerOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -26,6 +42,12 @@ const props = defineProps<{
    * ячейке таблицы картинка мельче не становится, иначе строка схлопывается.
    */
   size?: number | null
+  /**
+   * Открывать ли фото по клику в просмотре крупным кадром. Включается в
+   * индексных таблицах, где фото стоит в строке списка и клик по строке
+   * ничего не делает.
+   */
+  lightbox?: boolean
 }>()
 
 const { thumbUrl } = useThumbnail()
@@ -49,6 +71,22 @@ const WAIT_MS = 8000
 const failed = ref(false)
 const loading = ref(true)
 const attempt = ref(0)
+const viewerOpen = ref(false)
+
+/** Просмотр крупным кадром. Список фото целиком: их может быть несколько. */
+const lightboxImages = computed(() =>
+  (props.images ?? []).map((image) => ({
+    url: image.url,
+    sha256: image.sha256,
+    alt: image.alt,
+  })),
+)
+
+function openViewer() {
+  if (!props.lightbox) return
+
+  viewerOpen.value = true
+}
 
 const first = computed<ImageResponse | null>(() => (props.images ?? [])[0] ?? null)
 
@@ -149,6 +187,18 @@ function onError() {
 
 .item-photo--loading {
   opacity: 0;
+}
+
+/* Кнопка-просмотр: с рамкой и фоном фото она выглядит тем же блоком, что и
+   обычная обёртка, и отличается только курсором. */
+.item-photo-wrap--openable {
+  display: block;
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.item-photo-wrap--openable:hover {
+  border-color: #4a7a4a;
 }
 
 .item-photo-spinner {

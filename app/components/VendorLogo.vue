@@ -1,5 +1,14 @@
 <template>
-  <span class="m-logo" :style="{ width: px, height: px }" :title="title">
+  <component
+    :is="lightbox ? 'button' : 'span'"
+    class="m-logo"
+    :class="{ 'm-logo--openable': lightbox }"
+    :style="{ width: px, height: px }"
+    :type="lightbox ? 'button' : undefined"
+    :title="lightbox ? 'Открыть логотип' : title"
+    :aria-label="lightbox ? `Открыть логотип: ${title ?? ''}` : undefined"
+    @click="openViewer"
+  >
     <!-- Спиннер показывается, пока не пришла миниатюра: смена логотипа
          оставляет рамку с буквой-заглушкой на всё время запроса, и без
          индикатора не видно, идёт загрузка или она уже отвалилась. -->
@@ -14,7 +23,9 @@
       @error="failed = true"
     />
     <span v-else class="m-logo__fallback" :style="fallbackStyle">{{ initial }}</span>
-  </span>
+  </component>
+
+  <ImageLightbox v-if="viewerOpen" :images="lightboxImages" @close="viewerOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -26,6 +37,11 @@ const props = withDefaults(
     title?: string | null
     size?: number
     thumbKey?: string
+    /**
+     * Открывать ли логотип по клику в просмотре крупным кадром. Включается в
+     * индексных таблицах, где логотип стоит в строке списка.
+     */
+    lightbox?: boolean
   }>(),
   {
     // contain, а не cover: логотип обычно широкий, и обрезка съедала бы
@@ -49,6 +65,20 @@ const WAIT_MS = 8000
 
 const failed = ref(false)
 const loading = ref(false)
+const viewerOpen = ref(false)
+
+/** Просмотр: у логотипа он один, счётчика и стрелок в окне не будет. */
+const lightboxImages = computed(() =>
+  props.logoSha
+    ? [{ sha256: props.logoSha, alt: props.title ? `Логотип: ${props.title}` : 'Логотип' }]
+    : [],
+)
+
+function openViewer() {
+  if (!props.lightbox || !props.logoSha) return
+
+  viewerOpen.value = true
+}
 
 /**
  * Только миниатюра, и никогда — оригинал.
@@ -167,6 +197,16 @@ const fallbackStyle = computed(() => {
    мигает заглушкой, как будто логотип пропал. */
 .m-logo__img--loading {
   opacity: 0;
+}
+
+/* Кнопка-просмотр: рамка и фон те же, что у обёртки, отличается курсор. */
+.m-logo--openable {
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.m-logo--openable:hover {
+  border-color: #4a7a4a;
 }
 
 .m-logo__fallback {

@@ -13,6 +13,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th class="img-col">Аватар</th>
             <th>Имя</th>
             <th>E-mail</th>
             <th>Создан</th>
@@ -22,6 +23,9 @@
         <tbody>
           <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}/edit`)">
             <td data-label="ID">{{ u.id }}</td>
+            <td data-label="Аватар" class="img-col">
+              <UserAvatar :user="u" :size="40" lightbox />
+            </td>
             <td data-label="Имя">{{ u.name }}</td>
             <td data-label="E-mail">{{ u.email }}</td>
             <td data-label="Создан">{{ formatDate(u.created_at) }}</td>
@@ -284,6 +288,7 @@ watch(() => route.query.page, (newPage) => {
   .users-table tr {
     position: relative;
     margin-bottom: 14px;
+    /* Сверху 44px — под кнопки действий, аватар в левом углу стоит на них. */
     padding: 44px 14px 14px;
     background: #1e1e1e;
     border: 1px solid #2b2b2b;
@@ -299,6 +304,20 @@ watch(() => route.query.page, (newPage) => {
     color: #ddd;
     font-size: 15px;
     white-space: normal;
+  }
+
+  .users-table td.img-col {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: auto;
+    padding: 0;
+  }
+
+  /* Подпись колонки у аватара не нужна: картинка и так всё говорит, а на
+     телефоне она в углу и подпись только сбивала бы влево. */
+  .users-table td.img-col::before {
+    display: none;
   }
 
   .users-table td.actions {

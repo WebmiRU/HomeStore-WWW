@@ -26,7 +26,7 @@
             @dblclick="openRow($event, `/vendors/${m.id}/edit`)"
           >
             <td data-label="Логотип" class="cell-logo">
-              <VendorLogo :logo-sha="m.logo_sha" :title="m.title" />
+              <VendorLogo :logo-sha="m.logo_sha" :title="m.title" lightbox />
             </td>
             <td data-label="Название">{{ m.title }}</td>
             <!-- Описание в списке обрезаем: в таблице ему место в одну строку,

@@ -75,7 +75,7 @@
             </td>
             <td data-label="ID">{{ item.payload.id }}</td>
             <td class="img-col">
-              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" />
+              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" lightbox />
             </td>
             <td data-label="Название">{{ item.payload.title }}</td>
             <td data-label="Производитель">
@@ -90,7 +90,14 @@
               </NuxtLink>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Хранилище">{{ item.store?.[0]?.title ?? '—' }}</td>
+            <td data-label="Хранилище">
+              <!-- Ссылка на карточку хранилища, как у категории и производителя.
+                   В цепочке store первым идёт само хранилище, дальше — предки. -->
+              <NuxtLink v-if="item.store?.[0]" :to="`/stores/${item.store[0].id}/edit`" class="row-link">
+                {{ item.store[0].title }}
+              </NuxtLink>
+              <span v-else class="muted">—</span>
+            </td>
             <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>
             <td data-label="Создан">{{ formatDate(item.payload.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(item.payload.updated_at) }}</td>
