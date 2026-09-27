@@ -6,6 +6,8 @@ import type { UserBrief } from './code'
 export type VendorBrief = {
   id: number
   title: string
+  /** Поставщик удалён мягко: название показываем с пометкой, но не ссылкой. */
+  deleted?: boolean
 }
 
 export type VendorResponse = {

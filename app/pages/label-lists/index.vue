@@ -34,7 +34,12 @@
                 без текста
               </span>
             </td>
-            <td data-label="Шаблон">{{ list.label_preset?.title ?? (list.label_preset_id ? '#' + list.label_preset_id : '—') }}</td>
+            <td data-label="Шаблон">
+              <!-- Шаблон удаляется мягко, а список его переживает: название
+                   остаётся видимым с пометкой, назначить можно другой. -->
+              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted"> [удалено]</template></span>
+              <span v-else class="muted">Без шаблона</span>
+            </td>
             <td data-label="Создан">{{ formatDate(list.created_at) }}</td>
             <td data-label="Обновлён">{{ formatDate(list.updated_at) }}</td>
             <td v-if="showOwnerColumn" data-label="Владелец">

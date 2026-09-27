@@ -14,6 +14,9 @@
             <span class="field-label">Группа</span>
             <select v-model="form.group_id" class="field-select">
               <option :value="null">[БЕЗ ГРУППЫ]</option>
+              <option v-if="deletedGroup" :value="deletedGroup.id" disabled>
+                {{ deletedGroup.label }}
+              </option>
               <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.title }}</option>
             </select>
             <span class="field-hint">Группа нужна только чтобы собрать похожие свойства вместе</span>
@@ -42,6 +45,9 @@
             <span class="field-label">Единица измерения</span>
             <select v-model="form.unit_id" class="field-select">
               <option :value="null">[БЕЗ ЕДИНИЦЫ]</option>
+              <option v-if="deletedUnit" :value="deletedUnit.id" disabled>
+                {{ deletedUnit.label }}
+              </option>
               <option v-for="unit in units" :key="unit.id" :value="unit.id">
                 {{ unit.title_short }} — {{ unit.title_full }}
               </option>
@@ -52,6 +58,9 @@
             <span class="field-label">Справочник</span>
             <select v-model="form.dictionary_id" class="field-select">
               <option :value="null">[ВЫБЕРИТЕ СПРАВОЧНИК]</option>
+              <option v-if="deletedDictionary" :value="deletedDictionary.id" disabled>
+                {{ deletedDictionary.label }}
+              </option>
               <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
                 {{ dictionary.title }} ({{ dictionary.values_count }} знач.)
               </option>
@@ -80,11 +89,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import { deletedOption } from '~/composables/deletedOption'
 import {
   PROPERTY_TYPES,
   PROPERTY_TYPE_LABELS,
   propertyAcceptsUnit,
   propertyNeedsDictionary,
+  type PropertyResponse,
   type PropertyType,
 } from '~/repository/modules/property'
 import type { UnitResponse } from '~/repository/modules/unit'
@@ -136,6 +147,45 @@ const dictionary = computed(
   () => dictionaries.value.find((item) => item.id === form.dictionary_id) ?? null,
 )
 
+/**
+ * Позиция «текущее значение удалено» для селектов.
+ *
+ * Списки групп, единиц и справочников приходят уже без удалённых (их скрывает
+ * мягкое удаление), а значение в property осталось — без такой позиции форма
+ * показывала бы «без группы/единицы/справочника», что неправда.
+ */
+const propertyEntity = ref<PropertyResponse | null>(null)
+
+const deletedGroup = computed(() =>
+  deletedOption(groups.value, form.group_id, groupRelation.value),
+)
+
+const deletedUnit = computed(() => deletedOption(units.value, form.unit_id, unitRelation.value))
+
+const deletedDictionary = computed(() =>
+  deletedOption(dictionaries.value, form.dictionary_id, dictionaryRelation.value),
+)
+
+const groupRelation = computed(() => {
+  const group = propertyEntity.value?.group
+
+  return group ? { id: group.id, title: group.title, deleted: group.deleted } : null
+})
+
+const unitRelation = computed(() => {
+  const unit = propertyEntity.value?.unit
+
+  return unit
+    ? { id: unit.id, title: `${unit.title_short} — ${unit.title_full}`, deleted: unit.deleted }
+    : null
+})
+
+const dictionaryRelation = computed(() => {
+  const dict = propertyEntity.value?.dictionary
+
+  return dict ? { id: dict.id, title: dict.title, deleted: dict.deleted } : null
+})
+
 watch(
   () => form.type,
   () => {
@@ -154,6 +204,7 @@ async function load() {
       $api.propertyGroup.all(),
       $api.dictionary.all(),
     ])
+    propertyEntity.value = property
     form.title = property.title
     form.type = property.type
     form.group_id = property.group_id

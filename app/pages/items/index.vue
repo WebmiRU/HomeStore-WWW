@@ -79,23 +79,28 @@
             </td>
             <td data-label="Название">{{ item.payload.title }}</td>
             <td data-label="Производитель">
-              <NuxtLink v-if="item.vendor" :to="`/vendors/${item.vendor.id}/edit`" class="row-link">
+              <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}/edit`" class="row-link">
                 {{ item.vendor.title }}
               </NuxtLink>
+              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} [удалено]</span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Категория">
-              <NuxtLink v-if="item.category" :to="`/categories/${item.category.id}/edit`" class="row-link">
+              <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}/edit`" class="row-link">
                 {{ item.category.title }}
               </NuxtLink>
+              <span v-else-if="item.category" class="muted">{{ item.category.title }} [удалено]</span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Хранилище">
               <!-- Ссылка на карточку хранилища, как у категории и производителя.
-                   В цепочке store первым идёт само хранилище, дальше — предки. -->
-              <NuxtLink v-if="item.store?.[0]" :to="`/stores/${item.store[0].id}/edit`" class="row-link">
+                   В цепочке store первым идёт само хранилище, дальше — предки.
+                   У удалённого ссылки нет: переход вёл бы в 404, поэтому
+                  название остаётся текстом с пометкой. -->
+              <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}/edit`" class="row-link">
                 {{ item.store[0].title }}
               </NuxtLink>
+              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} [удалено]</span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>

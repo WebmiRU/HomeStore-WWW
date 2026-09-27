@@ -11,6 +11,8 @@ export type UserBrief = {
 
 export type StorePayload = {
   id: number
+  /** Хранилище удалено мягко: у первого элемента цепочки, не у предков. */
+  deleted?: boolean
   user_id?: number | null
   user?: UserBrief | null
   title: string

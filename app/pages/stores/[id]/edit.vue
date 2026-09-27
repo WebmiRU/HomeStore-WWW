@@ -24,6 +24,9 @@
             <span class="field-label">Склад</span>
             <select v-model.number="form.warehouse_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
+              <option v-if="deletedWarehouse" :value="deletedWarehouse.id" disabled>
+                {{ deletedWarehouse.label }}
+              </option>
               <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id">
                 {{ opt.title }}
               </option>
@@ -99,6 +102,16 @@ const images = ref<ImageResponse[]>([])
 const storeEntity = ref<StoreResponse | null>(null)
 
 const canEdit = computed(() => storeEntity.value?.rights?.includes('edit') ?? false)
+
+/**
+ * Позиция «текущее значение удалено» в селекте склада.
+ *
+ * Склад удаляется мягко, а warehouse_id у хранилища остаётся — значит, без
+ * этой позиции форма врала бы, что склад не назначен.
+ */
+const deletedWarehouse = computed(() =>
+  deletedOption(warehouseOptions.value, form.warehouse_id, storeEntity.value?.warehouse),
+)
 
 const tabs = [
   { key: 'main', label: 'Основные параметры' },

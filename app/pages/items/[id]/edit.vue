@@ -24,6 +24,9 @@
             <span class="field-label">Производитель</span>
             <select v-model="form.vendor_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
+              <option v-if="deletedVendor" :value="deletedVendor.id" disabled>
+                {{ deletedVendor.label }}
+              </option>
               <option v-for="option in vendorOptions" :key="option.id" :value="option.id">
               {{ option.title }}
               </option>
@@ -35,6 +38,9 @@
             <span class="field-label">Хранилище</span>
             <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
               <option :value="null">[НЕТ]</option>
+              <option v-if="deletedStore" :value="deletedStore.id" disabled>
+                {{ deletedStore.label }}
+              </option>
               <optgroup v-for="group in storeGroups" :key="group.label" :label="group.label">
                 <option
                   v-for="opt in group.options"
@@ -50,6 +56,9 @@
             <span class="field-label">Категория</span>
             <select v-model="form.category_id" class="field-select" :disabled="!canEdit" @change="onCategoryChange">
               <option :value="null">[НЕТ]</option>
+              <option v-if="deletedCategory" :value="deletedCategory.id" disabled>
+                {{ deletedCategory.label }}
+              </option>
               <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
                 {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
               </option>
@@ -143,6 +152,7 @@ import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
+import { deletedOption } from '~/composables/deletedOption'
 import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
 import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
@@ -189,6 +199,26 @@ const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(sto
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
 
 const vendorOptions = computed(() => vendorSelectOptions(vendors.value))
+
+// Позиция «текущее значение удалено» для каждого селекта: значение задано,
+// но родителя в списке уже нет, и без неё форма врала бы, что поле пустое.
+const deletedVendor = computed(() =>
+  deletedOption(vendorOptions.value, form.vendor_id, itemEntity.value?.vendor),
+)
+
+const deletedCategory = computed(() =>
+  deletedOption(categoryOptions.value, form.category_id, itemEntity.value?.category),
+)
+
+const deletedStore = computed(() => {
+  const chain = itemEntity.value?.store ?? []
+
+  return deletedOption(
+    storeGroups.value.flatMap((group) => group.options),
+    form.store_id,
+    chain[0],
+  )
+})
 
 const form = reactive({
   title: '',

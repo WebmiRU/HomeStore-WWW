@@ -6,6 +6,8 @@ import type { PropertyResponse } from './property'
 export type CategoryBrief = {
   id: number
   title: string
+  /** Родитель удалён мягко: название показываем с пометкой, но не ссылкой. */
+  deleted?: boolean
 }
 
 export type CategoryResponse = {

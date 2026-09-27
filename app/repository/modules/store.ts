@@ -25,7 +25,8 @@ export type StoreResponse = {
   title_print: string | null
   parent_id: number | null
   warehouse_id?: number | null
-  warehouse?: { id: number; title: string } | null
+  /** Склад удалён мягко: название показываем с пометкой, сменить можно только на живой. */
+  warehouse?: { id: number; title: string; deleted?: boolean } | null
   created_at: string
   updated_at: string
   parents: StoreParent[]

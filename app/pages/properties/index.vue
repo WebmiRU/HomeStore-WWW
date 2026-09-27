@@ -28,15 +28,15 @@
             <td data-label="Название">{{ p.title }}</td>
             <td data-label="Тип">{{ p.type_label }}</td>
             <td data-label="Группа">
-              <span v-if="p.group">{{ p.group.title }}</span>
+              <span v-if="p.group">{{ p.group.title }}<template v-if="p.group.deleted"> [удалено]</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Ед.">
-              <span v-if="p.unit">{{ p.unit.title_short }}</span>
+              <span v-if="p.unit">{{ p.unit.title_short }}<template v-if="p.unit.deleted"> [удалено]</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Спр.">
-              <span v-if="p.dictionary">{{ p.dictionary.title }}</span>
+              <span v-if="p.dictionary">{{ p.dictionary.title }}<template v-if="p.dictionary.deleted"> [удалено]</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Значений">{{ p.values_count ?? 0 }}</td>

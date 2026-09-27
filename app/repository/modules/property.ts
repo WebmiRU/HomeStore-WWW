@@ -32,6 +32,9 @@ export function propertyNeedsDictionary(type: PropertyType | '' | null | undefin
   return type === 'dictionary'
 }
 
+/** Пометка мягкого удаления: сервер отдаёт её у связанных записей. */
+export type DeletedMark = { deleted?: boolean }
+
 export type PropertyResponse = {
   id: number
   user_id: number
@@ -41,11 +44,11 @@ export type PropertyResponse = {
   /** Готовое название типа для показа: сервер отдаёт его вместе со значением. */
   type_label: string
   group_id: number | null
-  group?: PropertyGroupResponse | null
+  group?: (PropertyGroupResponse & DeletedMark) | null
   unit_id: number | null
-  unit?: UnitResponse | null
+  unit?: (UnitResponse & DeletedMark) | null
   dictionary_id: number | null
-  dictionary?: DictionaryResponse | null
+  dictionary?: (DictionaryResponse & DeletedMark) | null
   created_at: string
   updated_at: string
 }
