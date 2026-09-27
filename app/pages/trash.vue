@@ -120,17 +120,21 @@ const sections = [
 const counts = ref<Record<string, number>>({})
 
 /**
- * Подписи вкладок со счётчиками: «Предметы (3)».
+ * Подписи вкладок со счётчиками: «Предметы (3)», но и «Склады (0)».
  *
- * Число показывается только когда оно больше нуля, иначе вкладки
- * «Склады (0)», «Предметы (0)» и так далее превращаются в шум из
- * тринадцати нулей и взгляд цепляется не туда.
+ * Ноль тоже показываем: по нему видно, что раздел проверен и там пусто, а
+ * не «здесь ничего не лежит, может, сломано». Числа появляются после
+ * загрузки счётчиков — до этого подписи без них, чтобы не мигали сплошными
+ * нулями и тут же менялись на настоящие значения.
  */
 const tabs = computed(() =>
   sections.map((section) => {
-    const count = counts.value[section.key] ?? 0
+    const count = counts.value[section.key]
 
-    return { key: section.key, label: count > 0 ? `${section.label} (${count})` : section.label }
+    return {
+      key: section.key,
+      label: count === undefined ? section.label : `${section.label} (${count})`,
+    }
   }),
 )
 
