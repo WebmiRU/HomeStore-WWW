@@ -17,6 +17,7 @@
       <ContentsNodeRow
         :node="root"
         :depth="0"
+        is-root
         :expanded="expanded"
         :shown-items="shownItems"
         @toggle="toggle"

@@ -1,5 +1,14 @@
 <template>
-  <div class="cnode" :style="{ '--depth': depth }">
+  <!--
+    isLast нужен ради линии: вертикаль рисует каждый узел сам, и у последнего
+    ребёнка она обрывается на середине строки, иначе она уходит ниже последнего
+    потомка и дерево выглядит так, будто у него есть ещё дети.
+  -->
+  <div
+    class="cnode"
+    :class="{ 'cnode--last': isLast, 'cnode--root': isRoot }"
+    :style="{ '--depth': depth }"
+  >
     <div class="cnode__head">
       <!-- Стрелка только у хранилищ с потомками: у листа её нажатие ничего
            не делало бы, а место занимало бы. -->
@@ -17,7 +26,7 @@
 
       <span class="cnode__photo">
         <ItemPhoto v-if="node.image" :images="[node.image]" :alt="node.title" :size="28" />
-        <span v-else class="cnode__photo-empty"></span>
+        <ItemPhotoPlaceholder v-else :size="28" />
       </span>
 
       <NuxtLink v-if="isStore" :to="`/stores/${node.id}/edit`" class="cnode__title">
@@ -37,7 +46,7 @@
         <li v-for="item in visibleItems" :key="item.id">
           <span class="cnode__item-photo">
             <ItemPhoto v-if="item.image" :images="[item.image]" :alt="item.title" :size="22" />
-            <span v-else class="cnode__photo-empty cnode__photo-empty--sm"></span>
+            <ItemPhotoPlaceholder v-else :size="22" />
           </span>
           <NuxtLink :to="`/items/${item.id}/edit`" class="cnode__item">{{ item.title }}</NuxtLink>
         </li>
@@ -53,10 +62,11 @@
       </button>
 
       <ContentsNodeRow
-        v-for="child in node.children"
+        v-for="(child, index) in node.children"
         :key="child.id"
         :node="child"
         :depth="depth + 1"
+        :is-last="index === node.children.length - 1"
         :expanded="expanded"
         :shown-items="shownItems"
         @toggle="$emit('toggle', $event)"
@@ -73,6 +83,10 @@ import type { ContentsNode, ContentsItem } from '~/repository/modules/store'
 const props = defineProps<{
   node: ContentsNode
   depth: number
+  /** Последний ли узел среди братьев: влияет на линии дерева. */
+  isLast?: boolean
+  /** Корень дерева (само хранилище или склад): у него нет родительской линии. */
+  isRoot?: boolean
   expanded: Set<number>
   /** Полные списки предметов для узлов, где нажали «показать все». */
   shownItems: Record<number, ContentsItem[]>
@@ -109,18 +123,63 @@ const counts = computed(() => {
 </script>
 
 <style scoped>
+/*
+  Линии дерева — как в истории коммитов: от строки родителя вниз, от этой
+  линии вбок к строке ребёнка.
+
+  Рисует каждый узел сам, а не контейнер потомков: вертикаль у последнего
+  ребёнка обрывается на середине его строки (--last), иначе она ушла бы
+  ниже последнего потомка и дерево выглядело бы так, будто у него есть ещё
+  дети. Отступ уровня и положение линий — одно и то же число (--indent),
+  иначе на втором уровне горизонтальный отрезок не дойдёт до строки.
+*/
 .cnode {
-  /* Отступ уровня: одна вложенность — 18px, этого хватает, чтобы линия
-     читалась, и не съедает ширину на глубоком дереве. */
-  padding-left: calc(var(--depth) * 18px);
+  --indent: 18px;
+  position: relative;
+  padding-left: calc(var(--depth) * var(--indent) + var(--indent));
+}
+
+.cnode::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--depth) * var(--indent) + 6px);
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid #3a3a3a;
+}
+
+.cnode--last::before {
+  bottom: auto;
+  height: 15px;
+}
+
+.cnode__head::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--depth) * var(--indent) + 6px);
+  top: 14px;
+  width: calc(var(--indent) - 6px);
+  border-top: 1px solid #3a3a3a;
 }
 
 .cnode__head {
+  position: relative;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   padding: 5px 0;
   border-bottom: 1px solid #2b2b2b;
+}
+
+/* Корень — сама карточка, и линий у него нет: они рисуются по горизонтали
+   относительно каждого уровня, и у корня отступ был бы лишней ступенькой. */
+.cnode--root {
+  padding-left: 0;
+}
+
+.cnode--root::before,
+.cnode--root .cnode__head::before {
+  display: none;
 }
 
 .cnode__caret {
@@ -170,6 +229,9 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Строки предметов слипались: между ними не было ни одного поля, и список
+     читался как сплошная полоса текста. */
+  padding: 2px 0;
 }
 
 .cnode__title {
@@ -206,7 +268,7 @@ const counts = computed(() => {
 
 .cnode__items {
   margin: 6px 0 4px;
-  padding-left: 24px;
+  padding-left: 20px;
   list-style: none;
 }
 
@@ -241,8 +303,10 @@ const counts = computed(() => {
 }
 
 @media (max-width: 768px) {
+  /* Уменьшаем отступ через ту же переменную, которой считаются линии: иначе
+     горизонтальный отрезок на телефоне перестал бы доходить до строки. */
   .cnode {
-    padding-left: calc(var(--depth) * 10px);
+    --indent: 12px;
   }
 
   .cnode__counts {
