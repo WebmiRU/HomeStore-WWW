@@ -8,7 +8,9 @@
       </p>
     </div>
 
-    <TabBar :tabs="tabs" class="trash-tabs" />
+    <!-- Перенос, а не прокрутка: вкладок тринадцать, и в прокрутке половина
+         последней уезжает за край, а полосы прокрутки не видно. -->
+    <TabBar :tabs="tabs" wrap class="trash-tabs" />
 
     <div class="trash-toolbar">
       <label class="trash-all">

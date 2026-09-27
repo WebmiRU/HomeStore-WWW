@@ -1,5 +1,5 @@
 <template>
-  <nav class="tabbar">
+  <nav class="tabbar" :class="{ 'tabbar--wrap': wrap }">
     <NuxtLink
       v-for="tab in tabs"
       :key="tab.key"
@@ -17,9 +17,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   tabs: { key: string; label: string }[]
-}>()
+  /**
+   * Переносить вкладки на следующую строку вместо горизонтальной прокрутки.
+   *
+   * Прокрутка полосой вверх не годится там, где вкладок много: полоса
+   * скрыта, активная вкладка может оказаться за краем, и человек решает,
+   * что части разделов просто нет. С переносом видно всё, и на телефоне
+   * вкладки просто ложатся в несколько строк.
+   */
+  wrap?: boolean
+}>(), { wrap: false })
 
 const route = useRoute()
 
@@ -50,6 +59,26 @@ function isActive(key: string): boolean {
   display: none;
 }
 
+/* Перенос: строки вместо прокрутки. Правый край у .tabbar__item при этом
+   даёт лишние отступы у последней вкладки в строке, поэтому он снят. */
+.tabbar--wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  row-gap: 2px;
+}
+
+.tabbar--wrap .tabbar__item {
+  margin-right: 0;
+}
+
+/* Подчёркивание активной вкладки в режиме переноса пришлось бы висеть
+   посреди блока, а не под ним, поэтому здесь активная помечается заливкой. */
+.tabbar--wrap .tabbar__item--active {
+  border-bottom-color: transparent;
+  background: #2a2a3a;
+  border-radius: 4px;
+}
+
 .tabbar__item {
   flex-shrink: 0;
   white-space: nowrap;
@@ -75,6 +104,17 @@ function isActive(key: string): boolean {
   .tabbar__item {
     font-size: 16px;
     padding: 8px 12px;
+  }
+
+  /* На телефоне тринадцать вкладок в несколько строк съедают пол-экрана,
+     поэтому в переносе они мельче и короче. */
+  .tabbar--wrap {
+    row-gap: 0;
+  }
+
+  .tabbar--wrap .tabbar__item {
+    font-size: 14px;
+    padding: 6px 10px;
   }
 }
 </style>
