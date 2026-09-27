@@ -620,6 +620,12 @@ watch(activeTab, () => loadActive())
   border-color: #2f4f2f;
 }
 
+.badge--restore {
+  background: #1d2a33;
+  color: #9cc;
+  border-color: #2f4f60;
+}
+
 .badge--danger {
   background: #331a1a;
   color: #f9a;

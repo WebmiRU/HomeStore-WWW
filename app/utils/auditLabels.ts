@@ -37,6 +37,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'vendor.created': 'Производитель создан',
   'vendor.updated': 'Производитель изменён',
   'vendor.deleted': 'Производитель удалён',
+
   'access_grant.created': 'Доступ выдан',
   'access_grant.updated': 'Доступ изменён',
   'access_grant.deleted': 'Доступ отозван',
@@ -52,6 +53,22 @@ export const ACTION_LABELS: Record<string, string> = {
   'label.generate': 'Генерация этикеток',
   'auth.login': 'Вход в систему',
   'auth.logout': 'Выход из системы',
+
+  // Восстановление из корзины — по одному событию на мягко
+  // удаляемую сущность, их порядок повторяет группы .created выше.
+  'item.restored': 'Предмет восстановлен',
+  'store.restored': 'Хранилище восстановлено',
+  'warehouse.restored': 'Склад восстановлен',
+  'label_preset.restored': 'Шаблон восстановлен',
+  'label_list.restored': 'Список этикеток восстановлен',
+  'user.restored': 'Пользователь восстановлен',
+  'category.restored': 'Категория восстановлена',
+  'property.restored': 'Свойство восстановлено',
+  'property_group.restored': 'Группа свойств восстановлена',
+  'dictionary.restored': 'Справочник восстановлен',
+  'dictionary_value.restored': 'Значение справочника восстановлено',
+  'unit.restored': 'Единица измерения восстановлена',
+  'vendor.restored': 'Производитель восстановлен',
 }
 
 export const ENTITY_LABELS: Record<string, string> = {
@@ -83,6 +100,9 @@ export function entityLabel(key: string | null): string {
 
 export function actionBadgeClass(action: string): string {
   if (action.includes('.deleted')) return 'badge--danger'
+  // Восстановление проверяется раньше created: иначе оно зеленело бы вместе
+  // с созданием, а это разные события — вернули из корзины или завели заново.
+  if (action.includes('.restored')) return 'badge--restore'
   if (action.includes('.created')) return 'badge--success'
   if (action === 'auth.login' || action === 'auth.logout') return 'badge--auth'
   if (action.startsWith('operation.')) return 'badge--op'

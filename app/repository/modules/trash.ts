@@ -48,6 +48,18 @@ class TrashModule extends FetchFactory<any> {
     super(fetcher)
   }
 
+  /**
+   * Сколько записей удалено по каждому разделу.
+   *
+   * Нужен всем вкладкам сразу: без него подпись «Предметы (1)» требовала бы
+   * тринадцати запросов по одному на раздел, а это лишние походы в базу при
+   * каждом показе страницы.
+   */
+  async counts(): Promise<Record<string, number>> {
+    const result = await this.call('GET', `${this.baseUrl}/counts`)
+    return (result as any)?.counts ?? {}
+  }
+
   async list(section: string, page?: number): Promise<PaginatedResponse<TrashEntry>> {
     const result = await this.call('GET', `${this.baseUrl}/${section}`, undefined, {
       params: page ? { page } : undefined,

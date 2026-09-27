@@ -115,7 +115,22 @@ const sections = [
   { key: 'user', label: 'Пользователи' },
 ]
 
-const tabs = sections.map((section) => ({ key: section.key, label: section.label }))
+const counts = ref<Record<string, number>>({})
+
+/**
+ * Подписи вкладок со счётчиками: «Предметы (3)».
+ *
+ * Число показывается только когда оно больше нуля, иначе вкладки
+ * «Склады (0)», «Предметы (0)» и так далее превращаются в шум из
+ * тринадцати нулей и взгляд цепляется не туда.
+ */
+const tabs = computed(() =>
+  sections.map((section) => {
+    const count = counts.value[section.key] ?? 0
+
+    return { key: section.key, label: count > 0 ? `${section.label} (${count})` : section.label }
+  }),
+)
 
 const activeSection = computed(() => {
   const q = route.query.tab
@@ -143,6 +158,10 @@ async function load(page?: number) {
   loading.value = true
   error.value = null
   try {
+    // Счётчики обновляем на каждой загрузке: они меняются после
+    // восстановления, удаления и перехода на другую вкладку.
+    counts.value = await $api.trash.counts()
+
     const result = await $api.trash.list(activeSection.value, page)
     entries.value = result.data
     meta.value = {
