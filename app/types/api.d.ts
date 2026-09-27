@@ -13,6 +13,7 @@ import type OperationModule from '../repository/modules/operation'
 import type PropertyGroupModule from '../repository/modules/propertyGroup'
 import type PropertyModule from '../repository/modules/property'
 import type StockOperationModule from '../repository/modules/stockOperation'
+import type TrashModule from '../repository/modules/trash'
 import type StoreModule from '../repository/modules/store'
 import type UnitModule from '../repository/modules/unit'
 import type UserProfileModule from '../repository/modules/userProfile'
@@ -37,6 +38,7 @@ interface ApiModules {
   propertyGroup: PropertyGroupModule
   stockOperation: StockOperationModule
   store: StoreModule
+  trash: TrashModule
   unit: UnitModule
   userProfile: UserProfileModule
   warehouse: WarehouseModule

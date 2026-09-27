@@ -15,6 +15,7 @@ import OperationModule from '~/repository/modules/operation'
 import PropertyGroupModule from '~/repository/modules/propertyGroup'
 import PropertyModule from '~/repository/modules/property'
 import StockOperationModule from '~/repository/modules/stockOperation'
+import TrashModule from '~/repository/modules/trash'
 import StoreModule from '~/repository/modules/store'
 import UnitModule from '~/repository/modules/unit'
 import UserProfileModule from '~/repository/modules/userProfile'
@@ -37,6 +38,7 @@ interface IApiInstance {
   propertyGroup: PropertyGroupModule
   stockOperation: StockOperationModule
   store: StoreModule
+  trash: TrashModule
   unit: UnitModule
   userProfile: UserProfileModule
   warehouse: WarehouseModule
@@ -99,6 +101,7 @@ export default defineNuxtPlugin(() => {
     property: new PropertyModule(apiFetcher),
     propertyGroup: new PropertyGroupModule(apiFetcher),
     stockOperation: new StockOperationModule(apiFetcher),
+    trash: new TrashModule(apiFetcher),
     store: new StoreModule(apiFetcher),
     unit: new UnitModule(apiFetcher),
     userProfile: new UserProfileModule(apiFetcher),
