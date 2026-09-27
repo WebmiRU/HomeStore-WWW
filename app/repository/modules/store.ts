@@ -34,10 +34,26 @@ export type StoreResponse = {
   images?: ImageResponse[] | null
 }
 
+/**
+ * Картинка в узле дерева: первая по весу, как её показывают списки.
+ *
+ * Форма ответа повторяет ImageResponse, чтобы её можно было отдать
+ * компоненту ItemPhoto без приведения типов.
+ */
+export type ContentsImage = {
+  id: number
+  url: string
+  sha256: string | null
+  alt: string | null
+  original_name: string | null
+  mime: string | null
+}
+
 /** Предмет в узле дерева содержимого. */
 export type ContentsItem = {
   id: number
   title: string
+  image: ContentsImage | null
 }
 
 /**
@@ -54,6 +70,8 @@ export type ContentsNode = {
   kind: 'store' | 'warehouse'
   /** Хранилище удалено мягко: предметы в нём живые, поэтому узел остаётся. */
   deleted: boolean
+  /** Первая картинка хранилища; null, если их нет. */
+  image: ContentsImage | null
   items_count: number
   items: ContentsItem[]
   items_hidden: number

@@ -287,6 +287,7 @@ import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPayload, Store
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
 import type { ChainCrumb } from '~/composables/useLocationChain'
+import { plural } from '~/utils/plural'
 
 type Mode = OperationMode
 type FoundResult =
@@ -835,13 +836,6 @@ async function submitList() {
  * Русские правила не сводятся к «последняя цифра»: 11, 12, 13, 14 уходят
  * в форму множественного, хотя оканчиваются на 1-4.
  */
-function plural(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
-  return many
-}
 
 function formatDate(iso: string): string {
   const d = new Date(iso)

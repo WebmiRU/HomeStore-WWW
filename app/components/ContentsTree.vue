@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
+import { plural } from '~/utils/plural'
 import type { ContentsNode as Node } from '~/repository/modules/store'
 
 const props = defineProps<{
@@ -44,7 +45,7 @@ const root = ref<Node | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-/** Развёрнутые узлы по id. По умолчанию раскрыты первые два уровня. */
+/** Развёрнутые узлы по id. */
 const expanded = ref<Set<number>>(new Set())
 
 /** Узлы, у которых человек нажал «показать все», и их полные списки. */
@@ -52,14 +53,13 @@ const shownItems = ref<Record<number, Node['items']>>({})
 
 const nodeWord = computed(() => (props.kind === 'warehouse' ? 'складе' : 'хранилище'))
 
-/** Раскрыть первые два уровня: дерево бывает глубиной в шесть ступеней. */
-function expandFirstLevels(node: Node, depth: number, acc: Set<number>): void {
-  if (depth >= 2) return
-
-  acc.add(node.id)
-  node.children.forEach((child) => expandFirstLevels(child, depth + 1, acc))
-}
-
+/**
+ * Все узлы дерева сразу.
+ *
+ * Свёрнутым по умолчанию держать смысла нет: дерево — это и есть содержимое
+ * вкладки, и человек приходит за обзором, а не за верхушкой. Свернуть всё
+ * можно кнопкой.
+ */
 function collectIds(node: Node, acc: number[] = []): number[] {
   acc.push(node.id)
   node.children.forEach((child) => collectIds(child, acc))
@@ -77,9 +77,7 @@ async function load() {
         ? await $api.warehouse.contents(props.entityId)
         : await $api.store.contents(props.entityId)
 
-    const acc = new Set<number>()
-    if (root.value) expandFirstLevels(root.value, 0, acc)
-    expanded.value = acc
+    expanded.value = root.value ? new Set(collectIds(root.value)) : new Set()
   } catch (err: any) {
     error.value = formatApiError(err, 'Ошибка загрузки содержимого')
   } finally {

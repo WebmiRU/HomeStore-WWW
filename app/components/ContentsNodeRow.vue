@@ -15,6 +15,11 @@
       </button>
       <span v-else class="cnode__caret cnode__caret--empty"></span>
 
+      <span class="cnode__photo">
+        <ItemPhoto v-if="node.image" :images="[node.image]" :alt="node.title" :size="28" />
+        <span v-else class="cnode__photo-empty"></span>
+      </span>
+
       <NuxtLink v-if="isStore" :to="`/stores/${node.id}/edit`" class="cnode__title">
         {{ node.title }}
       </NuxtLink>
@@ -30,6 +35,10 @@
     <div v-if="isOpen" class="cnode__body">
       <ul v-if="visibleItems.length" class="cnode__items">
         <li v-for="item in visibleItems" :key="item.id">
+          <span class="cnode__item-photo">
+            <ItemPhoto v-if="item.image" :images="[item.image]" :alt="item.title" :size="22" />
+            <span v-else class="cnode__photo-empty cnode__photo-empty--sm"></span>
+          </span>
           <NuxtLink :to="`/items/${item.id}/edit`" class="cnode__item">{{ item.title }}</NuxtLink>
         </li>
       </ul>
@@ -133,6 +142,34 @@ const counts = computed(() => {
 
 .cnode__caret--empty {
   cursor: default;
+}
+
+.cnode__photo,
+.cnode__item-photo {
+  display: inline-flex;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* Пустое место, где у сущности картинки нет: квадрат того же размера, что и
+   миниатюра, иначе строка дерева прыгает между узлами с картинкой и без. */
+.cnode__photo-empty {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #222;
+}
+
+.cnode__photo-empty--sm {
+  width: 22px;
+  height: 22px;
+}
+
+.cnode__items li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cnode__title {
