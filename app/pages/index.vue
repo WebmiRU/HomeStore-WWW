@@ -509,7 +509,10 @@ async function handleScan(code: string) {
         blankCode.value = { value: result.code, set: result.label_set ?? null }
       } else {
         $notify.add('Это безымянная этикетка — создайте по ней предмет', { type: 'warning', timer: 6 })
-        handleCodeNotFound(code)
+        // Из режима операций тоже показываем сиреневый блок, а не красный
+        // «Код не найден в Базе»: код-то найден, отсутствие привязки здесь не
+        // ошибка, а нормальный этап жизни наклейки.
+        handleBlankCode(result.code, result.label_set ?? null)
       }
       return
     }
@@ -703,6 +706,26 @@ async function loadMatchChains(matchList: ItemPayload[]) {
     if (matchChains.value[m.id]) continue
     matchChains.value[m.id] = await chainForStore(m.store_id)
   }
+}
+
+/**
+ * Безымянная этикетка из режима операций: переключаемся в «Поиск» и
+ * показываем сиреневый блок с предложением завести предмет или хранилище.
+ *
+ * Отдельная функция нужна ради одной строки: раньше отсюда вызывался
+ * handleCodeNotFound, и на главной появлялось «Код не найден в Базе» про
+ * код, который только что напечатали, — обидно и неверно.
+ */
+function handleBlankCode(code: string, set: { id: number; title: string } | null) {
+  activeMode.value = 'search'
+  found.value = null
+  foundChain.value = []
+  ambiguousMatches.value = null
+  scanList.value = []
+  scanChains.value = {}
+  matchChains.value = {}
+  notFoundCode.value = ''
+  blankCode.value = { value: code, set }
 }
 
 // Код не найден: переключаемся в «Поиск» и показываем предложение
