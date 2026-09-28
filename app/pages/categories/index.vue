@@ -33,13 +33,20 @@
             </td>
             <td data-label="Создан">{{ formatDate(row.createdAt) }}</td>
             <td class="actions">
+              <!--
+                Воронка, а не глаз: пункт ведёт в список предметов, отобранных
+                по категории, — это фильтр. Глаз в приложении уже значит
+                «только чтение» (см. строку предмета, которую править нельзя),
+                и второй значок на то же место сбивал с толку. Цвет другой
+                намеренно: у «Редактирования» он был тот же.
+              -->
               <NuxtLink
                 :to="`/items?category_id=${row.id}`"
                 class="action-link action-view"
                 title="Предметы категории"
                 aria-label="Предметы категории"
               >
-                <img src="/img/icon/view.svg" class="action-icon" alt="" />
+                <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
               </NuxtLink>
               <NuxtLink
                 :to="`/categories/${row.id}/edit`"
