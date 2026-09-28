@@ -1,11 +1,11 @@
 <template>
   <div class="groups-page">
     <div class="page-header">
-      <h3 class="page-title">Группы свойств</h3>
-      <NuxtLink to="/property-groups/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('properties.groups_list') }}</h3>
+      <NuxtLink to="/property-groups/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,30 +13,30 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Создан</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="g in groups" :key="g.id" @dblclick="openRow($event, `/property-groups/${g.id}`)">
             <td data-label="ID">{{ g.id }}</td>
-            <td data-label="Название">{{ g.title }}</td>
-            <td data-label="Создан">{{ formatDate(g.created_at) }}</td>
+            <td :data-label="t('common.title')">{{ g.title }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(g.created_at) }}</td>
             <td class="actions">
               <NuxtLink
                 :to="`/property-groups/${g.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteGroup(g)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -46,7 +46,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет групп свойств</div>
+      <div v-else class="empty">{{ t('properties.no_groups') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -54,7 +54,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -62,7 +62,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -76,6 +76,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { PropertyGroupResponse } from '~/repository/modules/propertyGroup'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -93,7 +94,7 @@ async function load(page?: number) {
     groups.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки групп свойств')
+    error.value = formatApiError(err, t('properties.groups_load_failed'))
   } finally {
     loading.value = false
   }
@@ -104,14 +105,14 @@ function goToPage(page: number) {
 }
 
 async function deleteGroup(g: PropertyGroupResponse) {
-  if (!confirm(`Удалить группу «${g.title}»?`)) return
+  if (!confirm(t('properties.group_delete_confirm', { title: g.title }))) return
 
   try {
     await $api.propertyGroup.delete(g.id)
-    $notify.add('Группа свойств удалена', { type: 'success' })
+    $notify.add(t('properties.group_delete_done'), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

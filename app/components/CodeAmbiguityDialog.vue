@@ -2,13 +2,13 @@
   <div v-if="request" class="modal-backdrop" @click.self="cancel">
     <div class="modal modal--wide">
       <div class="modal__head">
-        <span class="modal__title">Этот код у нескольких предметов</span>
-        <button type="button" class="modal__close" aria-label="Закрыть" @click="cancel">×</button>
+        <span class="modal__title">{{ t('code_ambiguity.title') }}</span>
+        <button type="button" class="modal__close" :aria-label="t('common.close')" @click="cancel">×</button>
       </div>
 
       <p class="modal__lead">
-        Код <span class="modal__code">{{ request.code }}</span> заведён сразу на нескольких предметах.
-        Выберите, к какому относится эта штука{{ pendingCount > 0 ? ` — в очереди ещё ${pendingCount}` : '' }}.
+        {{ t('code_ambiguity.code_on_several', { code: request.code }) }}
+        {{ t('code_ambiguity.choose') }}{{ pendingCount > 0 ? t('code_ambiguity.in_queue', { count: pendingCount }) : '' }}
       </p>
 
       <!--
@@ -34,15 +34,15 @@
             <template v-if="item.id === request.preselectedId" #side>
               <span
                 class="item-card__prev"
-                title="Для этого кода в прошлый раз выбрали этот предмет"
-              >Предыдущий выбор</span>
+                :title="t('code_ambiguity.last_choice')"
+              >{{ t('code_ambiguity.previous_choice') }}</span>
             </template>
           </ItemCard>
         </li>
       </ul>
 
       <div class="modal__actions">
-        <button type="button" class="btn-plain" @click="cancel">Пропустить</button>
+        <button type="button" class="btn-plain" @click="cancel">{{ t('code_ambiguity.skip') }}</button>
       </div>
     </div>
   </div>

@@ -1,12 +1,12 @@
 <template>
   <div class="mv-page">
     <div class="page-header">
-      <h3 class="page-title">Списания и пополнения</h3>
+      <h3 class="page-title">{{ t('movements.title') }}</h3>
     </div>
 
     <div class="mv-controls">
       <div class="preset-row">
-        <span class="control-label">Период:</span>
+        <span class="control-label">{{ t('movements.period') }}</span>
         <button
           v-for="preset in periodPresets"
           :key="preset.value"
@@ -27,23 +27,23 @@
 
       <div class="preset-row">
         <div class="control-group">
-          <span class="control-label">Направление:</span>
+          <span class="control-label">{{ t('movements.direction') }}</span>
           <select v-model="direction" class="ctl-select" @change="applyFilters">
-            <option value="">Любое</option>
-            <option value="replenish">Пополнение</option>
-            <option value="writeoff">Списание</option>
+            <option value="">{{ t('common.all') }}</option>
+            <option value="replenish">{{ t('movements.replenish') }}</option>
+            <option value="writeoff">{{ t('movements.writeoff') }}</option>
           </select>
         </div>
 
         <div class="control-group">
-          <span class="control-label">Состояние:</span>
+          <span class="control-label">{{ t('movements.state') }}</span>
           <button
             type="button"
             class="ctl-btn"
             :class="{ active: !onlyActive && !onlyReversed && !onlyReversals }"
             @click="setState('all')"
           >
-            Все
+            {{ t('common.all') }}
           </button>
           <button
             type="button"
@@ -51,7 +51,7 @@
             :class="{ active: onlyActive }"
             @click="setState('active')"
           >
-            Без отката
+            {{ t('movements.state_plain') }}
           </button>
           <button
             type="button"
@@ -59,7 +59,7 @@
             :class="{ active: onlyReversed }"
             @click="setState('reversed')"
           >
-            Откаченные
+            {{ t('movements.state_reversed') }}
           </button>
           <button
             type="button"
@@ -67,7 +67,7 @@
             :class="{ active: onlyReversals }"
             @click="setState('reversals')"
           >
-            Только возвраты
+            {{ t('movements.state_returns') }}
           </button>
         </div>
 
@@ -76,17 +76,17 @@
             v-model.trim="comment"
             type="search"
             class="ctl-input ctl-input--search"
-            placeholder="Поиск по комментарию"
+            :placeholder="t('movements.search_comment')"
             @keyup.enter="applyFilters"
           />
-          <button type="button" class="ctl-btn" @click="applyFilters">Найти</button>
+          <button type="button" class="ctl-btn" @click="applyFilters">{{ t('common.search') }}</button>
           <button
             v-if="hasCustomFilters"
             type="button"
             class="ctl-btn ctl-btn--reset"
             @click="resetFilters"
           >
-            Сбросить
+            {{ t('common.reset') }}
           </button>
         </div>
       </div>
@@ -94,25 +94,25 @@
 
     <div class="mv-summary">
       <div class="sum-card sum-card--writeoff">
-        <div class="sum-card__label">Списано</div>
-        <div class="sum-card__units">{{ summary?.writeoff.units ?? 0 }} шт.</div>
-        <div class="sum-card__ops">{{ summary?.writeoff.operations ?? 0 }} операций</div>
+        <div class="sum-card__label">{{ t('main.done_writeoff') }}</div>
+        <div class="sum-card__units">{{ summary?.writeoff.units ?? 0 }} {{ t('units.pcs') }}</div>
+        <div class="sum-card__ops">{{ summary?.writeoff.operations ?? 0 }} {{ t('movements.operations_word') }}</div>
       </div>
       <div class="sum-card sum-card--replenish">
-        <div class="sum-card__label">Пополнено</div>
-        <div class="sum-card__units">{{ summary?.replenish.units ?? 0 }} шт.</div>
-        <div class="sum-card__ops">{{ summary?.replenish.operations ?? 0 }} операций</div>
+        <div class="sum-card__label">{{ t('main.done_replenish') }}</div>
+        <div class="sum-card__units">{{ summary?.replenish.units ?? 0 }} {{ t('units.pcs') }}</div>
+        <div class="sum-card__ops">{{ summary?.replenish.operations ?? 0 }} {{ t('movements.operations_word') }}</div>
       </div>
       <div class="sum-card">
-        <div class="sum-card__label">Отката</div>
+        <div class="sum-card__label">{{ t('movements.reversals') }}</div>
         <div class="sum-card__units">{{ summary?.reversed ?? 0 }}</div>
-        <div class="sum-card__ops">возвратов: {{ summary?.reversals ?? 0 }}</div>
+        <div class="sum-card__ops">{{ t('movements.reversals_count', { count: summary?.reversals ?? 0 }) }}</div>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="!operations.length" class="empty">Операций нет</div>
+    <div v-else-if="!operations.length" class="empty">{{ t('movements.no_operations') }}</div>
 
     <div v-else class="mv-list">
       <article
@@ -131,9 +131,9 @@
           <span class="mv-card__num">№{{ op.id }}</span>
 
           <span v-if="op.is_reversal" class="mv-badge mv-badge--return">
-            Возврат операции №{{ op.reversed_operation_id }}
+            {{ t('movements.reverse_of', { id: op.reversed_operation_id }) }}
           </span>
-          <span v-else-if="op.is_reversed" class="mv-badge mv-badge--reversed">Откачена</span>
+          <span v-else-if="op.is_reversed" class="mv-badge mv-badge--reversed">{{ t('movements.reversed') }}</span>
 
           <span class="mv-card__spacer" />
 
@@ -142,7 +142,7 @@
         </header>
 
         <p v-if="op.comment" class="mv-card__comment">{{ op.comment }}</p>
-        <p v-else class="mv-card__comment mv-card__comment--empty">Без комментария</p>
+        <p v-else class="mv-card__comment mv-card__comment--empty">{{ t('movements.no_comment') }}</p>
 
         <table class="mv-rows">
           <tbody>
@@ -152,7 +152,7 @@
                   {{ row.item_title }}
                 </NuxtLink>
                 <span v-else class="mv-row__plain">{{ row.item_title }}</span>
-                <span v-if="!row.item_id" class="mv-row__gone">(предмет удалён)</span>
+                <span v-if="!row.item_id" class="mv-row__gone">{{ t('movements.item_gone') }}</span>
               </td>
               <td class="mv-row__qty">
                 <span class="mv-row__delta">{{ signOf(op.direction) }}{{ row.quantity }}</span>
@@ -163,7 +163,7 @@
               </td>
               <td class="mv-row__returned">
                 <span v-if="row.is_returned" class="mv-row__return-note">
-                  возвращено {{ row.reversed_quantity }} из {{ row.quantity }}
+                  {{ t('movements.returned_of', { returned: row.reversed_quantity, total: row.quantity }) }}
                 </span>
               </td>
             </tr>
@@ -172,10 +172,10 @@
 
         <footer v-if="canReverse(op)" class="mv-card__foot">
           <button type="button" class="mv-reverse-btn" @click="openReverse(op)">
-            Вернуть
+            {{ t('movements.reverse') }}
           </button>
           <span v-if="totalRemaining(op) < totalQuantity(op)" class="mv-card__foot-hint">
-            уже возвращено {{ totalQuantity(op) - totalRemaining(op) }} из {{ totalQuantity(op) }}
+            {{ t('movements.already_returned', { returned: totalQuantity(op) - totalRemaining(op), total: totalQuantity(op) }) }}
           </span>
         </footer>
       </article>
@@ -188,7 +188,7 @@
         :disabled="meta.current_page <= 1"
         @click="goToPage(meta.current_page - 1)"
       >
-        ← Назад
+        ← {{ t('common.back') }}
       </button>
       <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
       <button
@@ -197,7 +197,7 @@
         :disabled="meta.current_page >= meta.last_page"
         @click="goToPage(meta.current_page + 1)"
       >
-        Вперёд →
+        {{ t('common.forward') }} →
       </button>
     </div>
 
@@ -205,12 +205,12 @@
     <div v-if="reversing" class="modal-backdrop" @click.self="closeReverse">
       <div class="modal">
         <div class="modal__head">
-          <span class="modal__title">Возврат операции №{{ reversing.id }}</span>
-          <button type="button" class="modal__close" aria-label="Закрыть" @click="closeReverse">×</button>
+          <span class="modal__title">{{ t('movements.reverse_title', { id: reversing.id }) }}</span>
+          <button type="button" class="modal__close" :aria-label="t('common.close')" @click="closeReverse">×</button>
         </div>
 
         <p class="modal__lead">
-          {{ reversing.direction_label }} на {{ totalQuantity(reversing) }} шт.
+          {{ t('movements.on_quantity', { direction: reversing.direction_label, count: totalQuantity(reversing) }) }}
           {{ reverseEffect }}
         </p>
 
@@ -221,13 +221,13 @@
                 <input
                   v-model="selection[row.id].on"
                   type="checkbox"
-                  :aria-label="`Вернуть ${row.item_title}`"
+                  :aria-label="t('movements.reverse_item', { title: row.item_title })"
                 />
               </td>
               <td class="modal__row-title">{{ row.item_title }}</td>
               <td class="modal__row-qty">
                 <label :for="`rev-${row.id}`" class="modal__row-label">
-                  {{ row.remaining }} из {{ row.quantity }}
+                  {{ t('movements.remaining_of', { remaining: row.remaining, total: row.quantity }) }}
                 </label>
                 <input
                   :id="`rev-${row.id}`"
@@ -244,7 +244,7 @@
         </table>
 
         <div class="modal__field">
-          <label class="modal__label" for="rev-comment">Комментарий</label>
+          <label class="modal__label" for="rev-comment">{{ t('movements.comment') }}</label>
           <input
             id="rev-comment"
             v-model.trim="reverseComment"
@@ -258,7 +258,7 @@
 
         <div class="modal__actions">
           <button type="button" class="btn-plain" :disabled="reversingBusy" @click="closeReverse">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
@@ -266,7 +266,7 @@
             :disabled="reversingBusy || selectedCount === 0"
             @click="confirmReverse"
           >
-            {{ reversingBusy ? 'Возвращаем…' : 'Вернуть' }}
+            {{ reversingBusy ? t('movements.reversing') : t('movements.reverse') }}
             <template v-if="selectedCount"> ({{ selectedCount }})</template>
           </button>
         </div>
@@ -285,6 +285,7 @@ import type {
 } from '~/repository/modules/stockOperation'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -304,11 +305,11 @@ const onlyReversed = ref(false)
 const onlyReversals = ref(false)
 
 const periodPresets = [
-  { value: '', label: 'Всё время' },
-  { value: 'today', label: 'Сегодня' },
-  { value: 'week', label: 'Неделя' },
-  { value: 'month', label: 'Месяц' },
-  { value: 'custom', label: 'Свои даты' },
+  { value: '', label: t('movements.period_all') },
+  { value: 'today', label: t('movements.period_today') },
+  { value: 'week', label: t('movements.period_week') },
+  { value: 'month', label: t('movements.period_month') },
+  { value: 'custom', label: t('journal.own_dates') },
 ]
 
 const hasCustomFilters = computed(
@@ -346,7 +347,7 @@ async function load(page?: number) {
     // только операции текущей страницы.
     summary.value = await $api.stockOperation.summary(filters)
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки журнала')
+    error.value = formatApiError(err, t('movements.load_failed'))
   } finally {
     loading.value = false
   }
@@ -440,8 +441,8 @@ const selectedCount = computed(
 
 const reverseCommentPlaceholder = computed(() =>
   reversing.value?.direction === 'writeoff'
-    ? 'Например: вернули на склад, приёмка №4'
-    : 'Например: ошибочно приняли, товар числится за другим'
+    ? t('movements.reverse_hint_replenish')
+    : t('movements.reverse_hint_writeoff')
 )
 
 // Что произойдёт с остатком. Откат меняет направление на противоположное:
@@ -449,8 +450,8 @@ const reverseCommentPlaceholder = computed(() =>
 // Раньше здесь стоял один текст на оба случая, и для пополнения он врал.
 const reverseEffect = computed(() =>
   reversing.value?.direction === 'writeoff'
-    ? 'Возврат вернёт товар на склад.'
-    : 'Возврат заберёт товар со склада — ошибочно принятый приход отыгрывается.'
+    ? t('movements.reverse_effect_replenish')
+    : t('movements.reverse_effect_writeoff')
 )
 
 function openReverse(op: StockOperation) {
@@ -489,13 +490,13 @@ async function confirmReverse() {
       comment: reverseComment.value || null,
     })
     $notify.add(
-      `${result.direction_label}: возврат операции №${op.id} — ${rows.length} строк`,
+      t('movements.reverse_done', { direction: result.direction_label, id: op.id, rows: rows.length }),
       { type: 'success', timer: 6 }
     )
     reversing.value = null
     await load(meta.value.current_page)
   } catch (err: any) {
-    reverseError.value = formatApiError(err, 'Не удалось выполнить возврат')
+    reverseError.value = formatApiError(err, t('movements.reverse_failed'))
   } finally {
     reversingBusy.value = false
   }

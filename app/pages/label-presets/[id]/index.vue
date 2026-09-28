@@ -1,15 +1,15 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование шаблона #{{ id }}</h3>
+    <h3 class="page-title">{{ t('label_presets.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
       <TabBar :tabs="tabs" class="edit-tabs" />
 
       <div v-if="readonly" class="readonly-notice">
-        Системный шаблон — только просмотр. Правке и удалению не подлежит.
+        {{ t('label_presets.system_card_hint') }}
       </div>
 
       <form @submit.prevent="save" class="edit-form">
@@ -19,43 +19,43 @@
           <fieldset :disabled="readonly" class="fieldset-plain">
           <!-- Основное -->
           <fieldset class="fieldset">
-            <legend class="legend">Основное</legend>
+            <legend class="legend">{{ t('label_presets.legend_main') }}</legend>
             <label class="field">
-              <span class="field-label">Название</span>
+              <span class="field-label">{{ t('form.title') }}</span>
               <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
             </label>
           </fieldset>
 
           <!-- Страница -->
           <fieldset class="fieldset">
-            <legend class="legend">Страница</legend>
+            <legend class="legend">{{ t('label_presets.legend_page') }}</legend>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Ширина</span>
+                <span class="field-label">{{ t('label_presets.width') }}</span>
                 <input v-model.number="form.page_width" type="number" class="field-input" min="1" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Высота</span>
+                <span class="field-label">{{ t('label_presets.height') }}</span>
                 <input v-model.number="form.page_height" type="number" class="field-input" min="1" step="0.1" required />
               </label>
             </div>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Отступ сверху</span>
+                <span class="field-label">{{ t('label_presets.margin_top') }}</span>
                 <input v-model.number="form.page_margin_top" type="number" class="field-input" min="0" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Отступ справа</span>
+                <span class="field-label">{{ t('label_presets.margin_right') }}</span>
                 <input v-model.number="form.page_margin_right" type="number" class="field-input" min="0" step="0.1" required />
               </label>
             </div>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Отступ снизу</span>
+                <span class="field-label">{{ t('label_presets.margin_bottom') }}</span>
                 <input v-model.number="form.page_margin_bottom" type="number" class="field-input" min="0" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Отступ слева</span>
+                <span class="field-label">{{ t('label_presets.margin_left') }}</span>
                 <input v-model.number="form.page_margin_left" type="number" class="field-input" min="0" step="0.1" required />
               </label>
             </div>
@@ -63,34 +63,34 @@
 
           <!-- Ячейка -->
           <fieldset class="fieldset">
-            <legend class="legend">Ячейка</legend>
+            <legend class="legend">{{ t('label_presets.legend_cell') }}</legend>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Ширина</span>
+                <span class="field-label">{{ t('label_presets.width') }}</span>
                 <input v-model.number="form.cell_width" type="number" class="field-input" min="1" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Высота</span>
+                <span class="field-label">{{ t('label_presets.height') }}</span>
                 <input v-model.number="form.cell_height" type="number" class="field-input" min="1" step="0.1" required />
               </label>
             </div>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Отступ сверху</span>
+                <span class="field-label">{{ t('label_presets.margin_top') }}</span>
                 <input v-model.number="form.cell_pad_top" type="number" class="field-input" min="0" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Отступ справа</span>
+                <span class="field-label">{{ t('label_presets.margin_right') }}</span>
                 <input v-model.number="form.cell_pad_right" type="number" class="field-input" min="0" step="0.1" required />
               </label>
             </div>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Отступ снизу</span>
+                <span class="field-label">{{ t('label_presets.margin_bottom') }}</span>
                 <input v-model.number="form.cell_pad_bottom" type="number" class="field-input" min="0" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Отступ слева</span>
+                <span class="field-label">{{ t('label_presets.margin_left') }}</span>
                 <input v-model.number="form.cell_pad_left" type="number" class="field-input" min="0" step="0.1" required />
               </label>
             </div>
@@ -98,56 +98,56 @@
 
           <!-- Штрих-код -->
           <fieldset class="fieldset">
-            <legend class="legend">Штрих-код</legend>
+            <legend class="legend">{{ t('label_presets.legend_barcode') }}</legend>
             <label class="field">
-              <span class="field-label">Позиция</span>
+              <span class="field-label">{{ t('label_presets.position') }}</span>
               <select v-model="form.barcode_position" class="field-select" required>
-                <option value="left">Слева</option>
-                <option value="right">Справа</option>
-                <option value="top">Сверху</option>
-                <option value="bottom">Снизу</option>
+                <option value="left">{{ t('label_presets.pos_left') }}</option>
+                <option value="right">{{ t('label_presets.pos_right') }}</option>
+                <option value="top">{{ t('label_presets.pos_top') }}</option>
+                <option value="bottom">{{ t('label_presets.pos_bottom') }}</option>
               </select>
             </label>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Отступ текста</span>
+                <span class="field-label">{{ t('label_presets.text_offset') }}</span>
                 <input v-model.number="form.barcode_text_gap" type="number" class="field-input" min="0" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Размер</span>
+                <span class="field-label">{{ t('label_presets.size') }}</span>
                 <input v-model.number="form.barcode_size" type="number" class="field-input" min="1" step="0.1" required />
               </label>
             </div>
             <label class="field field-check">
               <input v-model="form.show_text" type="checkbox" class="field-checkbox" />
-              <span class="field-label">Печатать подпись (название) под кодом</span>
+              <span class="field-label">{{ t('label_presets.print_label') }}</span>
             </label>
           </fieldset>
 
           <!-- Шрифт -->
           <fieldset class="fieldset">
-            <legend class="legend">Шрифт</legend>
+            <legend class="legend">{{ t('label_presets.legend_font') }}</legend>
             <label class="field">
               <span class="field-label">font_id</span>
               <input v-model.number="form.font_id" type="number" class="field-input" />
             </label>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Мин. размер</span>
+                <span class="field-label">{{ t('label_presets.font_min') }}</span>
                 <input v-model.number="form.font_size_min" type="number" class="field-input" min="1" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Макс. размер</span>
+                <span class="field-label">{{ t('label_presets.font_max') }}</span>
                 <input v-model.number="form.font_size_max" type="number" class="field-input" min="1" step="0.1" required />
               </label>
             </div>
             <div class="field-row">
               <label class="field field-half">
-                <span class="field-label">Шаг размера</span>
+                <span class="field-label">{{ t('label_presets.font_step') }}</span>
                 <input v-model.number="form.font_size_step" type="number" class="field-input" min="0.1" step="0.1" required />
               </label>
               <label class="field field-half">
-                <span class="field-label">Межстрочный</span>
+                <span class="field-label">{{ t('label_presets.line_height') }}</span>
                 <input v-model.number="form.line_height_factor" type="number" class="field-input" min="0.5" step="0.1" required />
               </label>
             </div>
@@ -160,9 +160,9 @@
         </section>
 
         <div class="form-actions">
-          <button v-if="!readonly" type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <button v-if="!readonly" type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
           <NuxtLink to="/label-presets" class="btn-cancel">
-            {{ readonly ? 'Назад' : 'Отмена' }}
+            {{ readonly ? t('common.back') : t('form.cancel') }}
           </NuxtLink>
         </div>
       </form>
@@ -175,18 +175,19 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('label_presets.main_tab') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -262,9 +263,9 @@ async function save() {
   saving.value = true
   try {
     await $api.labelPreset.update(Number(id), { ...form })
-    $notify.add('Шаблон сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('label_presets.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

@@ -1,13 +1,13 @@
 <template>
   <div class="options-page">
     <div class="page-header">
-      <h3 class="page-title">Настройки</h3>
+      <h3 class="page-title">{{ t('options_page.title') }}</h3>
       <div class="page-header-actions">
         <button type="button" class="btn-plain" :disabled="saving" @click="fillDefaults">
-          Вернуть как было
+          {{ t('options_page.restore') }}
         </button>
         <button type="button" class="btn-confirm" :disabled="saving || !dirty" @click="saveAll">
-          {{ saving ? 'Сохраняю...' : 'Сохранить' }}
+          {{ saving ? t('options_page.saving') : t('options_page.save') }}
         </button>
       </div>
     </div>
@@ -15,7 +15,7 @@
     <TabBar :tabs="tabs" class="options-tabs" />
 
     <p class="options-hint">
-      Настройки только ваши: их видите вы и больше никто.
+      {{ t('options_page.hint') }}
     </p>
 
     <!--
@@ -24,12 +24,9 @@
       Ключ вкладки живёт в адресе — на вкладку можно вернуться кнопкой «назад».
     -->
     <section v-if="activeTab === 'menu'" class="options-card">
-      <h4 class="options-card__title">Меню</h4>
+      <h4 class="options-card__title">{{ t('options_page.menu_title') }}</h4>
       <p class="options-card__hint">
-        Галочка — показывать пункт, стрелки — порядок. Пункты внутри групп
-        переставляются отдельно: у каждой группы свой список и своя
-        расстановка. Спрятанный пункт остаётся доступен по прямой ссылке: это
-        не запрет, а настройка отображения.
+        {{ t('options_page.menu_hint') }}
       </p>
 
       <ul class="menu-list">
@@ -39,10 +36,10 @@
               <input
                 type="checkbox"
                 :checked="shown.has(entry.key)"
-                :aria-label="`Показывать «${entry.label}»`"
+                :aria-label="t('options_page.show_item', { label: t(entry.labelKey) })""
                 @change="toggleShown(entry.key)"
               />
-              <span class="menu-row__label">{{ entry.label }}</span>
+              <span class="menu-row__label">{{ t(entry.labelKey) }}</span>
             </label>
 
             <span class="menu-row__move">
@@ -50,7 +47,7 @@
                 type="button"
                 class="menu-move"
                 :disabled="isFirst(topOrder, entry.key)"
-                :aria-label="`Выше: ${entry.label}`"
+                :aria-label="t('options_page.up', { label: t(entry.labelKey) })""
                 @click="move(entry.key, -1, topOrder)"
               >
                 ↑
@@ -59,7 +56,7 @@
                 type="button"
                 class="menu-move"
                 :disabled="isLast(topOrder, entry.key)"
-                :aria-label="`Ниже: ${entry.label}`"
+                :aria-label="t('options_page.down', { label: t(entry.labelKey) })""
                 @click="move(entry.key, 1, topOrder)"
               >
                 ↓
@@ -79,10 +76,10 @@
                   <input
                     type="checkbox"
                     :checked="shown.has(item.key)"
-                    :aria-label="`Показывать «${item.label}»`"
+                    :aria-label="t('options_page.show_item', { label: t(item.labelKey) })""
                     @change="toggleShown(item.key)"
                   />
-                  <span class="menu-row__label">{{ item.label }}</span>
+                  <span class="menu-row__label">{{ t(item.labelKey) }}</span>
                 </label>
 
                 <span class="menu-row__move">
@@ -90,7 +87,7 @@
                     type="button"
                     class="menu-move"
                     :disabled="isFirst(groupOrder(entry), item.key)"
-                    :aria-label="`Выше: ${item.label}`"
+                    :aria-label="t('options_page.up', { label: t(item.labelKey) })""
                     @click="move(item.key, -1, groupOrder(entry))"
                   >
                     ↑
@@ -99,7 +96,7 @@
                     type="button"
                     class="menu-move"
                     :disabled="isLast(groupOrder(entry), item.key)"
-                    :aria-label="`Ниже: ${item.label}`"
+                    :aria-label="t('options_page.down', { label: t(item.labelKey) })""
                     @click="move(item.key, 1, groupOrder(entry))"
                   >
                     ↓
@@ -113,9 +110,9 @@
     </section>
 
     <section v-else-if="activeTab === 'mode'" class="options-card">
-      <h4 class="options-card__title">Режим работы</h4>
+      <h4 class="options-card__title">{{ t('options_page.mode_title') }}</h4>
       <p class="options-card__hint">
-        С чего начинается главная страница и что делает следующее сканирование.
+        {{ t('options_page.mode_hint') }}
       </p>
 
       <div class="mode-row">
@@ -132,7 +129,7 @@
             :checked="operationMode === mode.value"
             @change="operationMode = mode.value"
           />
-          <span>{{ mode.label }}</span>
+          <span>{{ t(mode.labelKey) }}</span>
         </label>
       </div>
 
@@ -145,18 +142,16 @@
             :checked="rememberOperationMode"
             @change="rememberOperationMode = !rememberOperationMode"
           />
-          <span class="menu-row__label">Запоминать выбранный режим</span>
+          <span class="menu-row__label">{{ t('options_page.remember_mode') }}</span>
         </span>
       </label>
       <p class="options-card__hint">
-        Включено — после перезагрузки страницы и на другом устройстве главная
-        откроется в том же режиме. Выключено — каждый раз с поиска, а
-        переключение работает только до перезагрузки.
+        {{ t('options_page.remember_mode_hint') }}
       </p>
     </section>
 
-    <section v-else class="options-card">
-      <h4 class="options-card__title">Интерфейс</h4>
+    <section v-else-if="activeTab === 'interface'" class="options-card">
+      <h4 class="options-card__title">{{ t('options_page.interface_title') }}</h4>
 
       <label class="menu-row menu-row--plain">
         <span class="menu-row__check">
@@ -165,13 +160,37 @@
             :checked="showCodeBlock"
             @change="showCodeBlock = !showCodeBlock"
           />
-          <span class="menu-row__label">Показывать блок «Код» внизу страниц</span>
+          <span class="menu-row__label">{{ t('options_page.show_code_block') }}</span>
         </span>
       </label>
       <p class="options-card__hint">
-        Поле для ручного ввода кода. Сканер при этом продолжит работать: он
-        читает клавиатуру на любой странице.
+        {{ t('options_page.show_code_block_hint') }}
       </p>
+    </section>
+
+    <section v-else class="options-card">
+      <h4 class="options-card__title">{{ t('options_page.language_title') }}</h4>
+      <p class="options-card__hint">
+        {{ t('options_page.language_hint') }}
+      </p>
+
+      <div class="mode-row">
+        <label
+          v-for="item in languages"
+          :key="item.value"
+          class="mode-choice"
+          :class="{ 'mode-choice--on': localeChoice === item.value }"
+        >
+          <input
+            type="radio"
+            name="language"
+            :value="item.value"
+            :checked="localeChoice === item.value"
+            @change="switchLanguage(item.value)"
+          />
+          <span>{{ t(item.labelKey) }}</span>
+        </label>
+      </div>
     </section>
   </div>
 </template>
@@ -179,28 +198,38 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { isNavGroup, navTree, sortNavKeys, type NavGroup, type NavItem } from '~/utils/navigation'
-import type { OperationMode } from '~/repository/modules/option'
+import type { Locale, OperationMode } from '~/repository/modules/option'
+import type { TranslationKey } from '~/i18n/ru'
 import { formatApiError } from '~/composables/formatApiError'
 
 const route = useRoute()
 const { $notify } = useNuxtApp()
 const { options, load, save } = useOptions()
+const { t, locale, setLocale } = useI18n()
 
-const tabs = [
-  { key: 'menu', label: 'Меню' },
-  { key: 'mode', label: 'Режим работы' },
-  { key: 'interface', label: 'Интерфейс' },
-]
+// computed, а не обычный массив: язык приезжает из настроек после монтирования,
+// и собранный при setup список вкладок остался бы на старом языке.
+const tabs = computed(() => [
+  { key: 'menu', label: t('options_page.tab_menu') },
+  { key: 'mode', label: t('options_page.tab_mode') },
+  { key: 'interface', label: t('options_page.tab_interface') },
+  { key: 'language', label: t('options_page.tab_language') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  return typeof q === 'string' && tabs.some((tab) => tab.key === q) ? q : tabs[0]!.key
+  return typeof q === 'string' && tabs.value.some((tab) => tab.key === q) ? q : tabs.value[0]!.key
 })
 
-const modes: { value: OperationMode; label: string }[] = [
-  { value: 'search', label: 'Поиск' },
-  { value: 'replenish', label: 'Пополнить' },
-  { value: 'writeoff', label: 'Списать' },
+const languages: { value: Locale; labelKey: TranslationKey }[] = [
+  { value: 'ru', labelKey: 'options_page.language_ru' },
+  { value: 'en', labelKey: 'options_page.language_en' },
+]
+
+const modes: { value: OperationMode; labelKey: TranslationKey }[] = [
+  { value: 'search', labelKey: 'options_page.mode_search' },
+  { value: 'replenish', labelKey: 'options_page.mode_replenish' },
+  { value: 'writeoff', labelKey: 'options_page.mode_writeoff' },
 ]
 
 /**
@@ -212,6 +241,8 @@ const hidden = ref<Set<string>>(new Set())
 const operationMode = ref<OperationMode>('search')
 const showCodeBlock = ref(true)
 const rememberOperationMode = ref(true)
+/** Язык в форме: он же и то, что сейчас показано на экране. */
+const localeChoice = ref<Locale>('ru')
 const saving = ref(false)
 
 /**
@@ -287,6 +318,17 @@ function move(key: string, direction: -1 | 1, keys: string[]): void {
   order.value = next
 }
 
+/**
+ * Язык применяется сразу, чтобы результат был виден тут же, но сохраняется
+ * вместе с остальными настройками — как любая другая настройка, с той же
+ * кнопкой. Cookie обновляется сразу: следующая загрузка не должна ждать ответа
+ * сервера, чтобы показать нужный язык.
+ */
+function switchLanguage(next: Locale): void {
+  localeChoice.value = next
+  setLocale(next)
+}
+
 function toggleShown(key: string): void {
   const next = new Set(hidden.value)
 
@@ -306,6 +348,7 @@ function fillFromOptions(): void {
   operationMode.value = options.value.operation_mode
   showCodeBlock.value = options.value.show_code_block
   rememberOperationMode.value = options.value.remember_operation_mode
+  localeChoice.value = options.value.locale
 }
 
 /** К умолчаниям: пустой порядок и пустой список скрытых — это «как в приложении». */
@@ -315,6 +358,7 @@ function fillDefaults(): void {
   operationMode.value = 'search'
   showCodeBlock.value = true
   rememberOperationMode.value = true
+  localeChoice.value = 'ru'
 }
 
 /** Ключи в том виде, в каком их видит человек с учётом сохранённого порядка. */
@@ -329,7 +373,8 @@ const dirty = computed(
     [...hidden.value].sort().join() !== [...options.value.menu_hidden].sort().join() ||
     operationMode.value !== options.value.operation_mode ||
     showCodeBlock.value !== options.value.show_code_block ||
-    rememberOperationMode.value !== options.value.remember_operation_mode,
+    rememberOperationMode.value !== options.value.remember_operation_mode ||
+    localeChoice.value !== options.value.locale,
 )
 
 async function saveAll(): Promise<void> {
@@ -344,11 +389,12 @@ async function saveAll(): Promise<void> {
       operation_mode: operationMode.value,
       show_code_block: showCodeBlock.value,
       remember_operation_mode: rememberOperationMode.value,
+      locale: localeChoice.value,
     })
 
-    $notify.add('Настройки сохранены', { type: 'success', timer: 4 })
+    $notify.add(t('options_page.saved'), { type: 'success', timer: 4 })
   } catch (err: unknown) {
-    $notify.add(formatApiError(err, 'Не удалось сохранить настройки'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('options_page.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

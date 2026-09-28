@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование склада #{{ id }}</h3>
+    <h3 class="page-title">{{ t('warehouses.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,20 +11,20 @@
       <form @submit.prevent="save" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
           </label>
 
           <label class="field">
-            <span class="field-label">Пользователь</span>
+            <span class="field-label">{{ t('access_rights.user') }}</span>
             <select v-model.number="form.user_id" class="field-select" required :disabled="!canEdit">
               <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
             </select>
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
-            <NuxtLink to="/warehouses" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving || !canEdit">{{ t('form.save') }}</button>
+            <NuxtLink to="/warehouses" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </section>
 
@@ -52,6 +52,7 @@ import type { UserProfileResponse } from '~/repository/modules/userProfile'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { currentUserId } = useCurrentUser()
 const route = useRoute()
 
@@ -69,13 +70,13 @@ const form = reactive({
 })
 
 const tabs = computed(() => {
-  const base = [{ key: 'main', label: 'Основные параметры' }]
+  const base = [{ key: 'main', label: t('warehouses.main_tab') }]
   const isOwner = currentUserId.value !== null && warehouse.value?.user_id === currentUserId.value
-  base.push({ key: 'contents', label: 'Содержимое' })
+  base.push({ key: 'contents', label: t('warehouses.contents_tab') })
   if (isOwner) {
-    base.push({ key: 'rights', label: 'Права' })
+    base.push({ key: 'rights', label: t('warehouses.rights_tab') })
   }
-  base.push({ key: 'stats', label: 'Статистика' })
+  base.push({ key: 'stats', label: t('warehouses.stats_tab') })
   return base
 })
 
@@ -115,9 +116,9 @@ async function save() {
       title: form.title,
       user_id: form.user_id ?? undefined,
     })
-    $notify.add('Склад сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('warehouses.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

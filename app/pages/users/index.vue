@@ -1,11 +1,11 @@
 <template>
   <div class="users-page">
     <div class="page-header">
-      <h3 class="page-title">Пользователи</h3>
-      <NuxtLink to="/users/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('team.users_title') }}</h3>
+      <NuxtLink to="/users/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,27 +13,27 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th class="img-col">Аватар</th>
-            <th>Имя</th>
+            <th class="img-col">{{ t('team.avatar') }}</th>
+            <th>{{ t('common.name') }}</th>
             <th>E-mail</th>
-            <th>Создан</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}`)">
             <td data-label="ID">{{ u.id }}</td>
-            <td data-label="Аватар" class="img-col">
+            <td :data-label="t('team.avatar')" class="img-col">
               <UserAvatar :user="u" :size="40" lightbox />
             </td>
-            <td data-label="Имя">{{ u.name }}</td>
+            <td :data-label="t('common.name')">{{ u.name }}</td>
             <td data-label="E-mail">{{ u.email }}</td>
-            <td data-label="Создан">{{ formatDate(u.created_at) }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(u.created_at) }}</td>
             <td class="actions">
-              <NuxtLink :to="`/users/${u.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink :to="`/users/${u.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteUser(u.id)">
+              <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteUser(u.id)">
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
             </td>
@@ -41,7 +41,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет пользователей</div>
+      <div v-else class="empty">{{ t('team.no_users') }}</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -49,7 +49,7 @@
           @click="goToPage((meta.current_page || 1) - 1)"
           class="page-btn"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -57,7 +57,7 @@
           @click="goToPage((meta.current_page || 1) + 1)"
           class="page-btn"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -70,6 +70,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -113,13 +114,13 @@ function formatDate(iso: string): string {
 }
 
 async function deleteUser(id: number) {
-  if (!confirm('Удалить пользователя?')) return
+  if (!confirm(t('team.delete_confirm'))) return
   try {
     await $api.userProfile.delete(id)
-    $notify.add('Пользователь удалён', { type: 'success' })
+    $notify.add(t('team.delete_done'), { type: 'success' })
     await loadUsers(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

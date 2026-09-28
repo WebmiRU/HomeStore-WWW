@@ -25,7 +25,7 @@
         type="button"
         class="cnode__toggle"
         :aria-expanded="isOpen"
-        :aria-label="isOpen ? 'Свернуть' : 'Развернуть'"
+        :aria-label="isOpen ? t('contents.collapse') : t('contents.expand')"
         @click="$emit('toggle', node.id)"
       >
         {{ isOpen ? '−' : '+' }}
@@ -48,7 +48,7 @@
 
       <!-- Удалённое хранилище остаётся в дереве: предметы в нём живые, а
            это единственное место, где видно, где они лежат. -->
-      <span v-if="node.deleted" class="cnode__deleted">[удалено]</span>
+      <span v-if="node.deleted" class="cnode__deleted">t('placeholders.deleted')</span>
 
       <span v-if="counts" class="cnode__counts">{{ counts }}</span>
     </div>
@@ -71,7 +71,7 @@
 
         <li v-if="node.items_hidden > 0 && !isShownAll" class="cnode__itemrow">
           <button type="button" class="cnode__more" @click="$emit('showAll', node)">
-            Показать все ({{ node.items_hidden }})
+            {{ t('contents.show_all', { count: node.items_hidden }) }}
           </button>
         </li>
       </ul>
@@ -94,6 +94,7 @@
 import { computed } from 'vue'
 import type { ContentsNode, ContentsItem } from '~/repository/modules/store'
 
+const { t } = useI18n()
 const props = defineProps<{
   node: ContentsNode
   /** Последний ли узел среди братьев: влияет на линии дерева. */
@@ -138,9 +139,9 @@ const counts = computed(() => {
   const total = props.node.items_total
 
   if (own === 0 && total === 0) return ''
-  if (own === total) return `своих ${own}`
+  if (own === total) return t('contents.own_only', { count: own })
 
-  return `своих ${own}, всего ${total}`
+  return t('contents.own_and_total', { own, total })
 })
 </script>
 

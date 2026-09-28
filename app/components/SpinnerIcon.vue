@@ -6,7 +6,7 @@
     viewBox="0 0 24 24"
     fill="none"
     role="status"
-    aria-label="Загрузка"
+    :aria-label="t('common.loading')"
   >
     <circle
       class="spinner-icon__track"
@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const props = withDefaults(defineProps<{
   size?: number | string
 }>(), {

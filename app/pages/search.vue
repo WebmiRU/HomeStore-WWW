@@ -1,7 +1,7 @@
 <template>
   <div class="search-page">
     <div class="page-header">
-      <h3 class="page-title">Результаты поиска: «{{ query }}»</h3>
+      <h3 class="page-title">{{ t('search.title', { query }) }}</h3>
       <MassLabelListButton
         :item-ids="selectedItemIds"
         :store-ids="selectedStoreIds"
@@ -11,13 +11,13 @@
 
     <div v-if="loading" class="loading">
       <SpinnerIcon :size="36" />
-      <span class="loading-text">Поиск...</span>
+      <span class="loading-text">{{ t('search.searching') }}</span>
     </div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
-      <div v-if="results.length === 0" class="empty">Ничего не найдено</div>
+      <div v-if="results.length === 0" class="empty">{{ t('search.empty') }}</div>
 
       <table v-else class="results-table">
         <thead>
@@ -30,9 +30,9 @@
                 @change="toggleAll"
               />
             </th>
-            <th class="img-col">Фото</th>
-            <th>Тип</th>
-            <th>Название</th>
+            <th class="img-col">{{ t('list_common.photo') }}</th>
+            <th>{{ t('search.type') }}</th>
+            <th>{{ t('common.title') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -46,7 +46,7 @@
                 @change="toggleOne(r)"
               />
             </td>
-            <td class="img-col" data-label="Фото">
+            <td class="img-col" :data-label="t('list_common.photo')">
               <!-- Размер здесь больше, чем в списке предметов: в поиске смотрят
                    сами находки, а не список, и картинка нужна, чтобы узнать
                    предмет. При этом она всё равно много компактнее прежних
@@ -54,11 +54,11 @@
                    «Название». -->
               <ItemPhoto :images="r.payload.images" :alt="r.payload.title" :size="72" lightbox />
             </td>
-            <td data-label="Тип">
-              <span v-if="r.type === 'item'" class="type-badge type-item">Предмет</span>
-              <span v-else class="type-badge type-store">Хранилище</span>
+            <td :data-label="t('search.type')">
+              <span v-if="r.type === 'item'" class="type-badge type-item">{{ t('search.type_item') }}</span>
+              <span v-else class="type-badge type-store">{{ t('search.type_store') }}</span>
             </td>
-            <td data-label="Название">
+            <td :data-label="t('common.title')">
               <div class="result-title">{{ r.payload.title }}</div>
               <div v-if="r.payload.title_print" class="result-sub">{{ r.payload.title_print }}</div>
             </td>
@@ -80,8 +80,8 @@
                   :to="r.type === 'item' ? `/items/${r.payload.id}` : `/stores/${r.payload.id}`"
                   class="action-link"
                   :class="canEdit(r) ? 'action-edit' : 'action-view'"
-                  :title="canEdit(r) ? 'Редактировать' : 'Открыть'"
-                  :aria-label="canEdit(r) ? 'Редактировать' : 'Открыть'"
+                  :title="canEdit(r) ? t('common.edit') : t('common.open')"
+                  :aria-label="canEdit(r) ? t('common.edit') : t('common.open')"
                 >
                   <img :src="canEdit(r) ? '/img/icon/edit.svg' : '/img/icon/view.svg'" class="action-icon" alt="" />
                 </NuxtLink>
@@ -90,8 +90,8 @@
                     type="button"
                     class="action-btn action-btn--replenish"
                     :disabled="!r.payload.code"
-                    :title="r.payload.code ? `Пополнить: ${r.payload.title}` : 'Нет кода'"
-                    aria-label="Пополнить"
+                    :title="r.payload.code ? t('search.replenish_title', { title: r.payload.title }) : t('search.no_code')"
+                    :aria-label="t('options_page.mode_replenish')"
                     @click="goReplenish(r)"
                   >
                     <svg
@@ -110,8 +110,8 @@
                     type="button"
                     class="action-btn action-btn--writeoff"
                     :disabled="!r.payload.code"
-                    :title="r.payload.code ? `Списать: ${r.payload.title}` : 'Нет кода'"
-                    aria-label="Списать"
+                    :title="r.payload.code ? t('search.writeoff_title', { title: r.payload.title }) : t('search.no_code')"
+                    :aria-label="t('options_page.mode_writeoff')"
                     @click="goWriteoff(r)"
                   >
                     <svg
@@ -150,6 +150,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import type { FulltextSearchResult } from '~/repository/modules/code'
 import type { ChainCrumb } from '~/composables/useLocationChain'
 
+const { t } = useI18n()
 const { $api } = useNuxtApp()
 const { chainForStore } = useLocationChain()
 const route = useRoute()
@@ -286,7 +287,7 @@ function navigateOperation(code: string, mode: 'replenish' | 'writeoff') {
 async function search() {
   const q = route.query.q as string
   if (!q) {
-    error.value = 'Не указан поисковый запрос'
+    error.value = t('search.no_query')
     loading.value = false
     return
   }
@@ -313,7 +314,7 @@ async function search() {
     selectedStores.value = new Set()
     await Promise.all([loadChains(), loadLabelListInfo()])
   } catch (err: any) {
-    error.value = err?.data?.error || err?.message || 'Ошибка поиска'
+    error.value = err?.data?.error || err?.message || t('search.failed')
   } finally {
     loading.value = false
   }

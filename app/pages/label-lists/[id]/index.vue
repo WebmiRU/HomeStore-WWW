@@ -1,13 +1,13 @@
 <template>
   <div class="edit-page">
     <div class="page-header">
-      <h3 class="page-title">Редактирование списка #{{ id }}</h3>
+      <h3 class="page-title">{{ t('label_lists.edit_title', { id }) }}</h3>
       <button class="btn-download" :disabled="downloading" @click="downloadPdf">
-        {{ downloading ? 'Загрузка...' : 'Скачать' }}
+        {{ downloading ? t('form.loading') : t('label_lists.download') }}
       </button>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -15,59 +15,57 @@
 
       <form v-if="activeTab === 'main'" @submit.prevent="save" class="edit-form">
         <fieldset class="fieldset">
-          <legend class="legend">Основное</legend>
+          <legend class="legend">{{ t('label_presets.legend_main') }}</legend>
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
           </label>
           <label class="field">
-            <span class="field-label">Шаблон этикетки</span>
+            <span class="field-label">{{ t('label_lists.template_label') }}</span>
             <select v-model="form.label_preset_id" class="field-select" required>
-              <option :value="0" disabled>— выберите шаблон —</option>
+              <option :value="0" disabled>t('placeholders.pick_template')</option>
               <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.title }}</option>
             </select>
           </label>
           <label class="field field--check">
             <input v-model="form.print_all_codes" type="checkbox" class="field-check" />
-            <span>Печатать все коды предмета</span>
+            <span>{{ t('label_lists.print_all_codes') }}</span>
             <span class="field-hint">
-              По умолчанию на этикетку идёт главный код — верхний в списке на карточке
-              предмета. Крыжик нужен, когда на вещь наклеено несколько этикеток и
-              распечатать надо все.
+              {{ t('label_lists.codes_hint') }}
             </span>
           </label>
         </fieldset>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-          <NuxtLink to="/label-lists" class="btn-cancel">Отмена</NuxtLink>
+          <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+          <NuxtLink to="/label-lists" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
         </div>
       </form>
 
       <section v-if="activeTab === 'items'" class="content-section">
-        <h4 class="section-title">Предметы в списке ({{ listItems.length }})</h4>
-        <div v-if="listItems.length === 0" class="section-empty">Нет предметов</div>
+        <h4 class="section-title">{{ t('label_lists.stores_in_set', { count: listStores.length }) }}</h4>
+        <div v-if="listItems.length === 0" class="section-empty">{{ t('items.no_items') }}</div>
         <table v-else class="content-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>Название</th>
-              <th>Хранилище</th>
+              <th>{{ t('form.title') }}</th>
+              <th>{{ t('form.store') }}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in listItems" :key="item.payload.id">
               <td data-label="ID">{{ item.payload.id }}</td>
-              <td data-label="Название">{{ item.payload.title }}</td>
-              <td data-label="Хранилище">{{ item.store?.[0]?.title ?? '—' }}</td>
+              <td :data-label="t('common.title')">{{ item.payload.title }}</td>
+              <td :data-label="t('form.store')">{{ item.store?.[0]?.title ?? '—' }}</td>
               <td class="actions">
                 <a
                   href="#"
                   class="action-link action-del"
                   :class="{ disabled: removingItem === item.payload.id }"
-                  title="Удалить"
-                  aria-label="Удалить"
+                  :title="t('common.delete')"
+                  :aria-label="t('common.delete')"
                   @click.prevent="removeItem(item.payload.id)"
                 >
                   <img v-if="removingItem === item.payload.id" src="/img/icon/add.svg" class="action-icon" alt="" />
@@ -80,27 +78,27 @@
       </section>
 
       <section v-if="activeTab === 'stores'" class="content-section">
-        <h4 class="section-title">Хранилища в списке ({{ listStores.length }})</h4>
-        <div v-if="listStores.length === 0" class="section-empty">Нет хранилищ</div>
+        <h4 class="section-title">{{ t('label_lists.stores_in_set', { count: listStores.length }) }}</h4>
+        <div v-if="listStores.length === 0" class="section-empty">{{ t('stores.no_stores') }}</div>
         <table v-else class="content-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>Название</th>
+              <th>{{ t('form.title') }}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="store in listStores" :key="store.id">
               <td data-label="ID">{{ store.id }}</td>
-              <td data-label="Название">{{ store.title }}</td>
+              <td :data-label="t('common.title')">{{ store.title }}</td>
               <td class="actions">
                 <a
                   href="#"
                   class="action-link action-del"
                   :class="{ disabled: removingStore === store.id }"
-                  title="Удалить"
-                  aria-label="Удалить"
+                  :title="t('common.delete')"
+                  :aria-label="t('common.delete')"
                   @click.prevent="removeStore(store.id)"
                 >
                   <img v-if="removingStore === store.id" src="/img/icon/add.svg" class="action-icon" alt="" />
@@ -127,20 +125,21 @@ import type { StoreResponse } from '~/repository/modules/store'
 import { formatApiError, readBlobApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
 
-const tabs = [
-  { key: 'main', label: 'Основное' },
-  { key: 'items', label: 'Предметы' },
-  { key: 'stores', label: 'Хранилища' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('label_lists.main_tab') },
+  { key: 'items', label: t('access_sections.items') },
+  { key: 'stores', label: t('access_sections.stores') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -191,9 +190,9 @@ async function save() {
       label_preset_id: form.label_preset_id,
       print_all_codes: form.print_all_codes,
     })
-    $notify.add('Список сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('label_lists.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -204,9 +203,9 @@ async function removeItem(itemId: number) {
   try {
     await $api.labelList.detachItem(Number(id), itemId)
     listItems.value = listItems.value.filter(i => i.payload.id !== itemId)
-    $notify.add('Предмет удалён из списка', { type: 'success' })
+    $notify.add(t('label_lists.item_removed'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   } finally {
     removingItem.value = null
   }
@@ -217,9 +216,9 @@ async function removeStore(storeId: number) {
   try {
     await $api.labelList.detachStore(Number(id), storeId)
     listStores.value = listStores.value.filter(s => s.id !== storeId)
-    $notify.add('Хранилище удалено из списка', { type: 'success' })
+    $notify.add(t('label_lists.store_removed'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   } finally {
     removingStore.value = null
   }
@@ -237,9 +236,9 @@ async function downloadPdf() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    $notify.add('Документ отправлен на загрузку', { type: 'success' })
+    $notify.add(t('label_lists.download_started'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(await readBlobApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+    $notify.add(await readBlobApiError(err, t('label_lists.download_failed')), { type: 'error', timer: 10 })
   } finally {
     downloading.value = false
   }

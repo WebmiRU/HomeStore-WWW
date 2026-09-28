@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <h3 class="page-title">Вход</h3>
+    <h3 class="page-title">{{ t('login.title') }}</h3>
 
     <form @submit.prevent="submit" class="login-form">
       <label class="field">
@@ -9,13 +9,13 @@
       </label>
 
       <label class="field">
-        <span class="field-label">Пароль</span>
+        <span class="field-label">{{ t('login.password') }}</span>
         <input v-model="form.password" type="password" class="field-input" autocomplete="current-password" required />
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-login" :disabled="loading">Войти</button>
-        <NuxtLink to="/" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-login" :disabled="loading">{{ t('login.submit') }}</button>
+        <NuxtLink to="/" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -26,6 +26,7 @@ import { reactive, ref, computed } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { setCurrentUserId } = useCurrentUser()
@@ -51,10 +52,10 @@ async function submit() {
     setCurrentUserId(result.user.id)
     const { setProfile } = useUserProfile()
     setProfile(result.user)
-    $notify.add(`Добро пожаловать, ${result.user.name}`, { type: 'success' })
+    $notify.add(t('login.welcome', { name: result.user.name }), { type: 'success' })
     router.push(redirect.value)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Не удалось войти'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('login.failed')), { type: 'error', timer: 10 })
   } finally {
     loading.value = false
   }

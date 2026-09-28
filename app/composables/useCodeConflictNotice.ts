@@ -19,6 +19,7 @@ const TIMER = 12
 
 export function useCodeConflictNotice() {
   const { $notify } = useNuxtApp()
+  const { t, tp } = useI18n()
 
   function notifyCodeConflicts(saved: ItemResponse) {
     const conflicts = saved.conflicts
@@ -36,10 +37,13 @@ export function useCodeConflictNotice() {
 
     if (items.length === 0) return
 
-    const codeWord = countWord(entries.length, 'код', 'кода', 'кодов')
-
     $notify.add(
-      `Сохранено, но ${codeWord} встречается ещё у ${countWord(items.length, 'предмета', 'предметов', 'предметов')}`,
+      // Фразу берём по форме множественного числа: вместе со словом меняется и
+      // сказуемое — «встречается» или «встречаются».
+      tp('codes_plural.conflict', entries.length, {
+        codes: tp('codes_plural.code_word', entries.length),
+        items: tp('codes_plural.item_word', items.length),
+      }),
       {
         type: 'warning',
         timer: TIMER,
@@ -47,17 +51,9 @@ export function useCodeConflictNotice() {
           label: item.title,
           to: `/items/${item.id}`,
         })),
-        more: items.length > MAX_LINKS ? `…и ещё ${items.length - MAX_LINKS}` : '',
+        more: items.length > MAX_LINKS ? t('codes_plural.more', { count: items.length - MAX_LINKS }) : '',
       },
     )
-  }
-
-  /** Русское склонение по числу: 1 код, 2 кода, 5 кодов. */
-  function countWord(n: number, one: string, few: string, many: string): string {
-    const mod10 = n % 10
-    const mod100 = n % 100
-    const word = mod10 === 1 && mod100 !== 11 ? one : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? few : many
-    return `${n} ${word}`
   }
 
   return { notifyCodeConflicts }

@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование хранилища #{{ id }}</h3>
+    <h3 class="page-title">{{ t('stores.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,19 +11,19 @@
       <form @submit.prevent="save" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
           </label>
 
           <label class="field">
-            <span class="field-label">Название для печати</span>
+            <span class="field-label">{{ t('form.title_print') }}</span>
             <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
           </label>
 
           <label class="field">
-            <span class="field-label">Склад</span>
+            <span class="field-label">{{ t('form.warehouse') }}</span>
             <select v-model.number="form.warehouse_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">[НЕТ]</option>
+              <option :value="null">t('placeholders.none')</option>
               <option v-if="deletedWarehouse" :value="deletedWarehouse.id" disabled>
                 {{ deletedWarehouse.label }}
               </option>
@@ -34,9 +34,9 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Родительское хранилище</span>
+            <span class="field-label">{{ t('form.parent') }}</span>
             <select v-model.number="form.parent_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">[НЕТ]</option>
+              <option :value="null">t('placeholders.none')</option>
               <option
                 v-for="opt in parentOptions"
                 :key="opt.id"
@@ -46,7 +46,7 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Код</span>
+            <span class="field-label">{{ t('form.code') }}</span>
             <input v-model="form.code" type="text" class="field-input" maxlength="256" :readonly="!canEdit" @keydown="onKeydown" />
           </label>
         </section>
@@ -64,7 +64,7 @@
         </section>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
+          <button type="submit" class="btn-save" :disabled="saving || !canEdit">{{ t('form.save') }}</button>
           <NuxtLink
             v-if="canEdit"
             :to="{
@@ -77,8 +77,8 @@
               },
             }"
             class="btn-copy"
-          >Создать копию</NuxtLink>
-          <NuxtLink to="/stores" class="btn-cancel">Отмена</NuxtLink>
+          >{{ t('form.clone') }}</NuxtLink>
+          <NuxtLink to="/stores" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
         </div>
       </form>
     </template>
@@ -93,6 +93,7 @@ import type { WarehouseResponse } from '~/repository/modules/warehouse'
 import { useScanIntoField } from '~/composables/useScanIntoField'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const { onKeydown } = useScanIntoField()
@@ -117,16 +118,16 @@ const deletedWarehouse = computed(() =>
   deletedOption(warehouseOptions.value, form.warehouse_id, storeEntity.value?.warehouse),
 )
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'contents', label: 'Содержимое' },
-  { key: 'images', label: 'Изображения' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('stores.main_tab') },
+  { key: 'contents', label: t('stores.contents_tab') },
+  { key: 'images', label: t('stores.images_tab') },
+  { key: 'stats', label: t('stores.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -224,9 +225,9 @@ async function save() {
       parent_id: form.parent_id,
       code: form.code.trim() || null,
     })
-    $notify.add('Хранилище сохранено', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('stores.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

@@ -9,13 +9,13 @@
     :class="{ 'avatar--openable': openable }"
     :style="{ width: px, height: px }"
     :type="openable ? 'button' : undefined"
-    :aria-label="openable ? `Открыть аватар: ${user.name ?? ''}` : undefined"
+    :aria-label="openable ? t('user_avatar.open', { name: user.name ?? '' }) : undefined"
     @click="openViewer"
   >
     <img
       v-if="src"
       :src="src"
-      :alt="user.name ?? 'Пользователь'"
+      :alt="user.name ?? t('user_avatar.default_name')"
       class="avatar__img"
       @error="onError"
     />
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+const { t } = useI18n()
 const props = withDefaults(
   defineProps<{
     user?: {
@@ -59,7 +60,7 @@ const viewerOpen = ref(false)
 /** Просмотр: у пользователя аватар один, стрелок в окне не будет. */
 const lightboxImages = computed(() =>
   props.user?.avatar_sha || props.user?.avatar_url
-    ? [{ url: props.user?.avatar_url, sha256: props.user?.avatar_sha, alt: props.user?.name ?? 'Аватар' }]
+    ? [{ url: props.user?.avatar_url, sha256: props.user?.avatar_sha, alt: props.user?.name ?? t('user_avatar.default_title') }]
     : [],
 )
 

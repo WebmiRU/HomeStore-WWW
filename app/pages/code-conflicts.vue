@@ -1,11 +1,11 @@
 <template>
   <div class="conflicts-page">
     <div class="page-header">
-      <h3 class="page-title">Коллизии кодов</h3>
-      <NuxtLink to="/orphan-codes" class="btn-back">К очистке кодов</NuxtLink>
+      <h3 class="page-title">{{ t('codes.conflicts_title') }}</h3>
+      <NuxtLink to="/orphan-codes" class="btn-back">{{ t('codes.to_cleanup') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -19,27 +19,23 @@
       -->
       <div class="explain">
         <p>
-          Здесь собраны коды, которые заведены больше чем на одном предмете. Так бывает
-          намеренно: один штрихкод на несколько одинаковых вещей — обычное дело.
+          {{ t('codes.conflicts_intro') }}
         </p>
         <p>
-          <strong>Что с этим делать.</strong> При сканировании такого кода приложение
-          предложит выбрать предмет. Если коды совпали случайно, оставьте нужный предмет,
-          а лишний код уберите в его карточке. Списывать и пополнять можно спокойно:
-          приложение спросит, к какому предмету относится штука.
+          <strong>{{ t('codes.what_to_do') }}</strong> {{ t('codes.conflicts_tip') }}
         </p>
       </div>
 
       <div v-if="rows.length === 0" class="empty">
-        Коллизий нет — каждый код принадлежит одному предмету.
+        {{ t('codes.conflicts_empty') }}
       </div>
 
       <template v-else>
         <table class="table">
           <thead>
             <tr>
-              <th>Код</th>
-              <th>Предметы с этим кодом</th>
+              <th>{{ t('form.code') }}</th>
+              <th>{{ t('codes.items_with_code') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -58,9 +54,9 @@
         </table>
 
         <div v-if="meta.last_page > 1" class="pager">
-          <button type="button" class="pager__btn" :disabled="page <= 1" @click="go(page - 1)">← Назад</button>
-          <span class="pager__label">Страница {{ page }} из {{ meta.last_page }} · всего кодов: {{ meta.total }}</span>
-          <button type="button" class="pager__btn" :disabled="page >= meta.last_page" @click="go(page + 1)">Вперёд →</button>
+          <button type="button" class="pager__btn" :disabled="page <= 1" @click="go(page - 1)">← {{ t('common.back') }}</button>
+          <span class="pager__label">{{ t('codes.pager', { page, last: meta.last_page, total: meta.total }) }}</span>
+          <button type="button" class="pager__btn" :disabled="page >= meta.last_page" @click="go(page + 1)">{{ t('common.next') }} →</button>
         </div>
       </template>
     </template>
@@ -73,6 +69,7 @@ import type { CodeConflict } from '~/repository/modules/code'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -89,7 +86,7 @@ async function load(target: number) {
     meta.value = result.meta
     page.value = result.meta.current_page
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки коллизий')
+    error.value = formatApiError(err, t('list_common.load_failed'))
   } finally {
     loading.value = false
   }

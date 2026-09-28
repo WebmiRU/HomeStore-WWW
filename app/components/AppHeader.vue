@@ -5,7 +5,7 @@
         v-if="profileHref"
         :to="profileHref"
         class="header-avatar"
-        :title="profile?.name ?? 'Мой профиль'"
+        :title="profile?.name ?? t('common.profile')"
       >
         <UserAvatar :user="profile ?? { id: currentUserId ?? undefined }" :size="56" />
       </NuxtLink>
@@ -17,11 +17,11 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск предметов и хранилищ..."
+          :placeholder="t('common.search_placeholder')"
           class="header-search__input"
           @keydown.enter.prevent="doSearch"
         />
-        <button type="button" class="header-search__btn" @click="doSearch">Поиск</button>
+        <button type="button" class="header-search__btn" @click="doSearch">{{ t('common.search') }}</button>
       </form>
 
       <button
@@ -31,14 +31,14 @@
         :disabled="loggingOut"
         @click="logout"
       >
-        {{ loggingOut ? 'Выход...' : 'Выйти' }}
+        {{ loggingOut ? t('common.logging_out') : t('common.logout') }}
       </button>
     </div>
 
     <nav class="entity-nav">
       <template v-for="entry in visibleTree" :key="entry.key">
         <NuxtLink v-if="!isGroup(entry)" :to="entry.to" class="entity-link">
-          {{ entry.label }}
+          {{ t(entry.labelKey) }}
         </NuxtLink>
 
         <div
@@ -56,13 +56,13 @@
             aria-haspopup="true"
             @click="toggleGroup(entry.key)"
           >
-            {{ entry.label }}
+            {{ t(entry.labelKey) }}
             <span class="entity-group__caret" aria-hidden="true">▾</span>
           </button>
 
           <div v-if="openGroup === entry.key" class="entity-group__menu">
             <NuxtLink v-for="item in entry.items" :key="item.key" :to="item.to" class="entity-group__item">
-              {{ item.label }}
+              {{ t(item.labelKey) }}
             </NuxtLink>
           </div>
         </div>
@@ -90,6 +90,7 @@ const route = useRoute()
 const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
 const { visibleTree, load: loadOptions, reset: resetOptions } = useOptions()
+const { t } = useI18n()
 
 const searchQuery = ref('')
 const loggingOut = ref(false)
@@ -165,7 +166,7 @@ async function logout() {
     setCurrentUserId(null)
     clearProfile()
     resetOptions()
-    $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
+    $notify.add(t('notify.logged_out'), { type: 'info', timer: 5 })
     router.push('/login')
     loggingOut.value = false
   }

@@ -1,11 +1,11 @@
 <template>
   <div class="units-page">
     <div class="page-header">
-      <h3 class="page-title">Единицы измерения</h3>
-      <NuxtLink to="/units/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('properties.units_list') }}</h3>
+      <NuxtLink to="/units/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,32 +13,32 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Обозначение</th>
-            <th>Название</th>
-            <th>Создан</th>
+            <th>{{ t('properties.abbreviation') }}</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="u in units" :key="u.id" @dblclick="openRow($event, `/units/${u.id}`)">
             <td data-label="ID">{{ u.id }}</td>
-            <td data-label="Обозначение">{{ u.title_short }}</td>
-            <td data-label="Название">{{ u.title_full }}</td>
-            <td data-label="Создан">{{ formatDate(u.created_at) }}</td>
+            <td :data-label="t('properties.abbreviation')">{{ u.title_short }}</td>
+            <td :data-label="t('common.title')">{{ u.title_full }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(u.created_at) }}</td>
             <td class="actions">
               <NuxtLink
                 :to="`/units/${u.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteUnit(u)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -48,7 +48,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет единиц измерения</div>
+      <div v-else class="empty">{{ t('properties.no_units') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -56,7 +56,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -64,7 +64,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -78,6 +78,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { UnitResponse } from '~/repository/modules/unit'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -95,7 +96,7 @@ async function load(page?: number) {
     units.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки единиц измерения')
+    error.value = formatApiError(err, t('properties.units_load_failed'))
   } finally {
     loading.value = false
   }
@@ -109,14 +110,14 @@ async function deleteUnit(u: UnitResponse) {
   // Единицу измерения могут держать свойства, поэтому предупреждаем: у
   // них пропадёт обозначение, а проверить это заранее нельзя — счётчика
   // использования сервер не отдаёт.
-  if (!confirm(`Удалить единицу «${u.title_short} — ${u.title_full}»?`)) return
+  if (!confirm(t('properties.unit_delete_confirm', { title: `${u.title_short} — ${u.title_full}` }))) return
 
   try {
     await $api.unit.delete(u.id)
-    $notify.add('Единица измерения удалена', { type: 'success' })
+    $notify.add(t('properties.unit_delete_done'), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

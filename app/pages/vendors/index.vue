@@ -1,21 +1,21 @@
 <template>
   <div class="vendors-page">
     <div class="page-header">
-      <h3 class="page-title">Производители</h3>
-      <NuxtLink to="/vendors/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('vendors.list') }}</h3>
+      <NuxtLink to="/vendors/create" class="btn-add">{{ t('vendors.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
       <table v-if="vendors.length" class="vendors-table">
         <thead>
           <tr>
-            <th>Логотип</th>
-            <th>Название</th>
-            <th>Описание</th>
-            <th>Создан</th>
+            <th>{{ t('list_common.logo') }}</th>
+            <th>{{ t('vendors.title') }}</th>
+            <th>{{ t('list_common.description') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -25,28 +25,28 @@
             :key="m.id"
             @dblclick="openRow($event, `/vendors/${m.id}`)"
           >
-            <td data-label="Логотип" class="cell-logo">
+            <td :data-label="t('list_common.logo')" class="cell-logo">
               <VendorLogo :logo-sha="m.logo_sha" :title="m.title" lightbox />
             </td>
-            <td data-label="Название">{{ m.title }}</td>
+            <td :data-label="t('vendors.title')">{{ m.title }}</td>
             <!-- Описание в списке обрезаем: в таблице ему место в одну строку,
                  а целиком оно живёт в карточке. -->
-            <td data-label="Описание" class="cell-description">{{ m.description || '—' }}</td>
-            <td data-label="Создан">{{ formatDate(m.created_at) }}</td>
+            <td :data-label="t('list_common.description')" class="cell-description">{{ m.description || '—' }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(m.created_at) }}</td>
             <td class="actions">
               <NuxtLink
                 :to="`/vendors/${m.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteVendor(m)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -56,7 +56,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет производителей</div>
+      <div v-else class="empty">{{ t('vendors.no_vendors') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -64,7 +64,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -72,7 +72,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -86,6 +86,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { VendorResponse } from '~/repository/modules/vendor'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -103,7 +104,7 @@ async function load(page?: number) {
     vendors.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки производителей')
+    error.value = formatApiError(err, t('vendors.load_failed'))
   } finally {
     loading.value = false
   }
@@ -114,14 +115,14 @@ function goToPage(page: number) {
 }
 
 async function deleteVendor(m: VendorResponse) {
-  if (!confirm(`Удалить производителя «${m.title}»?`)) return
+  if (!confirm(t('list_common.delete_confirm', { title: m.title }))) return
 
   try {
     await $api.vendor.delete(m.id)
-    $notify.add('Производитель удалён', { type: 'success' })
+    $notify.add(t('vendors.delete_done'), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

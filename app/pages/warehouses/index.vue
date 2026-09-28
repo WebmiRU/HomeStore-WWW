@@ -1,11 +1,11 @@
 <template>
   <div class="warehouses-page">
     <div class="page-header">
-      <h3 class="page-title">Склады</h3>
-      <NuxtLink to="/warehouses/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('warehouses.list') }}</h3>
+      <NuxtLink to="/warehouses/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,18 +13,18 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Создан</th>
-            <th v-if="showOwnerColumn">Владелец</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('common.created') }}</th>
+            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}`)">
             <td data-label="ID">{{ w.id }}</td>
-            <td data-label="Название">{{ w.title }}</td>
-            <td data-label="Создан">{{ formatDate(w.created_at) }}</td>
-            <td v-if="showOwnerColumn" data-label="Владелец">
+            <td :data-label="t('common.title')">{{ w.title }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(w.created_at) }}</td>
+            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
               <span
                 v-if="w.user"
                 class="owner-name"
@@ -37,8 +37,8 @@
                 v-if="canEdit(w)"
                 :to="`/warehouses/${w.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -46,8 +46,8 @@
                 v-else
                 :to="`/warehouses/${w.id}`"
                 class="action-link action-view"
-                title="Открыть"
-                aria-label="Открыть"
+                :title="t('common.open')"
+                :aria-label="t('common.open')"
               >
                 <img src="/img/icon/view.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -55,8 +55,8 @@
                 href="#"
                 class="action-link action-del"
                 :class="{ 'action-del--forbidden': !canDelete(w) }"
-                :title="canDelete(w) ? 'Удалить' : 'Нельзя удалить'"
-                :aria-label="canDelete(w) ? 'Удалить' : 'Нельзя удалить'"
+                :title="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
+                :aria-label="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
                 @click.prevent="deleteWarehouse(w)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -66,7 +66,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет складов</div>
+      <div v-else class="empty">{{ t('warehouses.no_warehouses') }}</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -74,7 +74,7 @@
           @click="goToPage((meta.current_page || 1) - 1)"
           class="page-btn"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -82,7 +82,7 @@
           @click="goToPage((meta.current_page || 1) + 1)"
           class="page-btn"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -97,6 +97,7 @@ import type { WarehouseResponse } from '~/repository/modules/warehouse'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
@@ -148,13 +149,13 @@ function formatDate(iso: string): string {
 
 async function deleteWarehouse(w: WarehouseResponse) {
   if (!canDelete(w)) return
-  if (!confirm(`Удалить склад «${w.title}»?`)) return
+  if (!confirm(t('warehouses.delete_confirm', { title: w.title }))) return
   try {
     await $api.warehouse.delete(w.id)
-    $notify.add('Склад удалён', { type: 'success' })
+    $notify.add(t('warehouses.delete_done'), { type: 'success' })
     await loadWarehouses(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

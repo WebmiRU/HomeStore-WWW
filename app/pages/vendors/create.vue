@@ -1,31 +1,31 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление производителя</h3>
+    <h3 class="page-title">{{ t('vendors.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
     <form class="create-form" @submit.prevent="save">
       <label class="field">
-        <span class="field-label">Название</span>
+        <span class="field-label">{{ t('form.title') }}</span>
         <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-        <span class="field-hint">У названия уникальность в пределах вашего каталога</span>
+        <span class="field-hint">{{ t('vendors.title_unique_hint') }}</span>
       </label>
 
       <label class="field">
-        <span class="field-label">Описание</span>
+        <span class="field-label">{{ t('list_common.description') }}</span>
         <textarea
           v-model="form.description"
           class="field-input field-textarea"
           rows="4"
           maxlength="5000"
-          placeholder="Страна, год основания, specializes в чём — по желанию"
+          :placeholder="t('vendors.description_placeholder')"
         ></textarea>
-        <span class="field-hint">Необязательно. Логотип загружается потом, в карточке</span>
+        <span class="field-hint">{{ t('vendors.description_hint') }}</span>
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/vendors" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/vendors" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -36,11 +36,12 @@ import { reactive, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const router = useRouter()
 
 const saving = ref(false)
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('vendors.main_tab') }])
 
 const form = reactive({
   title: '',
@@ -54,10 +55,10 @@ async function save() {
       title: form.title,
       description: form.description,
     })
-    $notify.add('Производитель создан', { type: 'success' })
+    $notify.add(t('form.created', { title: t('vendors.one') }), { type: 'success' })
     router.push(`/vendors/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Производитель #{{ id }}</h3>
+    <h3 class="page-title">{{ t('vendors.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -13,7 +13,7 @@
           <div class="logo-block">
             <VendorLogo
               :logo-sha="logoSha"
-              :title="form.title || 'Производитель'"
+              :title="form.title || t('vendors.one')"
               :size="120"
             />
 
@@ -26,7 +26,7 @@
                 @change="onLogoChange"
               />
               <button type="button" class="btn-logo" :disabled="uploading" @click="logoInput?.click()">
-                {{ uploading ? 'Загрузка...' : hasLogo ? 'Заменить логотип' : 'Загрузить логотип' }}
+                {{ uploading ? t('form.loading') : hasLogo ? t('vendors.logo_replace') : t('vendors.logo_upload') }}
               </button>
               <button
                 v-if="hasLogo"
@@ -35,19 +35,19 @@
                 :disabled="removing"
                 @click="removeLogo"
               >
-                {{ removing ? 'Удаление...' : 'Убрать логотип' }}
+                {{ removing ? t('vendors.removing') : t('vendors.logo_remove') }}
               </button>
             </div>
           </div>
 
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-            <span class="field-hint">У названия уникальность: поменять можно, занять чужое — нет</span>
+            <span class="field-hint">{{ t('properties.title_unique_hint') }}</span>
           </label>
 
           <label class="field">
-            <span class="field-label">Описание</span>
+            <span class="field-label">{{ t('list_common.description') }}</span>
             <textarea
               v-model="form.description"
               class="field-input field-textarea"
@@ -57,8 +57,8 @@
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-            <NuxtLink to="/vendors" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+            <NuxtLink to="/vendors" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </section>
 
@@ -75,6 +75,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -103,8 +104,8 @@ const tabs = computed(() => {
   const q = route.query.tab
 
   return typeof q === 'string' && q === 'stats'
-    ? [{ key: 'main', label: 'Основные параметры' }, { key: 'stats', label: 'Статистика' }]
-    : [{ key: 'main', label: 'Основные параметры' }]
+    ? [{ key: 'main', label: t('vendors.main_tab') }, { key: 'stats', label: t('vendors.stats_tab') }]
+    : [{ key: 'main', label: t('vendors.main_tab') }]
 })
 
 const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'))
@@ -122,7 +123,7 @@ async function load() {
     form.description = vendor.description ?? ''
     applyLogo(vendor)
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки производителя')
+    loadError.value = formatApiError(err, t('vendors.load_failed'))
   } finally {
     loading.value = false
   }
@@ -136,9 +137,9 @@ async function save() {
       description: form.description,
     })
     form.description = updated.description ?? ''
-    $notify.add('Производитель сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('vendors.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -152,9 +153,9 @@ async function onLogoChange(event: Event) {
   uploading.value = true
   try {
     applyLogo(await $api.vendor.uploadLogo(Number(id), file))
-    $notify.add('Логотип обновлён', { type: 'success' })
+    $notify.add(t('vendors.logo_updated'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка загрузки логотипа'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('vendors.logo_upload_failed')), { type: 'error', timer: 10 })
   } finally {
     uploading.value = false
     // Сброс значения нужно, чтобы повторный выбор того же файла
@@ -164,15 +165,15 @@ async function onLogoChange(event: Event) {
 }
 
 async function removeLogo() {
-  if (!confirm('Убрать логотип?')) return
+  if (!confirm(t('vendors.logo_remove_confirm'))) return
 
   removing.value = true
   try {
     await $api.vendor.deleteLogo(Number(id))
     logoSha.value = null
-    $notify.add('Логотип убран', { type: 'success' })
+    $notify.add(t('vendors.logo_removed'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления логотипа'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('vendors.logo_remove_failed')), { type: 'error', timer: 10 })
   } finally {
     removing.value = false
   }

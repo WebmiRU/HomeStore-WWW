@@ -19,7 +19,7 @@
           <circle cx="11" cy="11" r="7" />
           <line x1="16.5" y1="16.5" x2="21" y2="21" />
         </svg>
-        <span class="mode-label">Поиск</span>
+        <span class="mode-label">{{ t('options_page.mode_search') }}</span>
       </button>
 
       <button
@@ -40,7 +40,7 @@
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        <span class="mode-label">Пополнить</span>
+        <span class="mode-label">{{ t('options_page.mode_replenish') }}</span>
       </button>
 
       <button
@@ -62,7 +62,7 @@
           <line x1="12" y1="8" x2="12" y2="16" />
           <polyline points="9 13 12 16 15 13" />
         </svg>
-        <span class="mode-label">Списать</span>
+        <span class="mode-label">{{ t('options_page.mode_writeoff') }}</span>
       </button>
     </div>
 
@@ -77,7 +77,7 @@
     <div v-if="activeMode === 'search' && found" class="found">
       <ItemCard :item="found.payload" :code="found.code" :kind="found.type" :chain="foundChain">
         <template #side>
-          <NuxtLink class="item-card__open" :to="editLink">Открыть</NuxtLink>
+          <NuxtLink class="item-card__open" :to="editLink">{{ t('common.open') }}</NuxtLink>
         </template>
       </ItemCard>
     </div>
@@ -85,7 +85,7 @@
     <!-- Несколько предметов с одним кодом: показываем все варианты -->
     <div v-else-if="activeMode === 'search' && ambiguousMatches && ambiguousMatches.length" class="ambiguous-list">
       <div class="ambiguous-list__title">
-        Код найден у {{ ambiguousMatches.length }} {{ plural(ambiguousMatches.length, 'предмет', 'предмета', 'предметов') }} — выберите нужный:
+        {{ t('main.ambiguous_found', { count: tp('words.item_nom', ambiguousMatches.length) }) }}
       </div>
       <!--
         Карточка предмета — общая (ItemCard), ровно как в модалке выбора при
@@ -105,7 +105,7 @@
         :chain="matchChains[m.payload.id] ?? []"
       >
         <template #side>
-          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}`">Открыть</NuxtLink>
+          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}`">{{ t('common.open') }}</NuxtLink>
         </template>
       </ItemCard>
     </div>
@@ -114,36 +114,36 @@
          Это не ошибка, поэтому тон и оформление — сиреневые, а не красные.
          Дальше всё как у «не найдено»: можно завести предмет или хранилище. -->
     <div v-else-if="activeMode === 'search' && blankCode" class="blank-label">
-      <div class="blank-label__text">Найдена безымянная этикетка</div>
-      <div v-if="blankCode.set" class="blank-label__set">Набор: {{ blankCode.set.title }}</div>
+      <div class="blank-label__text">{{ t('main.blank_code_title') }}</div>
+      <div v-if="blankCode.set" class="blank-label__set">{{ t('main.set_label') }}: {{ blankCode.set.title }}</div>
       <div class="blank-label__ask">
-        Добавить
+        {{ t('main.add_word') }}
         <NuxtLink :to="{ path: '/items/create', query: { code: blankCode.value } }" class="blank-label__link">
-          предмет
+          {{ t('main.item_word') }}
         </NuxtLink>
-        или
+        {{ t('main.or_word') }}
         <NuxtLink :to="{ path: '/stores/create', query: { code: blankCode.value } }" class="blank-label__link">
-          хранилище
+          {{ t('main.store_word') }}
         </NuxtLink>
         ?
       </div>
-      <div class="blank-label__code">Код: {{ blankCode.value }}</div>
+      <div class="blank-label__code">{{ t('form.code') }}: {{ blankCode.value }}</div>
     </div>
 
     <div v-else-if="activeMode === 'search' && notFoundCode" class="not-found">
-      <div class="not-found__text">Код не найден в Базе.</div>
+      <div class="not-found__text">{{ t('main.not_found') }}</div>
       <div class="not-found__ask">
-        Добавить
+        {{ t('main.add_word') }}
         <NuxtLink :to="{ path: '/items/create', query: { code: notFoundCode } }" class="not-found__link">
-          предмет
+          {{ t('main.item_word') }}
         </NuxtLink>
-        или
+        {{ t('main.or_word') }}
         <NuxtLink :to="{ path: '/stores/create', query: { code: notFoundCode } }" class="not-found__link">
-          хранилище
+          {{ t('main.store_word') }}
         </NuxtLink>
         ?
       </div>
-      <div class="not-found__code">Код: {{ notFoundCode }}</div>
+      <div class="not-found__code">{{ t('form.code') }}: {{ notFoundCode }}</div>
     </div>
 
     <!-- Режимы «Пополнить» / «Списать» -->
@@ -169,23 +169,23 @@
       >
           <template #foot>
             <div v-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
-              В наличии: {{ entry.payload.quantity }}
+              {{ t('main.in_stock', { count: entry.payload.quantity }) }}
             </div>
             <div v-else-if="entry.done" class="item-card__stock">
               <span
                 class="scan-row__done"
                 :class="`scan-row__done--${entry.doneMode}`"
-                :title="`Выполнено: ${formatDate(entry.doneAt)}`"
+                :title="t('main.done_at', { date: formatDate(entry.doneAt) })"
               >
-                {{ entry.doneMode === 'replenish' ? 'Пополнено' : 'Списано' }}
+                {{ entry.doneMode === 'replenish' ? t('main.done_replenish') : t('main.done_writeoff') }}
               </span>
               <span class="scan-row__residue">
-                Остаток: {{ entry.payload.quantity }}
+                {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
                 ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
               </span>
             </div>
             <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
-              Единичный предмет — операция на 1 шт.
+              {{ t('item_card.single_hint') }}
             </div>
             <div v-if="!entry.done && entryProblem(entry) !== null" class="scan-row__hint scan-row__hint--error">
               {{ entryProblem(entry) }}
@@ -203,15 +203,15 @@
                   step="1"
                   class="scan-row__count"
                 />
-                <span v-else class="scan-row__whole">1 шт.</span>
+                <span v-else class="scan-row__whole">1 {{ t('units.pcs') }}</span>
               </template>
             </div>
 
             <button
               type="button"
               class="scan-row__remove"
-              :aria-label="`Удалить ${entry.payload.title}`"
-              title="Удалить"
+              :aria-label="t('main.delete_entry', { title: entry.payload.title })"
+              :title="t('common.delete')"
               @click="removeFromScanList(entry)"
             >
               <svg
@@ -231,8 +231,8 @@
 
       <div class="scan-comment">
         <label class="scan-comment__label" for="scan-comment-input">
-          Комментарий
-          <span class="scan-comment__hint">(необязательно)</span>
+          {{ t('movements.comment') }}
+          <span class="scan-comment__hint">{{ t('main.optional') }}</span>
         </label>
         <input
           id="scan-comment-input"
@@ -240,8 +240,8 @@
           type="text"
           class="scan-comment__input"
           :placeholder="activeMode === 'replenish'
-            ? 'Например: приход от производителя, заявка №12'
-            : 'Например: ремонт в мастерской, брак'"
+            ? t('main.comment_replenish_hint')
+            : t('main.comment_writeoff_hint')"
           :disabled="submitting"
           @keyup.enter="submitList"
         />
@@ -255,7 +255,7 @@
           :disabled="submitting || pendingEntries === 0"
           @click="submitList"
         >
-          {{ submitting ? 'Сохранение…' : activeMode === 'replenish' ? 'Пополнить' : 'Списать' }}
+          {{ submitting ? t('main.submitting') : activeMode === 'replenish' ? t('options_page.mode_replenish') : t('options_page.mode_writeoff') }}
           <template v-if="!submitting && pendingEntries"> ({{ pendingEntries }}/{{ pendingTotal }})</template>
         </button>
 
@@ -264,10 +264,10 @@
           type="button"
           class="scan-reset"
           :disabled="submitting"
-          title="Очистить список"
+          :title="t('main.clear')"
           @click="clearList"
         >
-          Сбросить
+          {{ t('common.reset') }}
         </button>
       </div>
     </div>
@@ -287,7 +287,6 @@ import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPayload, Store
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
 import type { ChainCrumb } from '~/composables/useLocationChain'
-import { plural } from '~/utils/plural'
 
 type Mode = OperationMode
 type FoundResult =
@@ -307,6 +306,7 @@ interface ScanEntry {
 }
 
 const { $api, $notify } = useNuxtApp()
+const { t, tp } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -381,10 +381,10 @@ const pendingTotal = computed(() =>
 function entryProblem(entry: ScanEntry): string | null {
   if (entry.done) return null
   if (!Number.isInteger(entry.count) || entry.count < 1) {
-    return 'Количество должно быть целым и не меньше 1'
+    return t('main.quantity_hint')
   }
   if (activeMode.value === 'writeoff' && entry.payload.quantity != null && entry.count > entry.payload.quantity) {
-    return `В наличии ${entry.payload.quantity}, указано ${entry.count}`
+    return t('main.stock_line', { quantity: entry.payload.quantity, count: entry.count })
   }
   return null
 }
@@ -394,7 +394,7 @@ const isListMode = computed(
 )
 
 const listTitle = computed(() =>
-  activeMode.value === 'replenish' ? 'Пополнение' : 'Списание',
+  activeMode.value === 'replenish' ? t('main.mode_replenish_noun') : t('main.mode_writeoff_noun'),
 )
 
 const editLink = computed(() => {
@@ -514,7 +514,7 @@ async function handleScan(code: string) {
       if (activeMode.value === 'search') {
         blankCode.value = { value: result.code, set: result.label_set ?? null }
       } else {
-        $notify.add('Это безымянная этикетка — создайте по ней предмет', { type: 'warning', timer: 6 })
+        $notify.add(t('main.blank_label_hint'), { type: 'warning', timer: 6 })
         // Из режима операций тоже показываем сиреневый блок, а не красный
         // «Код не найден в Базе»: код-то найден, отсутствие привязки здесь не
         // ошибка, а нормальный этап жизни наклейки.
@@ -583,7 +583,7 @@ async function handleScan(code: string) {
       if (err?.statusCode === 404 || err?.status === 404 || err?.statusCode === 400 || err?.status === 400) {
         notFoundCode.value = code
       } else {
-        $notify.add(formatApiError(err, 'Ошибка поиска кода'), { type: 'error', timer: 10 })
+        $notify.add(formatApiError(err, t('notify.search_failed')), { type: 'error', timer: 10 })
       }
     } else {
       handleCodeNotFound(code)
@@ -639,7 +639,7 @@ function onAmbiguityCancelled() {
 
   ambiguityQueue.value = ambiguityQueue.value.slice(1)
   $notify.add(
-    `Код ${request.code}: предмет не выбран, штука не учтена. Отсканируйте ещё раз.`,
+    t('main.item_not_chosen', { code: request.code }),
     { type: 'warning', timer: 6 },
   )
 }
@@ -749,8 +749,13 @@ function handleCodeNotFound(code: string) {
 }
 
 function notifyStoreBlocked(store: StorePayload) {
-  const action = activeMode.value === 'replenish' ? 'пополнить' : 'списать'
-  $notify.add(`Хранилище "${store.title}" нельзя ${action}`, { type: 'warning', timer: 10 })
+  $notify.add(
+    t('main.store_not_allowed', {
+      title: store.title,
+      action: t(activeMode.value === 'replenish' ? 'main.verb_replenish' : 'main.verb_writeoff'),
+    }),
+    { type: 'warning', timer: 10 },
+  )
 }
 
 async function submitList() {
@@ -764,7 +769,7 @@ async function submitList() {
   }))
 
   if (rows.length === 0) {
-    $notify.add('Нет предметов для операции', { type: 'warning', timer: 5 })
+    $notify.add(t('main.no_items_for_operation'), { type: 'warning', timer: 5 })
     return
   }
 
@@ -776,7 +781,7 @@ async function submitList() {
     const details = problems
       .map((item) => `«${item.entry.payload.title}»: ${item.problem}`)
       .join('; ')
-    $notify.add(`Невозможно выполнить операцию: ${details}`, { type: 'error', timer: 12 })
+    $notify.add(t('main.operation_failed', { details }), { type: 'error', timer: 12 })
     return
   }
 
@@ -817,20 +822,20 @@ async function submitList() {
     // Уведомление выводится текстом, а не HTML, поэтому здесь нужен настоящий
     // знак «минус», а не сущность &minus; — она попадала в текст как есть.
     const sign = isReplenish ? '+' : '−'
-    const verb = isReplenish ? 'Пополнено' : 'Списано'
+    const verb = isReplenish ? t('main.done_replenish') : t('main.done_writeoff')
     comment.value = ''
     // «позиция» — это строка операции, «шт.» — единицы внутри неё. Раньше здесь
     // стояло «предмет», и при списании одного наименования пачкой сообщение
     // читалось как противоречие: «1 предмет (−10 шт.)».
     $notify.add(
-      `${verb}: ${rows.length} ${plural(rows.length, 'позиция', 'позиции', 'позиций')} (${sign}${deltaSum} шт.)`,
+      t('main.operation_done', { verb, count: tp('words.position', rows.length), amount: `${sign}${deltaSum}` }),
       {
         type: 'success',
         timer: 6,
       }
     )
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка операции'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('main.operation_failed_short')), { type: 'error', timer: 10 })
   } finally {
     submitting.value = false
   }

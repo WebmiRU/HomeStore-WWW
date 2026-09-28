@@ -1,11 +1,11 @@
 <template>
   <div class="presets-page">
     <div class="page-header">
-      <h3 class="page-title">Шаблоны этикеток</h3>
-      <NuxtLink to="/label-presets/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('label_presets.list') }}</h3>
+      <NuxtLink to="/label-presets/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -14,13 +14,13 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Страница</th>
-            <th>Ячейка</th>
-            <th>Этикеток/лист</th>
-            <th>Штрих-код</th>
-            <th>Шрифт</th>
-            <th v-if="showOwnerColumn">Владелец</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('label_presets.page') }}</th>
+            <th>{{ t('label_presets.cell') }}</th>
+            <th>{{ t('label_presets.per_sheet') }}</th>
+            <th>{{ t('label_presets.barcode') }}</th>
+            <th>{{ t('label_presets.font') }}</th>
+            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -31,18 +31,18 @@
             @dblclick="p.is_system ? null : openRow($event, `/label-presets/${p.id}`)"
           >
             <td data-label="ID">{{ p.id }}</td>
-            <td data-label="Название">
+            <td :data-label="t('common.title')">
               {{ p.title }}
-              <span v-if="p.is_system" class="system-badge" title="Общий шаблон. Правке и удалению не подлежит.">
-                системный
+              <span v-if="p.is_system" class="system-badge" :title="t('label_presets.system_hint')">
+                {{ t('label_presets.system_word') }}
               </span>
             </td>
-            <td data-label="Страница">{{ p.page_width }}×{{ p.page_height }}</td>
-            <td data-label="Ячейка">{{ p.cell_width }}×{{ p.cell_height }}</td>
-            <td data-label="Этикеток/лист">{{ p.labels_per_sheet }}</td>
-            <td data-label="Штрих-код">{{ p.barcode_position }}</td>
-            <td data-label="Шрифт">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
-            <td v-if="showOwnerColumn" data-label="Владелец">
+            <td :data-label="t('label_presets.page')">{{ p.page_width }}×{{ p.page_height }}</td>
+            <td :data-label="t('label_presets.cell')">{{ p.cell_width }}×{{ p.cell_height }}</td>
+            <td :data-label="t('label_presets.per_sheet')">{{ p.labels_per_sheet }}</td>
+            <td :data-label="t('label_presets.barcode')">{{ p.barcode_position }}</td>
+            <td :data-label="t('label_presets.font')">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
+            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
               <span
                 v-if="p.user"
                 class="owner-name"
@@ -54,15 +54,15 @@
               <!-- Системный шаблон только для просмотра: править и удалять
                    его нельзя, поэтому и ссылок на эти действия не показываем. -->
               <template v-if="p.is_system">
-                <span class="action-lock" title="Системный шаблон — только просмотр">
+                <span class="action-lock" :title="t('label_presets.system_readonly')">
                   <img src="/img/icon/view.svg" class="action-icon" alt="" />
                 </span>
               </template>
               <template v-else>
-                <NuxtLink :to="`/label-presets/${p.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                <NuxtLink :to="`/label-presets/${p.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
                   <img src="/img/icon/edit.svg" class="action-icon" alt="" />
                 </NuxtLink>
-                <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deletePreset(p.id)">
+                <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deletePreset(p.id)">
                   <img src="/img/icon/delete.svg" class="action-icon" alt="" />
                 </a>
               </template>
@@ -71,7 +71,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет шаблонов</div>
+      <div v-else class="empty">{{ t('label_presets.no_presets') }}</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -79,7 +79,7 @@
           @click="goToPage((meta.current_page || 1) - 1)"
           class="page-btn"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -87,7 +87,7 @@
           @click="goToPage((meta.current_page || 1) + 1)"
           class="page-btn"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -101,6 +101,7 @@ import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
@@ -135,13 +136,13 @@ function goToPage(page: number) {
 }
 
 async function deletePreset(id: number) {
-  if (!confirm('Удалить шаблон?')) return
+  if (!confirm(t('label_presets.delete_confirm'))) return
   try {
     await $api.labelPreset.delete(id)
-    $notify.add('Шаблон удалён', { type: 'success' })
+    $notify.add(t('label_presets.delete_done'), { type: 'success' })
     await loadPresets(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

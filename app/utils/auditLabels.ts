@@ -1,101 +1,130 @@
 import type { AuditLogEntry } from '~/repository/modules/auditLog'
+import type { TranslationKey } from '~/i18n/ru'
 
-export const ACTION_LABELS: Record<string, string> = {
-  'item.created': 'Предмет создан',
-  'item.updated': 'Предмет изменён',
-  'item.deleted': 'Предмет удалён',
-  'store.created': 'Хранилище создано',
-  'store.updated': 'Хранилище изменено',
-  'store.deleted': 'Хранилище удалено',
-  'warehouse.created': 'Склад создан',
-  'warehouse.updated': 'Склад изменён',
-  'warehouse.deleted': 'Склад удалён',
-  'label_preset.created': 'Шаблон создан',
-  'label_preset.updated': 'Шаблон изменён',
-  'label_preset.deleted': 'Шаблон удалён',
-  'label_list.created': 'Список создан',
-  'label_list.updated': 'Список изменён',
-  'label_list.deleted': 'Список удалён',
-  'category.created': 'Категория создана',
-  'category.updated': 'Категория изменена',
-  'category.deleted': 'Категория удалена',
-  'property.created': 'Свойство создано',
-  'property.updated': 'Свойство изменено',
-  'property.deleted': 'Свойство удалено',
-  'property_group.created': 'Группа свойств создана',
-  'property_group.updated': 'Группа свойств изменена',
-  'property_group.deleted': 'Группа свойств удалена',
-  'dictionary.created': 'Справочник создан',
-  'dictionary.updated': 'Справочник изменён',
-  'dictionary.deleted': 'Справочник удалён',
-  'dictionary_value.created': 'Значение справочника добавлено',
-  'dictionary_value.updated': 'Значение справочника изменено',
-  'dictionary_value.deleted': 'Значение справочника удалено',
-  'unit.created': 'Единица измерения создана',
-  'unit.updated': 'Единица измерения изменена',
-  'unit.deleted': 'Единица измерения удалена',
-  'vendor.created': 'Производитель создан',
-  'vendor.updated': 'Производитель изменён',
-  'vendor.deleted': 'Производитель удалён',
+/**
+ * Ключи действий и типов объектов, а не подписи: текст лежит в i18n
+ * (audit_actions, audit_entities) и подставляется при отрисовке. Русский вариант
+ * раньше был зашит здесь, и на английском журнал оставался русским.
+ */
+export const ACTION_KEYS = [
+  'item.created',
+  'item.updated',
+  'item.deleted',
+  'store.created',
+  'store.updated',
+  'store.deleted',
+  'warehouse.created',
+  'warehouse.updated',
+  'warehouse.deleted',
+  'label_preset.created',
+  'label_preset.updated',
+  'label_preset.deleted',
+  'label_list.created',
+  'label_list.updated',
+  'label_list.deleted',
+  'category.created',
+  'category.updated',
+  'category.deleted',
+  'property.created',
+  'property.updated',
+  'property.deleted',
+  'property_group.created',
+  'property_group.updated',
+  'property_group.deleted',
+  'dictionary.created',
+  'dictionary.updated',
+  'dictionary.deleted',
+  'dictionary_value.created',
+  'dictionary_value.updated',
+  'dictionary_value.deleted',
+  'unit.created',
+  'unit.updated',
+  'unit.deleted',
+  'vendor.created',
+  'vendor.updated',
+  'vendor.deleted',
+  'access_grant.created',
+  'access_grant.updated',
+  'access_grant.deleted',
+  'user.created',
+  'user.updated',
+  'user.deleted',
+  'operation.replenish',
+  'operation.writeoff',
+  'image.attached',
+  'image.detached',
+  'image.alt_updated',
+  'image.reordered',
+  'label.generate',
+  'auth.login',
+  'auth.logout',
+  'item.restored',
+  'store.restored',
+  'warehouse.restored',
+  'label_preset.restored',
+  'label_list.restored',
+  'user.restored',
+  'category.restored',
+  'property.restored',
+  'property_group.restored',
+  'dictionary.restored',
+  'dictionary_value.restored',
+  'unit.restored',
+  'vendor.restored',
+] as const
 
-  'access_grant.created': 'Доступ выдан',
-  'access_grant.updated': 'Доступ изменён',
-  'access_grant.deleted': 'Доступ отозван',
-  'user.created': 'Пользователь создан',
-  'user.updated': 'Пользователь изменён',
-  'user.deleted': 'Пользователь удалён',
-  'operation.replenish': 'Пополнение',
-  'operation.writeoff': 'Списание',
-  'image.attached': 'Фото добавлено',
-  'image.detached': 'Фото удалено',
-  'image.alt_updated': 'Подпись фото изменена',
-  'image.reordered': 'Порядок фото изменён',
-  'label.generate': 'Генерация этикеток',
-  'auth.login': 'Вход в систему',
-  'auth.logout': 'Выход из системы',
-
-  // Восстановление из корзины — по одному событию на мягко
-  // удаляемую сущность, их порядок повторяет группы .created выше.
-  'item.restored': 'Предмет восстановлен',
-  'store.restored': 'Хранилище восстановлено',
-  'warehouse.restored': 'Склад восстановлен',
-  'label_preset.restored': 'Шаблон восстановлен',
-  'label_list.restored': 'Список этикеток восстановлен',
-  'user.restored': 'Пользователь восстановлен',
-  'category.restored': 'Категория восстановлена',
-  'property.restored': 'Свойство восстановлено',
-  'property_group.restored': 'Группа свойств восстановлена',
-  'dictionary.restored': 'Справочник восстановлен',
-  'dictionary_value.restored': 'Значение справочника восстановлено',
-  'unit.restored': 'Единица измерения восстановлена',
-  'vendor.restored': 'Производитель восстановлен',
-}
-
-export const ENTITY_LABELS: Record<string, string> = {
-  item: 'Предметы',
-  store: 'Хранилища',
-  warehouse: 'Склады',
-  label_preset: 'Шаблоны',
-  label_list: 'Этикетки',
-  category: 'Категории',
-  property: 'Свойства',
-  property_group: 'Группы свойств',
-  dictionary: 'Справочники',
-  dictionary_value: 'Значения справочников',
-  unit: 'Единицы измерения',
-  vendor: 'Производители',
-  access_grant: 'Доступ',
-  user: 'Пользователи',
-  none: 'Без объекта',
-}
+export const ENTITY_KEYS = [
+  'item',
+  'store',
+  'warehouse',
+  'label_preset',
+  'label_list',
+  'category',
+  'property',
+  'property_group',
+  'dictionary',
+  'dictionary_value',
+  'unit',
+  'vendor',
+  'access_grant',
+  'user',
+  'none',
+] as const
 
 export function actionLabel(key: string | null): string {
-  return key ? (ACTION_LABELS[key] ?? key) : '—'
+  if (!key) return '—'
+
+  const { t } = useI18n()
+
+  // Неизвестное действие показываем его же, а не пустотой: так видно, что
+  // сервер прислал событие, для которого подписи ещё нет.
+  return t(`audit_actions.${key}` as TranslationKey)
 }
 
 export function entityLabel(key: string | null): string {
   if (!key) return '—'
-  return ENTITY_LABELS[key] ?? key
+
+  const { t } = useI18n()
+
+  return t(`audit_entities.${key}` as TranslationKey)
+}
+
+/**
+ * Переведённые карты подписей для графика.
+ *
+ * График принимает готовый объект «ключ → подпись» и не знает про i18n, поэтому
+ * карты собираются здесь: обычным объектом они заморозились бы на русском.
+ */
+export function useAuditLabelMaps() {
+  const { t } = useI18n()
+
+  const actions = computed<Record<string, string>>(() =>
+    Object.fromEntries(ACTION_KEYS.map((key) => [key, t(`audit_actions.${key}` as TranslationKey)])))
+
+  const entities = computed<Record<string, string>>(() =>
+    Object.fromEntries(ENTITY_KEYS.map((key) => [key, t(`audit_entities.${key}` as TranslationKey)])))
+
+  return { actions, entities }
 }
 
 export function actionBadgeClass(action: string): string {
@@ -112,7 +141,7 @@ export function actionBadgeClass(action: string): string {
 
 export function formatDate(iso: string): string {
   if (!iso) return ''
-  return new Date(iso).toLocaleString('ru-RU', {
+  return new Date(iso).toLocaleString(useI18n().locale.value, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -142,12 +171,12 @@ export function summarize(entry: AuditLogEntry): string {
 
     return full ? `${short} — ${full}` : short
   }
-  if (entry.action === 'label.generate' && p.count != null) return `этикеток: ${p.count}`
+  if (entry.action === 'label.generate' && p.count != null) return useI18n().t('audit_chart.labels_count', { count: p.count })
   if (entry.action === 'auth.login') return p.method ?? ''
   const changes = p.changes
   if (changes) {
     const keys = Object.keys(changes)
-    return keys.length ? `изменено: ${keys.slice(0, 3).join(', ')}` : ''
+    return keys.length ? useI18n().t('audit_chart.changed', { fields: keys.slice(0, 3).join(', ') }) : ''
   }
   return ''
 }

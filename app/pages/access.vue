@@ -1,12 +1,10 @@
 <template>
   <div class="access-page">
     <div class="page-header">
-      <h3 class="page-title">Доступ</h3>
+      <h3 class="page-title">{{ t('nav.access') }}</h3>
     </div>
     <p class="page-hint">
-      Права выдаются на склады и по цепочке распространяются на связанные хранилища, предметы,
-      их изображения и коды. «Просмотр» — видно всё «дерево» склада, «Изменение» и «Удаление» —
-      правки и удаление (изменение и удаление подразумевают просмотр).
+      {{ t('access_page.hint') }}
     </p>
 
     <AccessGrants />
@@ -14,6 +12,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 </script>
 
 <style scoped>

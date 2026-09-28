@@ -1,7 +1,7 @@
 <template>
   <div class="images-manager">
     <div class="images-toolbar">
-      <span class="images-toolbar__title">Изображения&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}</span>
+      <span class="images-toolbar__title">{{ t('images.title') }}&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}</span>
       <input
         v-if="!readonly"
         ref="fileInput"
@@ -12,7 +12,7 @@
         @change="onFileChange"
       />
       <button v-if="!readonly" type="button" class="btn-upload" :disabled="uploading" @click="fileInput?.click()">
-        {{ uploading ? `Загрузка ${progress.done}/${progress.total}...` : 'Загрузить' }}
+        {{ uploading ? t('images.uploading_progress', { done: progress.done, total: progress.total }) : t('images.upload') }}
       </button>
     </div>
 
@@ -20,9 +20,9 @@
       <table class="images-table">
         <thead>
           <tr>
-            <th class="col-order">Порядок</th>
+            <th class="col-order">{{ t('images.order') }}</th>
             <th class="col-id">ID</th>
-            <th class="col-thumb">Изображение</th>
+            <th class="col-thumb">{{ t('images.column') }}</th>
             <th class="col-alt">Alt</th>
             <th class="col-actions"></th>
           </tr>
@@ -41,18 +41,18 @@
           >
             <td class="col-order">
               <div class="order-controls">
-                <span class="drag-handle" title="Перетащить">⠿</span>
+                <span class="drag-handle" :title="t('images.drag')">⠿</span>
                 <button
                   type="button"
                   class="btn-order"
-                  title="Выше"
+                  :title="t('images.order_up')"
                   :disabled="readonly || idx === 0 || reordering"
                   @click="moveUp(idx)"
                 >↑</button>
                 <button
                   type="button"
                   class="btn-order"
-                  title="Ниже"
+                  :title="t('images.order_down')"
                   :disabled="readonly || idx === sortedImages.length - 1 || reordering"
                   @click="moveDown(idx)"
                 >↓</button>
@@ -80,7 +80,7 @@
                 :disabled="readonly || savingAltId === img.id"
                 :readonly="readonly"
                 maxlength="255"
-                placeholder="описание изображения"
+                :placeholder="t('images.alt_placeholder')"
                 @blur="onAltBlur($event, img)"
               />
             </td>
@@ -92,7 +92,7 @@
                 :disabled="removingId === img.id"
                 @click="removeImage(img.id)"
               >
-                {{ removingId === img.id ? '...' : 'Удалить' }}
+                {{ removingId === img.id ? '...' : t('common.delete') }}
               </button>
             </td>
           </tr>
@@ -120,6 +120,7 @@ const emit = defineEmits<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { thumbUrl } = useThumbnail()
 
 const THUMB_KEY = '100x100_contain'
@@ -192,7 +193,7 @@ async function persistOrder() {
       await $api.image.reorderForStore(props.entityId, ids)
     }
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения порядка'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('images.order_save_failed')), { type: 'error', timer: 10 })
     items.value = [...props.modelValue]
     emitItems()
   } finally {
@@ -289,11 +290,9 @@ async function onFileChange(event: Event) {
       // молчания говорим, что произошло: иначе повтор выглядит как сбой.
       if (!uploaded.attached) {
         $notify.add(
-          `«${file.name}» уже был в списке — ${
-            uploaded.duplicatesRemoved > 1
-              ? `убрано дублей: ${uploaded.duplicatesRemoved}`
-              : 'дубль не добавлен'
-          }`,
+          uploaded.duplicatesRemoved > 1
+            ? t('images.duplicates_removed', { count: uploaded.duplicatesRemoved })
+            : t('images.duplicate_skipped'),
           { type: 'info' },
         )
         continue
@@ -301,9 +300,9 @@ async function onFileChange(event: Event) {
 
       items.value = [...items.value, { ...uploaded.image, weight: sortedImages.value.length }]
       emitItems()
-      $notify.add(`Изображение «${file.name}» загружено`, { type: 'success' })
+      $notify.add(t('images.uploaded', { name: file.name }), { type: 'success' })
     } catch (err: any) {
-      $notify.add(`«${file.name}»: ${formatApiError(err, 'ошибка загрузки')}`, { type: 'error', timer: 10 })
+      $notify.add(`${file.name}: ${formatApiError(err, t('images.upload_failed'))}`, { type: 'error', timer: 10 })
     }
   }
 
@@ -323,9 +322,9 @@ async function removeImage(imageId: number) {
       : $api.image.deleteForStore(props.entityId, imageId))
     items.value = items.value.filter((img) => img.id !== imageId)
     emitItems()
-    $notify.add('Изображение удалено', { type: 'success' })
+    $notify.add(t('images.deleted'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   } finally {
     removingId.value = null
   }
@@ -348,9 +347,9 @@ async function onAltBlur(event: Event, img: ImageResponse) {
       items.value[idx] = { ...items.value[idx], alt: updated.alt ?? null }
       emitItems()
     }
-    $notify.add('Alt сохранён', { type: 'success' })
+    $notify.add(t('images.alt_saved'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения alt'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('images.alt_save_failed')), { type: 'error', timer: 10 })
   } finally {
     savingAltId.value = null
   }

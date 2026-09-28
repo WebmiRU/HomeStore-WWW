@@ -1,14 +1,14 @@
 <template>
   <div class="lists-page">
     <div class="page-header">
-      <h3 class="page-title">Этикетки</h3>
+      <h3 class="page-title">{{ t('label_lists.list') }}</h3>
       <div class="page-actions">
         <BlankLabelButton @done="loadLists(meta.current_page)" />
-        <NuxtLink to="/label-lists/create" class="btn-add">Добавить</NuxtLink>
+        <NuxtLink to="/label-lists/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -17,32 +17,32 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Шаблон</th>
-            <th>Создан</th>
-            <th>Обновлён</th>
-            <th v-if="showOwnerColumn">Владелец</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('label_lists.template') }}</th>
+            <th>{{ t('common.created') }}</th>
+            <th>{{ t('common.updated') }}</th>
+            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}`)">
             <td data-label="ID">{{ list.id }}</td>
-            <td data-label="Название">
+            <td :data-label="t('common.title')">
               {{ list.title }}
-              <span v-if="list.codes_count" class="blank-badge" :title="`Сгенерировано кодов: ${list.codes_count}`">
-                без текста
+              <span v-if="list.codes_count" class="blank-badge" :title="t('label_lists.codes_generated', { count: list.codes_count })">
+                {{ t('label_lists.preset_without_text') }}
               </span>
             </td>
-            <td data-label="Шаблон">
+            <td :data-label="t('label_lists.template')">
               <!-- Шаблон удаляется мягко, а список его переживает: название
                    остаётся видимым с пометкой, назначить можно другой. -->
-              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted"> [удалено]</template></span>
-              <span v-else class="muted">Без шаблона</span>
+              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted"> t('placeholders.deleted')</template></span>
+              <span v-else class="muted">{{ t('label_lists.no_template') }}</span>
             </td>
-            <td data-label="Создан">{{ formatDate(list.created_at) }}</td>
-            <td data-label="Обновлён">{{ formatDate(list.updated_at) }}</td>
-            <td v-if="showOwnerColumn" data-label="Владелец">
+            <td :data-label="t('common.created')">{{ formatDate(list.created_at) }}</td>
+            <td :data-label="t('common.updated')">{{ formatDate(list.updated_at) }}</td>
+            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
               <span
                 v-if="list.user"
                 class="owner-name"
@@ -51,10 +51,10 @@
               <span v-else>—</span>
             </td>
             <td class="actions">
-              <NuxtLink :to="`/label-lists/${list.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink :to="`/label-lists/${list.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteList(list)">
+              <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteList(list)">
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
               <a
@@ -71,7 +71,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет списков</div>
+      <div v-else class="empty">{{ t('label_lists.no_lists') }}</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -79,7 +79,7 @@
           @click="goToPage((meta.current_page || 1) - 1)"
           class="page-btn"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -87,7 +87,7 @@
           @click="goToPage((meta.current_page || 1) + 1)"
           class="page-btn"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -101,6 +101,7 @@ import { formatApiError, readBlobApiError } from '~/composables/formatApiError'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
@@ -159,9 +160,9 @@ async function downloadPdf(id: number) {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    $notify.add('Документ отправлен на загрузку', { type: 'success' })
+    $notify.add(t('label_lists.download_started'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(await readBlobApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+    $notify.add(await readBlobApiError(err, t('label_lists.download_failed')), { type: 'error', timer: 10 })
   } finally {
     downloading.value = null
   }
@@ -172,19 +173,17 @@ async function deleteList(list: LabelListResponse) {
   // Без этой оговорки выглядит так, будто мы только что потеряли кусок
   // этикеток, который печатали специально.
   const question = list.codes_count
-    ? `Удалить набор «${list.title}»?\n\n`
-      + `С ${list.codes_count} безымянными кодами набора ничего не случится — `
-      + `наклейки останутся рабочими. Позже их можно убрать в разделе «Чистка кодов».`
-    : `Удалить набор «${list.title}»?`
+    ? t('label_lists.delete_confirm_codes', { title: list.title, count: list.codes_count })
+    : t('label_lists.delete_confirm', { title: list.title })
 
   if (!confirm(question)) return
 
   try {
     await $api.labelList.delete(list.id)
-    $notify.add('Набор удалён', { type: 'success' })
+    $notify.add(t('label_lists.delete_done'), { type: 'success' })
     await loadLists(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

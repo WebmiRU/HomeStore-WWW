@@ -1,18 +1,18 @@
 <template>
   <div class="stores-page">
     <div class="page-header">
-      <h3 class="page-title">Список хранилищ</h3>
+      <h3 class="page-title">{{ t('stores.list') }}</h3>
       <div class="page-header-actions">
         <MassLabelListButton
           :item-ids="[]"
           :store-ids="selectedIds"
           @done="clearSelection"
         />
-        <NuxtLink to="/stores/create" class="btn-add">Добавить</NuxtLink>
+        <NuxtLink to="/stores/create" class="btn-add">{{ t('stores.add') }}</NuxtLink>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -28,11 +28,11 @@
               />
             </th>
             <th>ID</th>
-            <th class="img-col">Фото</th>
-            <th>Название</th>
-            <th>Создан</th>
-            <th>Обновлён</th>
-            <th v-if="showOwnerColumn">Владелец</th>
+            <th class="img-col">{{ t('list_common.photo') }}</th>
+            <th>{{ t('stores.title') }}</th>
+            <th>{{ t('common.created') }}</th>
+            <th>{{ t('common.updated') }}</th>
+            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -49,14 +49,14 @@
             <td class="img-col">
               <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="40" lightbox />
             </td>
-            <td data-label="Название">
+            <td :data-label="t('stores.title')">
               <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
               <span v-if="node.depth > 0" class="tree-space"> </span>
               {{ node.store.title }}
             </td>
-            <td data-label="Создан">{{ formatDate(node.store.created_at) }}</td>
-            <td data-label="Обновлён">{{ formatDate(node.store.updated_at) }}</td>
-            <td v-if="showOwnerColumn" data-label="Владелец">
+            <td :data-label="t('common.created')">{{ formatDate(node.store.created_at) }}</td>
+            <td :data-label="t('common.updated')">{{ formatDate(node.store.updated_at) }}</td>
+            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
               <span
                 v-if="node.store.user"
                 class="owner-name"
@@ -70,8 +70,8 @@
                 v-if="canEdit(node.store)"
                 :to="`/stores/${node.store.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -79,8 +79,8 @@
                 v-else
                 :to="`/stores/${node.store.id}`"
                 class="action-link action-view"
-                title="Открыть"
-                aria-label="Открыть"
+                :title="t('common.open')"
+                :aria-label="t('common.open')"
               >
                 <img src="/img/icon/view.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -88,8 +88,8 @@
                 href="#"
                 class="action-link action-del"
                 :class="{ 'action-del--forbidden': !canDelete(node.store) }"
-                :title="canDelete(node.store) ? 'Удалить' : 'Нельзя удалить'"
-                :aria-label="canDelete(node.store) ? 'Удалить' : 'Нельзя удалить'"
+                :title="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
+                :aria-label="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
                 @click.prevent="deleteStore(node.store.id)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -99,7 +99,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет хранилищ</div>
+      <div v-else class="empty">{{ t('stores.no_stores') }}</div>
 
       <TablePagination :page="page" :last-page="lastPage" @go="goToPage" />
     </template>
@@ -113,6 +113,7 @@ import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const { openRow } = useRowOpen()
 const route = useRoute()
@@ -277,13 +278,13 @@ async function loadLabelListInfo() {
 async function deleteStore(id: number) {
   const store = flatList.value.find(n => n.store.id === id)?.store
   if (store && !canDelete(store)) return
-  if (!confirm('Удалить хранилище?')) return
+  if (!confirm(t('stores.delete_confirm'))) return
   try {
     await $api.store.delete(id)
-    $notify.add('Хранилище удалено', { type: 'success' })
+    $notify.add(t('stores.delete_done'), { type: 'success' })
     await load()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

@@ -1,37 +1,35 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление списка этикеток</h3>
+    <h3 class="page-title">{{ t('label_lists.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
     <form @submit.prevent="save" class="create-form">
       <fieldset class="fieldset">
-        <legend class="legend">Основное</legend>
+        <legend class="legend">{{ t('label_presets.legend_main') }}</legend>
         <label class="field">
-          <span class="field-label">Название</span>
+          <span class="field-label">{{ t('form.title') }}</span>
           <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
         </label>
         <label class="field">
-          <span class="field-label">Шаблон этикетки</span>
+          <span class="field-label">{{ t('label_lists.template_label') }}</span>
           <select v-model="form.label_preset_id" class="field-select" required>
-            <option :value="0" disabled>— выберите шаблон —</option>
+            <option :value="0" disabled>t('placeholders.pick_template')</option>
             <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.title }}</option>
           </select>
         </label>
         <label class="field field--check">
           <input v-model="form.print_all_codes" type="checkbox" class="field-check" />
-          <span>Печатать все коды предмета</span>
+          <span>{{ t('label_lists.print_all_codes') }}</span>
           <span class="field-hint">
-            По умолчанию на этикетку идёт главный код — верхний в списке на карточке
-            предмета. Крыжик нужен, когда на вещь наклеено несколько этикеток и
-            распечатать надо все.
+            {{ t('label_lists.codes_hint') }}
           </span>
         </label>
       </fieldset>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/label-lists" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/label-lists" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -43,12 +41,13 @@ import type { LabelPresetResponse } from '~/repository/modules/labelPreset'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const router = useRouter()
 
 const saving = ref(false)
 const presets = ref<LabelPresetResponse[]>([])
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('label_lists.main_tab') }])
 
 const form = reactive({
   title: '',
@@ -73,10 +72,10 @@ async function save() {
       label_preset_id: form.label_preset_id,
       print_all_codes: form.print_all_codes,
     })
-    $notify.add('Список создан', { type: 'success' })
+    $notify.add(t('form.created', { title: t('label_lists.one') }), { type: 'success' })
     router.push(`/label-lists/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

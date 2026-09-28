@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование группы свойств #{{ id }}</h3>
+    <h3 class="page-title">{{ t('properties.group_titles.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,14 +11,14 @@
       <form class="edit-form" @submit.prevent="save">
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="200" required />
-            <span class="field-hint">Переименование не затрагивает свойства группы</span>
+            <span class="field-hint">{{ t('properties.rename_hint') }}</span>
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-            <NuxtLink to="/property-groups" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+            <NuxtLink to="/property-groups" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </section>
 
@@ -35,6 +35,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -45,10 +46,10 @@ const saving = ref(false)
 
 const form = reactive({ title: '' })
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('properties.main_tab') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'))
 
@@ -59,7 +60,7 @@ async function load() {
     const group = await $api.propertyGroup.get(Number(id))
     form.title = group.title
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки группы свойств')
+    loadError.value = formatApiError(err, t('properties.group_card_load_failed'))
   } finally {
     loading.value = false
   }
@@ -69,9 +70,9 @@ async function save() {
   saving.value = true
   try {
     await $api.propertyGroup.update(Number(id), { title: form.title })
-    $notify.add('Группа свойств сохранена', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('properties.group_one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

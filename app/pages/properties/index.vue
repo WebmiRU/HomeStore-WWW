@@ -1,11 +1,11 @@
 <template>
   <div class="properties-page">
     <div class="page-header">
-      <h3 class="page-title">Свойства предметов</h3>
-      <NuxtLink to="/properties/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('properties.list_page') }}</h3>
+      <NuxtLink to="/properties/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,47 +13,47 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Тип</th>
-            <th>Группа</th>
-            <th>Ед.</th>
-            <th>Спр.</th>
-            <th>Значений</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('properties.type') }}</th>
+            <th>{{ t('properties.group') }}</th>
+            <th>{{ t('properties.unit_short') }}</th>
+            <th>{{ t('properties.dictionary_short') }}</th>
+            <th>{{ t('properties.values_count') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="p in properties" :key="p.id" @dblclick="openRow($event, `/properties/${p.id}`)">
             <td data-label="ID">{{ p.id }}</td>
-            <td data-label="Название">{{ p.title }}</td>
-            <td data-label="Тип">{{ p.type_label }}</td>
-            <td data-label="Группа">
-              <span v-if="p.group">{{ p.group.title }}<template v-if="p.group.deleted"> [удалено]</template></span>
+            <td :data-label="t('common.title')">{{ p.title }}</td>
+            <td :data-label="t('properties.type')">{{ p.type_label }}</td>
+            <td :data-label="t('properties.group')">
+              <span v-if="p.group">{{ p.group.title }}<template v-if="p.group.deleted"> t('placeholders.deleted')</template></span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Ед.">
-              <span v-if="p.unit">{{ p.unit.title_short }}<template v-if="p.unit.deleted"> [удалено]</template></span>
+            <td :data-label="t('properties.unit_short')">
+              <span v-if="p.unit">{{ p.unit.title_short }}<template v-if="p.unit.deleted"> t('placeholders.deleted')</template></span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Спр.">
-              <span v-if="p.dictionary">{{ p.dictionary.title }}<template v-if="p.dictionary.deleted"> [удалено]</template></span>
+            <td :data-label="t('properties.dictionary_short')">
+              <span v-if="p.dictionary">{{ p.dictionary.title }}<template v-if="p.dictionary.deleted"> t('placeholders.deleted')</template></span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Значений">{{ p.values_count ?? 0 }}</td>
+            <td :data-label="t('properties.values_count')">{{ p.values_count ?? 0 }}</td>
             <td class="actions">
               <NuxtLink
                 :to="`/properties/${p.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteProperty(p)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -63,7 +63,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет свойств</div>
+      <div v-else class="empty">{{ t('properties.no_properties') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -71,7 +71,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -79,7 +79,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -92,6 +92,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { PropertyResponse } from '~/repository/modules/property'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -109,7 +110,7 @@ async function load(page?: number) {
     properties.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки свойств')
+    error.value = formatApiError(err, t('properties.load_failed'))
   } finally {
     loading.value = false
   }
@@ -122,14 +123,14 @@ function goToPage(page: number) {
 async function deleteProperty(p: PropertyResponse) {
   // Значения свойства — это то, чем заполнены предметы: удаление стирает их
   // вместе с заполнениями, а проверить заранее, где оно заполнено, нельзя.
-  if (!confirm(`Удалить свойство «${p.title}»?\n\nЗаполненные им значения у предметов тоже пропадут.`)) return
+  if (!confirm(t('properties.delete_confirm', { title: p.title }) + '\n\n' + t('properties.delete_confirm_tail'))) return
 
   try {
     await $api.property.delete(p.id)
-    $notify.add('Свойство удалено', { type: 'success' })
+    $notify.add(t('properties.delete_done'), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

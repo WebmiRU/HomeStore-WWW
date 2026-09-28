@@ -17,46 +17,49 @@
  * настройками, права отдельным фильтром, и путать их не надо.
  */
 
+import type { TranslationKey } from '~/i18n/ru'
+
 export type NavItem = {
   key: string
-  label: string
+  /** Ключ перевода, а не текст: текст живёт в словарях. */
+  labelKey: TranslationKey
   to: string
 }
 
 export type NavGroup = {
   key: string
-  label: string
+  labelKey: TranslationKey
   items: NavItem[]
 }
 
 export type NavEntry = NavItem | NavGroup
 
 export const navTree: NavEntry[] = [
-  { key: 'home', label: 'Главная', to: '/' },
-  { key: 'items', label: 'Предметы', to: '/items' },
-  { key: 'stores', label: 'Хранилища', to: '/stores' },
-  { key: 'warehouses', label: 'Склады', to: '/warehouses' },
-  { key: 'categories', label: 'Категории', to: '/categories' },
-  { key: 'vendors', label: 'Производители', to: '/vendors' },
+  { key: 'home', labelKey: 'nav.home', to: '/' },
+  { key: 'items', labelKey: 'nav.items', to: '/items' },
+  { key: 'stores', labelKey: 'nav.stores', to: '/stores' },
+  { key: 'warehouses', labelKey: 'nav.warehouses', to: '/warehouses' },
+  { key: 'categories', labelKey: 'nav.categories', to: '/categories' },
+  { key: 'vendors', labelKey: 'nav.vendors', to: '/vendors' },
   {
     key: 'properties',
-    label: 'Свойства',
+    labelKey: 'nav.properties',
     items: [
-      { key: 'property_list', label: 'Свойства', to: '/properties' },
-      { key: 'property_groups', label: 'Группы свойств', to: '/property-groups' },
-      { key: 'units', label: 'Ед. изм.', to: '/units' },
+      { key: 'property_list', labelKey: 'nav.property_list', to: '/properties' },
+      { key: 'property_groups', labelKey: 'nav.property_groups', to: '/property-groups' },
+      { key: 'units', labelKey: 'nav.units', to: '/units' },
       // Справочник — такой же источник значений, как единица измерения: тип
       // свойства ссылается на оба. Держать их порознь в шапке незачем.
-      { key: 'dictionaries', label: 'Справочники', to: '/dictionaries' },
+      { key: 'dictionaries', labelKey: 'nav.dictionaries', to: '/dictionaries' },
     ],
   },
-  { key: 'movements', label: 'Движения', to: '/stock-operations' },
+  { key: 'movements', labelKey: 'nav.movements', to: '/stock-operations' },
   {
     key: 'marking',
-    label: 'Маркировка',
+    labelKey: 'nav.marking',
     items: [
-      { key: 'label_lists', label: 'Этикетки', to: '/label-lists' },
-      { key: 'label_presets', label: 'Шаблоны', to: '/label-presets' },
+      { key: 'label_lists', labelKey: 'nav.label_lists', to: '/label-lists' },
+      { key: 'label_presets', labelKey: 'nav.label_presets', to: '/label-presets' },
     ],
   },
   {
@@ -64,29 +67,29 @@ export const navTree: NavEntry[] = [
     // «Команда» короче «Пользователи и доступ» и звучит в том же просторе,
     // что остальные пункты.
     key: 'team',
-    label: 'Команда',
+    labelKey: 'nav.team',
     items: [
-      { key: 'users', label: 'Пользователи', to: '/users' },
-      { key: 'access', label: 'Доступ', to: '/access' },
+      { key: 'users', labelKey: 'nav.users', to: '/users' },
+      { key: 'access', labelKey: 'nav.access', to: '/access' },
     ],
   },
-  { key: 'journal', label: 'Журнал', to: '/journal' },
-  { key: 'trash', label: 'Корзина', to: '/trash' },
+  { key: 'journal', labelKey: 'nav.journal', to: '/journal' },
+  { key: 'trash', labelKey: 'nav.trash', to: '/trash' },
   {
     // Коды — одна сущность с двумя разными неприятностями: одни и те же
     // значения у разных предметов (надо найти и починить) и осиротевшие
     // (надо вычистить). Отдельными пунктами в меню это два места про одно,
     // поэтому в шапке они одним разделом.
     key: 'codes',
-    label: 'Коды',
+    labelKey: 'nav.codes',
     items: [
-      { key: 'code_conflicts', label: 'Коллизии', to: '/code-conflicts' },
-      { key: 'orphan_codes', label: 'Очистка', to: '/orphan-codes' },
+      { key: 'code_conflicts', labelKey: 'nav.code_conflicts', to: '/code-conflicts' },
+      { key: 'orphan_codes', labelKey: 'nav.orphan_codes', to: '/orphan-codes' },
     ],
   },
   {
     key: 'options',
-    label: 'Настройки',
+    labelKey: 'nav.options',
     to: '/options',
   },
 ]
@@ -122,18 +125,23 @@ export function navKeysByLevel(entries: NavEntry[] = navTree): Record<string, st
   return levels
 }
 
-/** Подпись пункта по ключу: верхнего уровня или вложенного. */
-export function navLabel(key: string, entries: NavEntry[] = navTree): string {
+/**
+ * Ключ перевода пункта по ключу меню: верхнего уровня или вложенного.
+ *
+ * Ключ, которого в меню нет, отдаётся как есть: t() покажет его текстом, и
+ * это лучше пустой строки — видно, что за путь сломался.
+ */
+export function navLabelKey(key: string, entries: NavEntry[] = navTree): TranslationKey {
   for (const entry of entries) {
-    if (entry.key === key) return entry.label
+    if (entry.key === key) return entry.labelKey
 
     if (isNavGroup(entry)) {
       const found = entry.items.find((item) => item.key === key)
-      if (found) return found.label
+      if (found) return found.labelKey
     }
   }
 
-  return key
+  return 'nav.home'
 }
 
 /**

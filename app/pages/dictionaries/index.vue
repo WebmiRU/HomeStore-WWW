@@ -1,11 +1,11 @@
 <template>
   <div class="dictionaries-page">
     <div class="page-header">
-      <h3 class="page-title">Справочники</h3>
-      <NuxtLink to="/dictionaries/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('properties.dictionaries_list') }}</h3>
+      <NuxtLink to="/dictionaries/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,32 +13,32 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Значений</th>
-            <th>Создан</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('properties.values_count') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="d in dictionaries" :key="d.id" @dblclick="openRow($event, `/dictionaries/${d.id}`)">
             <td data-label="ID">{{ d.id }}</td>
-            <td data-label="Название">{{ d.title }}</td>
-            <td data-label="Значений">{{ d.values_count }}</td>
-            <td data-label="Создан">{{ formatDate(d.created_at) }}</td>
+            <td :data-label="t('common.title')">{{ d.title }}</td>
+            <td :data-label="t('properties.values_count')">{{ d.values_count }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(d.created_at) }}</td>
             <td class="actions">
               <NuxtLink
                 :to="`/dictionaries/${d.id}`"
                 class="action-link action-edit"
-                title="Значения справочника"
-                aria-label="Значения справочника"
+                :title="t('properties.dictionary_values_title')"
+                :aria-label="t('properties.dictionary_values_title')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteDictionary(d)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -48,7 +48,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет справочников</div>
+      <div v-else class="empty">{{ t('properties.no_dictionaries') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -56,7 +56,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -64,7 +64,7 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -78,6 +78,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { openRow } = useRowOpen()
@@ -95,7 +96,7 @@ async function load(page?: number) {
     dictionaries.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки справочников')
+    error.value = formatApiError(err, t('properties.dictionaries_load_failed'))
   } finally {
     loading.value = false
   }
@@ -108,14 +109,14 @@ function goToPage(page: number) {
 async function deleteDictionary(d: DictionaryResponse) {
   // Справочник удаляется вместе со значениями, а значения могут быть
   // выбраны в свойствах, — их придётся перезаполнить.
-  if (!confirm(`Удалить справочник «${d.title}» вместе со ${d.values_count} значениями?`)) return
+  if (!confirm(t('properties.dictionary_delete_confirm', { title: d.title, count: d.values_count }))) return
 
   try {
     await $api.dictionary.delete(d.id)
-    $notify.add('Справочник удалён', { type: 'success' })
+    $notify.add(t('properties.dictionary_delete_done'), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

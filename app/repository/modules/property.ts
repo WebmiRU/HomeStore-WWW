@@ -14,12 +14,24 @@ export const PROPERTY_TYPES = ['string', 'int', 'float', 'bool', 'dictionary'] a
 
 export type PropertyType = (typeof PROPERTY_TYPES)[number]
 
-export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
-  string: 'Текст',
-  int: 'Целое число',
-  float: 'Дробное число',
-  bool: 'Да/Нет',
-  dictionary: 'Из справочника',
+/**
+ * Подписи типов берутся из i18n; сервер тоже отдаёт type_label, и он
+ * переводится на его стороне. Здесь — для тех мест, где подпись нужна до
+ * ответа сервера (выбор типа в форме).
+ */
+/** Ключ подписи типа: у сервера он свой, здесь — общий на оба числовых типа. */
+const TYPE_LABEL_KEYS: Record<PropertyType, string> = {
+  string: 'property_types.text',
+  int: 'property_types.number',
+  float: 'property_types.number',
+  bool: 'property_types.bool',
+  dictionary: 'property_types.dictionary',
+}
+
+export function propertyTypeLabel(type: PropertyType): string {
+  const { t } = useI18n()
+
+  return t(TYPE_LABEL_KEYS[type])
 }
 
 /** Единица измерения бывает только у числового свойства. */

@@ -4,15 +4,15 @@
       class="toggler-btn"
       :class="{ 'toggler-btn--active': inAnyList }"
       @click.stop="toggle"
-      :title="itemId ? 'Добавить предмет в этикетки' : 'Добавить хранилище в этикетки'"
+      :title="itemId ? t('label_lists.add_item') : t('label_lists.add_store')"
     >
       <span class="toggler-icon" :class="{ 'toggler-icon--active': inAnyList }"></span>
     </button>
 
     <div v-if="open" class="toggler-dropdown" @click.stop>
-      <div v-if="loading" class="toggler-loading">Загрузка...</div>
+      <div v-if="loading" class="toggler-loading">{{ t('form.loading') }}</div>
       <template v-else-if="lists.length === 0">
-        <div class="toggler-empty">Нет списков</div>
+        <div class="toggler-empty">{{ t('label_lists.no_lists') }}</div>
       </template>
       <template v-else>
         <label
@@ -52,6 +52,7 @@ const emit = defineEmits<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 
 const rootEl = ref<HTMLElement | null>(null)
 const open = ref(false)
@@ -93,7 +94,7 @@ async function loadLists() {
   try {
     lists.value = await $api.labelList.all()
   } catch {
-    $notify.add('Ошибка загрузки списков', { type: 'error', timer: 5 })
+    $notify.add(t('label_lists.load_failed'), { type: 'error', timer: 5 })
   } finally {
     loading.value = false
   }
@@ -124,7 +125,7 @@ async function onToggle(list: LabelListResponse) {
       emit('changed', { storeId: props.storeId, added: !checked })
     }
   } catch {
-    $notify.add('Ошибка', { type: 'error', timer: 5 })
+    $notify.add(t('list_common.load_failed'), { type: 'error', timer: 5 })
   } finally {
     const next = new Set(busy.value)
     next.delete(list.id)

@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование предмета #{{ id }}</h3>
+    <h3 class="page-title">{{ t('items.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,19 +11,19 @@
       <form @submit.prevent="save" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required :readonly="!canEdit" />
           </label>
 
           <label class="field">
-            <span class="field-label">Название для печати</span>
+            <span class="field-label">{{ t('form.title_print') }}</span>
             <input v-model="form.title_print" type="text" class="field-input" maxlength="500" :readonly="!canEdit" />
           </label>
 
           <label class="field">
-            <span class="field-label">Производитель</span>
+            <span class="field-label">{{ t('form.vendor') }}</span>
             <select v-model="form.vendor_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">[НЕТ]</option>
+              <option :value="null">t('placeholders.none')</option>
               <option v-if="deletedVendor" :value="deletedVendor.id" disabled>
                 {{ deletedVendor.label }}
               </option>
@@ -31,13 +31,13 @@
               {{ option.title }}
               </option>
             </select>
-            <span class="field-hint">Кто выпустил предмет: Bosch, Makita, собственный бренд</span>
+            <span class="field-hint">{{ t('items.vendor_hint') }}</span>
           </label>
 
           <label class="field">
-            <span class="field-label">Хранилище</span>
+            <span class="field-label">{{ t('form.store') }}</span>
             <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">[НЕТ]</option>
+              <option :value="null">t('placeholders.none')</option>
               <option v-if="deletedStore" :value="deletedStore.id" disabled>
                 {{ deletedStore.label }}
               </option>
@@ -49,13 +49,13 @@
                 >{{ opt.own ? '●' : '○' }} {{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
               </optgroup>
             </select>
-            <span class="field-hint">● — своё хранилище, ○ — доступ по правам</span>
+            <span class="field-hint">{{ t('items.own_storage_hint') }}</span>
           </label>
 
           <label class="field">
-            <span class="field-label">Категория</span>
+            <span class="field-label">{{ t('form.category') }}</span>
             <select v-model="form.category_id" class="field-select" :disabled="!canEdit" @change="onCategoryChange">
-              <option :value="null">[НЕТ]</option>
+              <option :value="null">t('placeholders.none')</option>
               <option v-if="deletedCategory" :value="deletedCategory.id" disabled>
                 {{ deletedCategory.label }}
               </option>
@@ -63,30 +63,30 @@
                 {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
               </option>
             </select>
-            <span class="field-hint">Задаёт набор свойств по умолчанию на вкладке «Свойства»</span>
+            <span class="field-hint">{{ t('items.category_hint') }}</span>
           </label>
 
           <div class="field">
-            <span class="field-label">Коды</span>
+            <span class="field-label">{{ t('items.codes') }}</span>
             <ItemCodesEditor v-model="codes" :readonly="!canEdit" />
-            <button v-if="codesChanged && canEdit" type="button" class="btn-reset-code" @click="resetCodes">Сброс</button>
+            <button v-if="codesChanged && canEdit" type="button" class="btn-reset-code" @click="resetCodes">{{ t('common.reset') }}</button>
           </div>
 
           <label class="field">
-            <span class="field-label">Количество</span>
+            <span class="field-label">{{ t('form.quantity') }}</span>
             <input
               v-model="quantityInput"
               type="number"
               class="field-input"
               step="1"
-              placeholder="без количества"
+              :placeholder="t('items.quantity_placeholder')"
               :readonly="!canEdit"
             />
           </label>
         </section>
 
         <section v-if="activeTab === 'properties'" class="tab-section">
-          <div v-if="propertiesLoading" class="loading">Загрузка свойств...</div>
+          <div v-if="propertiesLoading" class="loading">{{ t('form.loading') }}</div>
           <ItemPropertiesEditor
             v-else
             v-model="properties"
@@ -115,7 +115,7 @@
         </section>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving || !canEdit">Сохранить</button>
+          <button type="submit" class="btn-save" :disabled="saving || !canEdit">{{ t('form.save') }}</button>
           <NuxtLink
             v-if="canEdit"
             :to="{
@@ -132,8 +132,8 @@
               },
             }"
             class="btn-copy"
-          >Создать копию</NuxtLink>
-          <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
+          >{{ t('form.clone') }}</NuxtLink>
+          <NuxtLink to="/items" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
         </div>
       </form>
     </template>
@@ -157,6 +157,7 @@ import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
 import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { notifyCodeConflicts } = useCodeConflictNotice()
 const route = useRoute()
 
@@ -171,18 +172,18 @@ const itemEntity = ref<ItemResponse | null>(null)
 
 const canEdit = computed(() => itemEntity.value?.rights?.includes('edit') ?? false)
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'properties', label: 'Свойства' },
-  { key: 'images', label: 'Изображения' },
-  { key: 'balance', label: 'Остатки' },
-  { key: 'movements', label: 'Движения' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('items.main_tab') },
+  { key: 'properties', label: t('form.properties_tab') },
+  { key: 'images', label: t('items.images_tab') },
+  { key: 'balance', label: t('form.balance_tab') },
+  { key: 'movements', label: t('form.movements_tab') },
+  { key: 'stats', label: t('items.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -286,7 +287,7 @@ async function loadProperties(categoryId: number | null) {
     propertiesKey.value = String(categoryId)
   } catch (err: any) {
     categoryProperties.value = []
-    $notify.add(formatApiError(err, 'Ошибка загрузки свойств категории'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('categories.properties_load_failed')), { type: 'error', timer: 10 })
   } finally {
     propertiesLoading.value = false
   }
@@ -355,10 +356,10 @@ async function save() {
       payload.quantity = Number(qty)
     }
     const saved = await $api.item.update(Number(id), payload)
-    $notify.add('Предмет сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('items.one') }), { type: 'success' })
     notifyCodeConflicts(saved)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

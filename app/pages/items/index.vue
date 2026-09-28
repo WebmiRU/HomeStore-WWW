@@ -1,22 +1,22 @@
 <template>
   <div class="items-page">
     <div class="page-header">
-      <h3 class="page-title">Список предметов</h3>
+      <h3 class="page-title">{{ t('items.list') }}</h3>
       <div class="page-header-actions">
         <MassLabelListButton
           :item-ids="selectedIds"
           :store-ids="[]"
           @done="clearSelection"
         />
-        <NuxtLink to="/items/create" class="btn-add">Добавить</NuxtLink>
+        <NuxtLink to="/items/create" class="btn-add">{{ t('items.add') }}</NuxtLink>
       </div>
     </div>
 
     <div class="filter-bar">
       <label class="filter">
-        <span class="filter-label">Категория</span>
+        <span class="filter-label">{{ t('items.category') }}</span>
         <select :value="categoryFilter" class="filter-select" @change="onCategoryChange">
-          <option :value="null">[ВСЕ]</option>
+          <option :value="null">t('placeholders.all')</option>
           <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
             {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
           </option>
@@ -24,12 +24,12 @@
       </label>
 
       <span class="filter-hint">
-        Вместе с вложенными категориями.
-        <a v-if="categoryFilter" href="#" class="filter-reset" @click.prevent="onCategoryChange($event, null)">Сбросить</a>
+        {{ t('categories.with_nested') }}
+        <a v-if="categoryFilter" href="#" class="filter-reset" @click.prevent="onCategoryChange($event, null)">{{ t('common.reset') }}</a>
       </span>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -52,15 +52,15 @@
               места, чем она занимает, — колонка выходила 94px против 42px самой
               картинки, а «Название» сжималось до 169px.
             -->
-            <th class="img-col">Фото</th>
-            <th>Название</th>
-            <th>Производитель</th>
-            <th>Категория</th>
-            <th>Хранилище</th>
-            <th>Количество</th>
-            <th>Создан</th>
-            <th>Обновлён</th>
-            <th v-if="showOwnerColumn">Владелец</th>
+            <th class="img-col">{{ t('items.image') }}</th>
+            <th>{{ t('items.title') }}</th>
+            <th>{{ t('items.vendor') }}</th>
+            <th>{{ t('items.category') }}</th>
+            <th>{{ t('items.store') }}</th>
+            <th>{{ t('items.quantity') }}</th>
+            <th>{{ t('common.created') }}</th>
+            <th>{{ t('common.updated') }}</th>
+            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -77,22 +77,22 @@
             <td class="img-col">
               <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" lightbox />
             </td>
-            <td data-label="Название">{{ item.payload.title }}</td>
-            <td data-label="Производитель">
+            <td :data-label="t('items.title')">{{ item.payload.title }}</td>
+            <td :data-label="t('items.vendor')">
               <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
                 {{ item.vendor.title }}
               </NuxtLink>
-              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} [удалено]</span>
+              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} t('placeholders.deleted')</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Категория">
+            <td :data-label="t('items.category')">
               <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
                 {{ item.category.title }}
               </NuxtLink>
-              <span v-else-if="item.category" class="muted">{{ item.category.title }} [удалено]</span>
+              <span v-else-if="item.category" class="muted">{{ item.category.title }} t('placeholders.deleted')</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Хранилище">
+            <td :data-label="t('items.store')">
               <!-- Ссылка на карточку хранилища, как у категории и производителя.
                    В цепочке store первым идёт само хранилище, дальше — предки.
                    У удалённого ссылки нет: переход вёл бы в 404, поэтому
@@ -100,13 +100,13 @@
               <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
                 {{ item.store[0].title }}
               </NuxtLink>
-              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} [удалено]</span>
+              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} t('placeholders.deleted')</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Кол-во">{{ item.payload.quantity ?? '—' }}</td>
-            <td data-label="Создан">{{ formatDate(item.payload.created_at) }}</td>
-            <td data-label="Обновлён">{{ formatDate(item.payload.updated_at) }}</td>
-            <td v-if="showOwnerColumn" data-label="Владелец">
+            <td :data-label="t('items.quantity_short')">{{ item.payload.quantity ?? '—' }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(item.payload.created_at) }}</td>
+            <td :data-label="t('common.updated')">{{ formatDate(item.payload.updated_at) }}</td>
+            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
               <span
                 v-if="item.payload.user"
                 class="owner-name"
@@ -120,8 +120,8 @@
                 v-if="canEdit(item)"
                 :to="`/items/${item.payload.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -129,8 +129,8 @@
                 v-else
                 :to="`/items/${item.payload.id}`"
                 class="action-link action-view"
-                title="Открыть"
-                aria-label="Открыть"
+                :title="t('common.open')"
+                :aria-label="t('common.open')"
               >
                 <img src="/img/icon/view.svg" class="action-icon" alt="" />
               </NuxtLink>
@@ -138,8 +138,8 @@
                 href="#"
                 class="action-link action-del"
                 :class="{ 'action-del--forbidden': !canDelete(item) }"
-                :title="canDelete(item) ? 'Удалить' : 'Нельзя удалить'"
-                :aria-label="canDelete(item) ? 'Удалить' : 'Нельзя удалить'"
+                :title="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
+                :aria-label="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
                 @click.prevent="deleteItem(item.payload.id)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -149,7 +149,7 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет предметов</div>
+      <div v-else class="empty">{{ t('items.no_items') }}</div>
 
       <TablePagination
         :page="meta.current_page || 1"
@@ -169,6 +169,7 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const { openRow } = useRowOpen()
 const route = useRoute()
@@ -292,13 +293,13 @@ function onCategoryChange(event: Event, value: number | null = null) {
 async function deleteItem(id: number) {
   const item = items.value.find(i => i.payload.id === id)
   if (item && !canDelete(item)) return
-  if (!confirm('Удалить предмет?')) return
+  if (!confirm(t('items.delete_confirm'))) return
   try {
     await $api.item.delete(id)
-    $notify.add('Предмет удалён', { type: 'success' })
+    $notify.add(t('items.delete_done'), { type: 'success' })
     await loadItems(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('items.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

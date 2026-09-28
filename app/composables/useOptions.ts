@@ -12,6 +12,7 @@ const defaultOptions = (): OptionResponse => ({
   menu_order: [],
   menu_hidden: [],
   operation_mode: 'search',
+  locale: 'ru',
   show_code_block: true,
   remember_operation_mode: true,
 })

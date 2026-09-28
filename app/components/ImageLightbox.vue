@@ -1,13 +1,13 @@
 <template>
   <Teleport to="body">
     <div class="lightbox" @click.self="emit('close')">
-      <button type="button" class="lightbox__close" aria-label="Закрыть" @click="emit('close')">×</button>
+      <button type="button" class="lightbox__close" :aria-label="t('images.close')" @click="emit('close')">×</button>
 
       <button
         v-if="multiple"
         type="button"
         class="lightbox__nav lightbox__nav--prev"
-        aria-label="Предыдущее фото"
+        :aria-label="t('images.previous')"
         @click="step(-1)"
       >‹</button>
 
@@ -22,14 +22,14 @@
           @load="onLoad"
           @error="onError"
         />
-        <p v-else class="lightbox__error">Не удалось загрузить фото</p>
+        <p v-else class="lightbox__error">{{ t('images.load_failed') }}</p>
       </div>
 
       <button
         v-if="multiple"
         type="button"
         class="lightbox__nav lightbox__nav--next"
-        aria-label="Следующее фото"
+        :aria-label="t('images.next')"
         @click="step(1)"
       >›</button>
 
@@ -48,6 +48,7 @@ type LightboxImage = {
   alt?: string | null
 }
 
+const { t } = useI18n()
 const props = withDefaults(
   defineProps<{
     images: LightboxImage[]

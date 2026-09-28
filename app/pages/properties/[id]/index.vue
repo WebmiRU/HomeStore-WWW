@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование свойства #{{ id }}</h3>
+    <h3 class="page-title">{{ t('properties.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,40 +11,40 @@
       <section v-if="activeTab === 'main'" class="tab-section">
         <form class="edit-form" @submit.prevent="save">
           <label class="field">
-            <span class="field-label">Группа</span>
+            <span class="field-label">{{ t('properties.group') }}</span>
             <select v-model="form.group_id" class="field-select">
-              <option :value="null">[БЕЗ ГРУППЫ]</option>
+              <option :value="null">t('placeholders.no_group')</option>
               <option v-if="deletedGroup" :value="deletedGroup.id" disabled>
                 {{ deletedGroup.label }}
               </option>
               <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.title }}</option>
             </select>
-            <span class="field-hint">Группа нужна только чтобы собрать похожие свойства вместе</span>
+            <span class="field-hint">{{ t('properties.group_hint_short') }}</span>
           </label>
 
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
           </label>
 
           <label class="field">
-            <span class="field-label">Тип</span>
+            <span class="field-label">{{ t('properties.type') }}</span>
             <select v-model="form.type" class="field-select" :disabled="lockedType">
               <option v-for="type in PROPERTY_TYPES" :key="type" :value="type">
-                {{ PROPERTY_TYPE_LABELS[type] }}
+                {{ propertyTypeLabel(type) }}
               </option>
             </select>
             <span class="field-hint">
               {{ lockedType
-                ? `Тип зафиксирован: по свойству заполнено ${valuesCount} значений у предметов`
-                : 'Тип задаёт вид поля при заполнении предметов' }}
+                ? t('properties.type_locked', { count: valuesCount })
+                : t('properties.type_hint') }}
             </span>
           </label>
 
           <label v-if="acceptsUnit" class="field">
-            <span class="field-label">Единица измерения</span>
+            <span class="field-label">{{ t('properties.unit') }}</span>
             <select v-model="form.unit_id" class="field-select">
-              <option :value="null">[БЕЗ ЕДИНИЦЫ]</option>
+              <option :value="null">t('placeholders.no_unit')</option>
               <option v-if="deletedUnit" :value="deletedUnit.id" disabled>
                 {{ deletedUnit.label }}
               </option>
@@ -55,26 +55,26 @@
           </label>
 
           <label v-if="needsDictionary" class="field">
-            <span class="field-label">Справочник</span>
+            <span class="field-label">{{ t('properties.dictionary') }}</span>
             <select v-model="form.dictionary_id" class="field-select">
-              <option :value="null">[ВЫБЕРИТЕ СПРАВОЧНИК]</option>
+              <option :value="null">t('placeholders.pick_dictionary')</option>
               <option v-if="deletedDictionary" :value="deletedDictionary.id" disabled>
                 {{ deletedDictionary.label }}
               </option>
               <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
-                {{ dictionary.title }} ({{ dictionary.values_count }} знач.)
+                {{ dictionary.title }} ({{ dictionary.values_count }} t('properties.values_short') })
               </option>
             </select>
             <span v-if="dictionary" class="field-hint">
               <NuxtLink :to="`/dictionaries/${dictionary.id}?tab=values`" class="row-link">
-                {{ dictionary.title }}: открыть значения
+                {{ t('properties.open_values', { title: dictionary.title }) }}
               </NuxtLink>
             </span>
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-            <NuxtLink to="/properties" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+            <NuxtLink to="/properties" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </form>
       </section>
@@ -92,7 +92,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import { deletedOption } from '~/composables/deletedOption'
 import {
   PROPERTY_TYPES,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   propertyAcceptsUnit,
   propertyNeedsDictionary,
   type PropertyResponse,
@@ -103,6 +103,7 @@ import type { PropertyGroupResponse } from '~/repository/modules/propertyGroup'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -130,10 +131,10 @@ const form = reactive<{
   dictionary_id: null,
 })
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('properties.main_tab') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'))
 
@@ -215,7 +216,7 @@ async function load() {
     groups.value = allGroups
     dictionaries.value = allDictionaries
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки свойства')
+    loadError.value = formatApiError(err, t('properties.card_load_failed'))
   } finally {
     loading.value = false
   }
@@ -223,7 +224,7 @@ async function load() {
 
 async function save() {
   if (needsDictionary.value && form.dictionary_id === null) {
-    $notify.add('Выберите справочник для свойства типа «Из справочника»', { type: 'error', timer: 10 })
+    $notify.add(t('properties.choose_dictionary'), { type: 'error', timer: 10 })
     return
   }
 
@@ -236,9 +237,9 @@ async function save() {
       unit_id: acceptsUnit.value ? form.unit_id : null,
       dictionary_id: needsDictionary.value ? form.dictionary_id : null,
     })
-    $notify.add('Свойство сохранено', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('properties.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

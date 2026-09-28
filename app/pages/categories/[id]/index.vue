@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование категории #{{ id }}</h3>
+    <h3 class="page-title">{{ t('categories.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,84 +11,81 @@
       <section v-if="activeTab === 'main'" class="tab-section">
         <form class="edit-form" @submit.prevent="save">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="200" required />
           </label>
 
           <label class="field">
-            <span class="field-label">Родительская категория</span>
+            <span class="field-label">{{ t('categories.parent') }}</span>
             <select v-model="form.parent_id" class="field-select">
-              <option :value="null">[КОРЕНЬ]</option>
+              <option :value="null">t('placeholders.root')</option>
               <option v-for="option in parentOptions" :key="option.id" :value="option.id">
                 {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
               </option>
             </select>
-            <span class="field-hint">Ни сама категория, ни её вложенные сюда попасть не могут</span>
+            <span class="field-hint">{{ t('categories.no_self_hint') }}</span>
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-            <NuxtLink to="/categories" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+            <NuxtLink to="/categories" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </form>
 
         <div class="children">
           <div class="children__head">
-            <span class="children__title">Вложенные категории</span>
-            <NuxtLink :to="`/categories/create?parent_id=${id}`" class="btn-add">Добавить внутрь</NuxtLink>
+            <span class="children__title">{{ t('categories.children') }}</span>
+            <NuxtLink :to="`/categories/create?parent_id=${id}`" class="btn-add">{{ t('categories.add_inside') }}</NuxtLink>
           </div>
 
           <ul v-if="children.length" class="children__list">
             <li v-for="child in children" :key="child.id" class="children__item">
               <NuxtLink :to="`/categories/${child.id}`" class="children__link">{{ child.title }}</NuxtLink>
               <span class="children__count">
-                {{ child.items_count ? `${child.items_count} предм.` : 'пусто' }}
+                {{ child.items_count ? t('categories.items_short', { count: child.items_count }) : t('categories.empty_word') }}
               </span>
             </li>
           </ul>
 
-          <div v-else class="children__empty">Вложенных категорий нет</div>
+          <div v-else class="children__empty">{{ t('categories.no_children') }}</div>
         </div>
       </section>
 
       <section v-if="activeTab === 'properties'" class="tab-section">
-        <div v-if="propertiesLoading" class="loading">Загрузка...</div>
+        <div v-if="propertiesLoading" class="loading">{{ t('form.loading') }}</div>
         <div v-else-if="propertiesError" class="error">{{ propertiesError }}</div>
 
         <template v-else>
           <p class="section-hint">
-            Набор считается сервером по уже заполненным значениям и включает предметы
-            вложенных категорий. Свойство появляется здесь само, как только его заполнят
-            хотя бы у одного предмета.
-          </p>
+            {{ t('categories.properties_hint') }}</p>
 
           <table v-if="properties.length" class="props-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Название</th>
-                <th>Тип</th>
-                <th>Группа</th>
-                <th>Единица</th>
-                <th>Справочник</th>
+                <th>{{ t('form.title') }}</th>
+                <th>{{ t('properties.type') }}</th>
+                <th>{{ t('properties.group') }}</th>
+                <th>{{ t('properties.unit') }}</th>
+                <th>{{ t('properties.dictionary') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="property in properties" :key="property.id">
                 <td data-label="ID">{{ property.id }}</td>
-                <td data-label="Название">
+                <td :data-label="t('common.title')">
                   <NuxtLink :to="`/properties/${property.id}`" class="row-link">{{ property.title }}</NuxtLink>
                 </td>
-                <td data-label="Тип">{{ property.type_label }}</td>
-                <td data-label="Группа">
+                <td :data-label="t('properties.type')">{{ property.type_label }}</td>
+                <td :data-label="t('properties.group')">
                   <span v-if="property.group">{{ property.group.title }}</span>
                   <span v-else class="muted">—</span>
                 </td>
-                <td data-label="Единица">
+                <td :data-label="t('properties.unit')">
                   <span v-if="property.unit">{{ property.unit.title_short }}</span>
                   <span v-else class="muted">—</span>
                 </td>
-                <td data-label="Справочник">
+                <td :data-label="t('properties.dictionary')">
                   <span v-if="property.dictionary">
                     <NuxtLink :to="`/dictionaries/${property.dictionary.id}?tab=values`" class="row-link">
                       {{ property.dictionary.title }}
@@ -101,7 +98,7 @@
           </table>
 
           <div v-else class="empty">
-            Для этой категории пока нет заполненных свойств
+            {{ t('categories.no_properties') }}
           </div>
         </template>
       </section>
@@ -121,6 +118,7 @@ import type { CategoryResponse } from '~/repository/modules/category'
 import type { PropertyResponse } from '~/repository/modules/property'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -136,11 +134,11 @@ const propertiesError = ref<string | null>(null)
 
 const form = reactive<{ title: string; parent_id: number | null }>({ title: '', parent_id: null })
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'properties', label: 'Свойства' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('categories.main_tab') },
+  { key: 'properties', label: t('form.properties_tab') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const tab = route.query.tab
@@ -168,7 +166,7 @@ async function load() {
     form.parent_id = category.parent_id
     categories.value = all
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки категории')
+    loadError.value = formatApiError(err, t('categories.card_load_failed'))
   } finally {
     loading.value = false
   }
@@ -180,7 +178,7 @@ async function loadProperties() {
   try {
     properties.value = await $api.category.properties(Number(id))
   } catch (err: any) {
-    propertiesError.value = formatApiError(err, 'Ошибка загрузки свойств категории')
+    propertiesError.value = formatApiError(err, t('categories.properties_load_failed'))
   } finally {
     propertiesLoading.value = false
   }
@@ -190,12 +188,12 @@ async function save() {
   saving.value = true
   try {
     await $api.category.update(Number(id), { title: form.title, parent_id: form.parent_id })
-    $notify.add('Категория сохранена', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('categories.one') }), { type: 'success' })
     // Дерево могло переехать, поэтому перечитываем его целиком: иначе
     // список вложенных и селект родителя остались бы от старой структуры.
     await load()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

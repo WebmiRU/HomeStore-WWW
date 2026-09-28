@@ -1,12 +1,12 @@
 <template>
   <div class="journal-page">
     <div class="page-header">
-      <h3 class="page-title">Журнал действий</h3>
+      <h3 class="page-title">{{ t('journal.title') }}</h3>
     </div>
 
     <div class="journal-controls">
       <div class="preset-row">
-        <span class="control-label">Период:</span>
+        <span class="control-label">{{ t('journal.period_label') }}</span>
         <button
           v-for="preset in periodPresets"
           :key="preset.label"
@@ -21,7 +21,7 @@
 
       <div class="preset-row">
         <div class="control-group date-group">
-          <span class="control-label">Свои даты:</span>
+          <span class="control-label">{{ t('journal.own_dates') }}</span>
           <ClientOnly>
             <VueDatepicker
               v-model="dateRange"
@@ -37,7 +37,7 @@
         </div>
 
         <div class="control-group" v-if="activeTab === 'analytics'">
-          <span class="control-label">Шаг:</span>
+          <span class="control-label">{{ t('journal.step_label') }}</span>
           <button
             v-for="g in granularities"
             :key="g.value"
@@ -51,9 +51,9 @@
         </div>
 
         <div class="control-group">
-          <span class="control-label">Объект:</span>
+          <span class="control-label">{{ t('journal.object_label') }}</span>
           <select v-model="entityFilter" class="ctl-select" @change="applyFilters">
-            <option value="">Все объекты</option>
+            <option value="">{{ t('journal.all_objects') }}</option>
             <option v-for="et in entityOptions" :key="et.value" :value="et.value">
               {{ et.label }}
             </option>
@@ -65,78 +65,73 @@
     <TabBar :tabs="tabDefs" />
 
     <template v-if="activeTab === 'analytics'">
-      <div v-if="statsLoading" class="loading">Загрузка статистики...</div>
+      <div v-if="statsLoading" class="loading">{{ t('common.loading') }}</div>
       <div v-else-if="statsError" class="error">{{ statsError }}</div>
 
       <div v-else class="charts-grid">
       <section class="chart-card chart-card--wide">
         <div class="chart-head">
-          <h4 class="chart-title">Активность и действия</h4>
-          <span v-if="activityTotal" class="stats-summary">Всего за период: <b>{{ activityTotal }}</b></span>
+          <h4 class="chart-title">{{ t('journal.activity') }}</h4>
+          <span v-if="activityTotal" class="stats-summary">{{ t('journal.total_for_period') }}<b>{{ activityTotal }}</b></span>
         </div>
-        <p class="chart-subtitle">
-          Ось X — дата, ось Y — число событий. Цвет сегмента — действие (пополнение, списание,
-          создание и т.д.); высота столбца — общая активность, белая линия — итог за день/час.
-        </p>
-        <AuditActivityChart :points="actionSeries" :labels="ACTION_LABELS" />
+        <p class="chart-subtitle">{{ t('journal.chart_x_hint') }}</p>
+        <AuditActivityChart :points="actionSeries" :labels="actionLabels" />
       </section>
 
       <section class="chart-card chart-card--wide">
-        <h4 class="chart-title">Активность по объектам</h4>
-        <p class="chart-subtitle">
-          Те же события по типу затронутого объекта: предметы, хранилища, склады, этикетки и т.д.
-        </p>
-        <AuditActivityChart :points="entitySeries" :labels="ENTITY_LABELS" />
+        <h4 class="chart-title">{{ t('journal.activity_by_object') }}</h4>
+        <p class="chart-subtitle">{{ t('journal.chart_entities_hint') }}</p>
+        <AuditActivityChart :points="entitySeries" :labels="entityLabels" />
       </section>
       </div>
     </template>
 
     <template v-else>
       <div class="journal-table-head">
-        <span class="total" v-if="meta.total">Всего записей: {{ meta.total }}</span>
+        <span class="total" v-if="meta.total">{{ t('journal.total_entries', { count: meta.total }) }}</span>
       </div>
 
-      <div v-if="listLoading" class="loading">Загрузка записей...</div>
+      <div v-if="listLoading" class="loading">{{ t('common.loading') }}</div>
       <div v-else-if="listError" class="error">{{ listError }}</div>
 
       <template v-else>
       <table class="journal-table" v-if="entries.length">
         <thead>
           <tr>
-            <th>Когда</th>
-            <th>Действие</th>
-            <th>Объект</th>
-            <th>Кто</th>
-            <th>Детали</th>
+            <th>{{ t('journal.when') }}</th>
+            <th>{{ t('journal.action') }}</th>
+            <th>{{ t('journal.object') }}</th>
+            <th>{{ t('journal.actor') }}</th>
+            <th>{{ t('journal.details') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="entry in entries" :key="entry.id">
-            <td data-label="Когда">{{ formatDate(entry.created_at) }}</td>
-            <td data-label="Действие">
+            <td :data-label="t('journal.when')">{{ formatDate(entry.created_at) }}</td>
+            <td :data-label="t('journal.action')">
               <span class="action-badge" :class="actionBadgeClass(entry.action)">
                 {{ actionLabel(entry.action) }}
               </span>
             </td>
-            <td data-label="Объект">
+            <td :data-label="t('journal.object')">
               <template v-if="entry.entity_type">
                 {{ entityLabel(entry.entity_type) }}
                 <span class="entity-id" v-if="entry.entity_id">#{{ entry.entity_id }}</span>
               </template>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Кто">
+            <td :data-label="t('journal.actor')">
               <span v-if="entry.actor">{{ entry.actor.name }}</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Детали" class="details-cell">
+            <td :data-label="t('journal.details')" class="details-cell">
               <span class="details-text">{{ summarize(entry) }}</span>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div v-else class="empty">Записей не найдено</div>
+      <div v-else class="empty">{{ t('journal.empty') }}</div>
 
       <div class="pagination" v-if="meta.last_page > 1">
         <button
@@ -144,7 +139,7 @@
           @click="goToPage((meta.current_page || 1) - 1)"
           class="page-btn"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -152,7 +147,7 @@
           @click="goToPage((meta.current_page || 1) + 1)"
           class="page-btn"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
       </template>
@@ -169,8 +164,7 @@ import {
   actionBadgeClass,
   formatDate,
   summarize,
-  ACTION_LABELS,
-  ENTITY_LABELS,
+  useAuditLabelMaps,
 } from '~/utils/auditLabels'
 import {
   isoLocal,
@@ -186,46 +180,50 @@ const VueDatepicker = defineAsyncComponent(() =>
 )
 
 const { $api } = useNuxtApp()
+const { t } = useI18n()
+const { actions: actionLabels, entities: entityLabels } = useAuditLabelMaps()
 const route = useRoute()
 const router = useRouter()
 
 // ---- табы ----
-const tabDefs = [
-  { key: 'analytics', label: 'Аналитика' },
-  { key: 'journal', label: 'Журнал действий' },
-]
+const tabDefs = computed(() => [
+  { key: 'analytics', label: t('journal.analytics') },
+  { key: 'journal', label: t('form.journal_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  return typeof q === 'string' && tabDefs.some((t) => t.key === q) ? q : tabDefs[0]?.key ?? 'analytics'
+  return typeof q === 'string' && tabDefs.value.some((tab) => tab.key === q) ? q : tabDefs.value[0]?.key ?? 'analytics'
 })
 
 // ---- объекты (фильтр) ----
-const ENTITY_FILTER_OPTIONS: Record<string, string> = {
-  item: 'Предметы',
-  store: 'Хранилища',
-  warehouse: 'Склады',
-  label_preset: 'Шаблоны',
-  label_list: 'Этикетки',
-  category: 'Категории',
-  property: 'Свойства',
-  property_group: 'Группы свойств',
-  dictionary: 'Справочники',
-  dictionary_value: 'Значения справочников',
-  unit: 'Единицы измерения',
-  vendor: 'Производители',
-  access_grant: 'Доступ',
-  user: 'Пользователи',
-}
+// computed, а не обычный объект: язык приезжает из настроек после монтирования,
+// и собранный при setup список остался бы русским.
+const ENTITY_FILTER_OPTIONS = computed<Record<string, string>>(() => ({
+  item: t('access_sections.items'),
+  store: t('access_sections.stores'),
+  warehouse: t('access_sections.warehouses'),
+  label_preset: t('access_sections.label_presets'),
+  label_list: t('access_sections.label_lists'),
+  category: t('nav.categories'),
+  property: t('nav.property_list'),
+  property_group: t('nav.property_groups'),
+  dictionary: t('nav.dictionaries'),
+  dictionary_value: t('properties.dictionary_values'),
+  unit: t('properties.units_list'),
+  vendor: t('nav.vendors'),
+  access_grant: t('nav.access'),
+  user: t('access_sections.users'),
+}))
 
-const entityOptions = Object.entries(ENTITY_FILTER_OPTIONS).map(([value, label]) => ({ value, label }))
+const entityOptions = computed(() => Object.entries(ENTITY_FILTER_OPTIONS.value).map(([value, label]) => ({ value, label })))
 const entityFilter = ref<string>('')
 
 // ---- шаг ----
-const granularities = [
-  { label: 'дни', value: 'day' },
-  { label: 'часы', value: 'hour' },
-]
+const granularities = computed<{ label: string; value: string }[]>(() => [
+  { label: t('journal.days'), value: 'day' },
+  { label: t('journal.hours'), value: 'hour' },
+])
 const granularity = ref<'day' | 'hour'>('day')
 
 // ---- период (календарь) ----

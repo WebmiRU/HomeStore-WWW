@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Пользователь #{{ id }}</h3>
+    <h3 class="page-title">{{ t('team.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -22,13 +22,13 @@
                 @change="onAvatarChange"
               />
               <button type="button" class="btn-avatar" :disabled="uploading" @click="avatarInput?.click()">
-                {{ uploading ? 'Загрузка...' : 'Загрузить аватар' }}
+                {{ uploading ? t('form.loading') : t('team.avatar_upload') }}
               </button>
             </div>
           </div>
 
           <label class="field">
-            <span class="field-label">Имя</span>
+            <span class="field-label">{{ t('common.name') }}</span>
             <input v-model="form.name" type="text" class="field-input" maxlength="255" required />
           </label>
 
@@ -38,7 +38,7 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Новый пароль</span>
+            <span class="field-label">{{ t('team.new_password') }}</span>
             <input
               v-model="form.password"
               type="password"
@@ -46,7 +46,7 @@
               minlength="6"
               maxlength="255"
               autocomplete="new-password"
-              placeholder="Оставьте пустым, чтобы не менять"
+              :placeholder="t('team.password_leave_blank')"
             />
           </label>
         </section>
@@ -56,10 +56,10 @@
         </section>
 
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-          <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
+          <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+          <NuxtLink to="/users" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           <button v-if="isMe" type="button" class="btn-logout" :disabled="loggingOut" @click="logout">
-            {{ loggingOut ? 'Выход...' : 'Выйти' }}
+            {{ loggingOut ? t('common.logging_out') : t('common.logout') }}
           </button>
         </div>
       </form>
@@ -73,6 +73,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -82,14 +83,14 @@ const { profile, setProfile, clear: clearProfile } = useUserProfile()
 
 const isMe = computed(() => currentUserId.value !== null && currentUserId.value === id)
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('form.main') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -112,7 +113,7 @@ const form = reactive({
 
 const previewUser = computed<UserProfileResponse>(() => ({
   id,
-  name: form.name || 'Пользователь',
+  name: form.name || t('user_avatar.default_name'),
   email: form.email,
   avatar_url: currentAvatarUrl.value,
   avatar_sha: currentAvatarSha.value,
@@ -150,9 +151,9 @@ async function save() {
       setProfile(updated)
     }
     form.password = ''
-    $notify.add('Пользователь сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('team.one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -171,9 +172,9 @@ async function onAvatarChange(event: Event) {
     if (isMe.value) {
       setProfile(updated)
     }
-    $notify.add('Аватар обновлён', { type: 'success' })
+    $notify.add(t('team.avatar_updated'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка загрузки аватара'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('team.avatar_failed')), { type: 'error', timer: 10 })
   } finally {
     uploading.value = false
     input.value = ''
@@ -191,7 +192,7 @@ async function logout() {
     localStorage.removeItem('home-store-user-id')
     setCurrentUserId(null)
     clearProfile()
-    $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
+    $notify.add(t('notify.logged_out_body'), { type: 'info', timer: 5 })
     router.push('/login')
   }
 }

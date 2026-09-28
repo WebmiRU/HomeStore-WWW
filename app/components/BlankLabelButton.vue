@@ -5,20 +5,18 @@
       :disabled="busy"
       @click.stop="toggle"
     >
-      {{ busy ? 'Создаём...' : 'Сгенерировать набор' }}
+      {{ busy ? t('blank_label.busy') : t('blank_label.generate') }}
     </button>
 
     <div v-if="open" class="blank-dropdown" @click.stop>
       <div class="blank-hint">
-        Шаблон — столько кодов попадёт в набор. Коды не привязаны ни к
-        чему: отсканировав наклейку, можно будет сразу завести предмет
-        или хранилище.
+        {{ t('blank_label.template_hint') }}
       </div>
 
-      <div v-if="loading" class="blank-loading">Загрузка...</div>
+      <div v-if="loading" class="blank-loading">{{ t('form.loading') }}</div>
 
       <div v-else-if="presets.length === 0" class="blank-empty">
-        Сначала создайте шаблон этикеток
+        {{ t('blank_label.no_templates') }}
       </div>
 
       <template v-else>
@@ -30,7 +28,7 @@
           @click="generate(preset)"
         >
           <span class="blank-item-title">{{ preset.title }}</span>
-          <span class="blank-item-count">{{ preset.labels_per_sheet }} шт.</span>
+          <span class="blank-item-count">{{ preset.labels_per_sheet }} {{ t('units.pcs') }}</span>
         </div>
       </template>
     </div>
@@ -47,6 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 
 const rootEl = ref<HTMLElement | null>(null)
 const open = ref(false)
@@ -69,7 +68,7 @@ async function loadPresets() {
     const result = await $api.labelPreset.list()
     presets.value = result.data
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка загрузки шаблонов'), { type: 'error', timer: 5 })
+    $notify.add(formatApiError(err, t('blank_label.templates_failed')), { type: 'error', timer: 5 })
   } finally {
     loading.value = false
   }
@@ -82,7 +81,7 @@ async function generate(preset: LabelPresetResponse) {
   try {
     const list = await $api.labelList.createBlank(preset.id)
     open.value = false
-    $notify.add(`Создано этикеток: ${preset.labels_per_sheet}`, { type: 'success' })
+    $notify.add(t('blank_label.created', { count: preset.labels_per_sheet }), { type: 'success' })
 
     // Сразу отдаём PDF: заходить за ним отдельно не нужно, иначе
     // непонятно, что набор пустой и печатать нечего.
@@ -97,12 +96,12 @@ async function generate(preset: LabelPresetResponse) {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err: any) {
-      $notify.add(await readBlobApiError(err, 'Ошибка скачивания'), { type: 'error', timer: 10 })
+      $notify.add(await readBlobApiError(err, t('blank_label.download_failed')), { type: 'error', timer: 10 })
     }
 
     emit('done')
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания набора'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('blank_label.create_failed')), { type: 'error', timer: 10 })
   } finally {
     busy.value = null
   }

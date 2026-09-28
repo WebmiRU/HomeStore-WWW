@@ -1,11 +1,11 @@
 <template>
   <div class="orphans-page">
     <div class="page-header">
-      <h3 class="page-title">Осиротевшие коды</h3>
-      <NuxtLink to="/label-lists" class="btn-back">К этикеткам</NuxtLink>
+      <h3 class="page-title">{{ t('codes.orphans_title') }}</h3>
+      <NuxtLink to="/label-lists" class="btn-back">{{ t('codes.to_labels') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
 
     <div v-else-if="error" class="error">{{ error }}</div>
 
@@ -14,27 +14,25 @@
            выглядит как «уборка мусора», а удаление здесь обратимо не всегда. -->
       <div class="explain">
         <p>
-          Это коды, напечатанные в составе набора безымянных этикеток, у которого потом
-          удалили сам набор. Набор удаляется без кодов намеренно: наклейки-то уже наклеены.
+          {{ t('codes.orphans_about') }}
         </p>
         <p>
-          <strong>Сюда не попадают</strong> свободные коды действующих наборов — это рабочие
-          наклейки, ждущие привязки, и трогать их нельзя.
+          <strong>{{ t('codes.orphans_exclude') }}</strong> {{ t('codes.orphans_explain_full') }}
         </p>
       </div>
 
       <div v-if="summary.total === 0" class="empty">
-        Осиротевших кодов нет — уборка не требуется.
+        {{ t('codes.orphans_none') }}
       </div>
 
       <template v-else>
         <div class="summary">
           <div class="summary__count">{{ summary.total }}</div>
           <div class="summary__meta">
-            <div>кодов осиротело</div>
+            <div>{{ t('codes.orphans_count') }}</div>
             <div class="summary__dates" v-if="summary.oldest">
-              самый старый — {{ formatDate(summary.oldest) }}<br />
-              новейший — {{ formatDate(summary.newest) }}
+              {{ t('codes.oldest', { date: formatDate(summary.oldest) }) }}<br />
+              {{ t('codes.newest', { date: formatDate(summary.newest) }) }}
             </div>
           </div>
         </div>
@@ -42,7 +40,7 @@
         <!-- Выбор по возрасту, а не поштучно: код — это нечитаемая
              32-символьная строка, выбирать из них руками бессмысленно. -->
         <fieldset class="picker">
-          <legend>Что удалять</legend>
+          <legend>{{ t('codes.orphans_what') }}</legend>
 
           <label
             v-for="b in summary.buckets"
@@ -62,8 +60,7 @@
           </label>
 
           <p class="picker__hint">
-            Обновление страницы подставляет самые «залежавшиеся» коды: их давно можно было
-            использовать, но не использовали.
+            {{ t('codes.orphans_stale_hint') }}
           </p>
         </fieldset>
 
@@ -74,7 +71,7 @@
             :disabled="!selectedCount || previewing"
             @click="downloadPreview"
           >
-            {{ previewing ? 'Готовим PDF...' : `Показать, что удалится (${selectedCount})` }}
+            {{ previewing ? t('codes.orphans_preparing') : t('codes.orphans_preview', { count: selectedCount }) }}
           </button>
 
           <button
@@ -83,7 +80,7 @@
             :disabled="!selectedCount || deleting"
             @click="armed = !armed"
           >
-            {{ deleting ? 'Удаляем...' : `Удалить ${selectedCount}` }}
+            {{ deleting ? t('codes.orphans_deleting') : t('codes.orphans_delete', { count: selectedCount }) }}
           </button>
         </div>
 
@@ -91,21 +88,19 @@
              и его последствия нужно проговорить до того, как нажали. -->
         <div v-if="armed && !deleting" class="confirm">
           <p class="confirm__text">
-            Будет удалено <strong>{{ selectedCount }}</strong>
-            {{ plural(selectedCount, 'код', 'кода', 'кодов') }}
-            ({{ selectedLabel }}). Отменить это нельзя.
+            {{ t('codes.will_delete', { count: selectedCount }) }}
+            {{ tp('words.code_nom', selectedCount) }}
+            ({{ selectedLabel }}). {{ t('codes.cannot_undo') }}
           </p>
           <p class="confirm__text confirm__text--warn">
-            Наклейки при этом никуда не денутся. Но перестанут отличаться от любого
-            никогда не выдававшегося кода: при сканировании приложение ответит
-            «код не найден», пока вы снова не заведёте предмет или хранилище с этим кодом.
+            {{ t('codes.orphans_warning') }}
           </p>
           <div class="confirm__actions">
             <button type="button" class="btn-del" :disabled="deleting" @click="runDelete">
-              Да, удалить {{ selectedCount }}
+              {{ t('codes.confirm_delete', { count: selectedCount }) }}
             </button>
             <button type="button" class="btn-cancel" :disabled="deleting" @click="armed = false">
-              Отмена
+              {{ t('common.cancel') }}
             </button>
           </div>
         </div>
@@ -118,9 +113,9 @@
 import { ref, computed, onMounted } from 'vue'
 import type { OrphanedCodesSummary, OrphanAgeBucket } from '~/repository/modules/code'
 import { formatApiError, readBlobApiError } from '~/composables/formatApiError'
-import { plural } from '~/utils/plural'
 
 const { $api, $notify } = useNuxtApp()
+const { t, tp } = useI18n()
 
 const EMPTY: OrphanedCodesSummary = { total: 0, oldest: null, newest: null, buckets: [] }
 
@@ -169,7 +164,7 @@ async function load() {
     summary.value = await $api.code.orphanedCodes()
     pickDefault()
   } catch (err: any) {
-    error.value = formatApiError(err, 'Не удалось загрузить сводку')
+    error.value = formatApiError(err, t('codes.summary_failed'))
   } finally {
     loading.value = false
   }
@@ -192,16 +187,16 @@ async function downloadPreview() {
 
     if (rendered < total) {
       $notify.add(
-        `В PDF попали только первые ${rendered} из ${total} — сверяйте по счёту, а не по листам`,
+        t('codes.pdf_partial', { rendered, total }),
         { type: 'warning', timer: 10 }
       )
     } else {
-      $notify.add(`Предпросмотр готов: ${rendered} ${plural(rendered, 'код', 'кода', 'кодов')}`, {
+      $notify.add(t('codes.preview_ready', { count: tp('words.code_nom', rendered) }), {
         type: 'success',
       })
     }
   } catch (err: any) {
-    $notify.add(await readBlobApiError(err, 'Не удалось построить предпросмотр'), {
+    $notify.add(await readBlobApiError(err, t('codes.preview_failed')), {
       type: 'error',
       timer: 10,
     })
@@ -217,12 +212,12 @@ async function runDelete() {
     const deleted = await $api.code.deleteOrphanedCodes(selectedDays.value)
     armed.value = false
     $notify.add(
-      `Удалено ${deleted} ${plural(deleted, 'код', 'кода', 'кодов')}`,
+      t('codes.deleted_count', { count: tp('words.code_nom', deleted) }),
       { type: 'success' }
     )
     await load()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Не удалось удалить коды'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('codes.delete_failed')), { type: 'error', timer: 10 })
   } finally {
     deleting.value = false
   }

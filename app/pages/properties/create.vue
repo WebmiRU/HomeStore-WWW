@@ -1,45 +1,44 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление свойства</h3>
+    <h3 class="page-title">{{ t('properties.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <form v-else class="create-form" @submit.prevent="save">
       <label class="field">
-        <span class="field-label">Группа</span>
+        <span class="field-label">{{ t('properties.group') }}</span>
         <select v-model="form.group_id" class="field-select">
-          <option :value="null">[БЕЗ ГРУППЫ]</option>
+          <option :value="null">t('placeholders.no_group')</option>
           <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.title }}</option>
         </select>
-        <span class="field-hint">Группа нужна только чтобы собрать похожие свойства вместе</span>
+        <span class="field-hint">{{ t('properties.group_hint_short') }}</span>
       </label>
 
       <label class="field">
-        <span class="field-label">Название</span>
+        <span class="field-label">{{ t('form.title') }}</span>
         <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
-        <span class="field-hint">То, как свойство будет подписано в карточке предмета</span>
+        <span class="field-hint">{{ t('properties.title_hint') }}</span>
       </label>
 
       <label class="field">
-        <span class="field-label">Тип</span>
+        <span class="field-label">{{ t('properties.type') }}</span>
         <select v-model="form.type" class="field-select">
           <option v-for="type in PROPERTY_TYPES" :key="type" :value="type">
-            {{ PROPERTY_TYPE_LABELS[type] }}
+            {{ propertyTypeLabel(type) }}
           </option>
         </select>
         <span class="field-hint">
-          Тип задаёт вид поля. Сменить его потом можно, только пока у свойства нет
-          заполненных значений у предметов.
+          {{ t('properties.type_hint_create') }}
         </span>
       </label>
 
       <label v-if="acceptsUnit" class="field">
-        <span class="field-label">Единица измерения</span>
+        <span class="field-label">{{ t('properties.unit') }}</span>
         <select v-model="form.unit_id" class="field-select">
-          <option :value="null">[БЕЗ ЕДИНИЦЫ]</option>
+          <option :value="null">t('placeholders.no_unit')</option>
           <option v-for="unit in units" :key="unit.id" :value="unit.id">
             {{ unit.title_short }} — {{ unit.title_full }}
           </option>
@@ -47,22 +46,21 @@
       </label>
 
       <label v-if="needsDictionary" class="field">
-        <span class="field-label">Справочник</span>
+        <span class="field-label">{{ t('properties.dictionary') }}</span>
         <select v-model="form.dictionary_id" class="field-select">
-          <option :value="null">[ВЫБЕРИТЕ СПРАВОЧНИК]</option>
+          <option :value="null">t('placeholders.pick_dictionary')</option>
           <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
-            {{ dictionary.title }} ({{ dictionary.values_count }} знач.)
+            {{ dictionary.title }} ({{ dictionary.values_count }} t('properties.values_short') })
           </option>
         </select>
         <span class="field-hint">
-          Значения свойства будут выбираться из этого справочника — создайте его
-          заранее, если его ещё нет
+          {{ t('properties.dictionary_hint_create') }}
         </span>
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/properties" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/properties" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -73,7 +71,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import {
   PROPERTY_TYPES,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   propertyAcceptsUnit,
   propertyNeedsDictionary,
   type PropertyType,
@@ -83,6 +81,7 @@ import type { PropertyGroupResponse } from '~/repository/modules/propertyGroup'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const router = useRouter()
 
 const loading = ref(true)
@@ -93,7 +92,7 @@ const units = ref<UnitResponse[]>([])
 const groups = ref<PropertyGroupResponse[]>([])
 const dictionaries = ref<DictionaryResponse[]>([])
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('properties.main_tab') }])
 
 const form = reactive<{
   title: string
@@ -132,7 +131,7 @@ async function load() {
       $api.dictionary.all(),
     ])
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки справочников формы')
+    loadError.value = formatApiError(err, t('properties.form_load_failed'))
   } finally {
     loading.value = false
   }
@@ -140,7 +139,7 @@ async function load() {
 
 async function save() {
   if (needsDictionary.value && form.dictionary_id === null) {
-    $notify.add('Выберите справочник для свойства типа «Из справочника»', { type: 'error', timer: 10 })
+    $notify.add(t('properties.choose_dictionary'), { type: 'error', timer: 10 })
     return
   }
 
@@ -153,10 +152,10 @@ async function save() {
       unit_id: acceptsUnit.value ? form.unit_id : null,
       dictionary_id: needsDictionary.value ? form.dictionary_id : null,
     })
-    $notify.add('Свойство создано', { type: 'success' })
+    $notify.add(t('form.created', { title: t('properties.one') }), { type: 'success' })
     router.push(`/properties/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

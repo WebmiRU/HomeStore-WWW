@@ -5,8 +5,8 @@
     :class="{ 'm-logo--openable': openable }"
     :style="{ width: px, height: px }"
     :type="openable ? 'button' : undefined"
-    :title="openable ? 'Открыть логотип' : title"
-    :aria-label="openable ? `Открыть логотип: ${title ?? ''}` : undefined"
+    :title="openable ? t('vendor_logo.open') : title"
+    :aria-label="openable ? t('vendor_logo.open_title', { title: title ?? '' }) : undefined"
     @click="openViewer"
   >
     <!-- Спиннер показывается, пока не пришла миниатюра: смена логотипа
@@ -16,7 +16,7 @@
     <img
       v-if="src"
       :src="src"
-      :alt="title || 'Логотип'"
+      :alt="title || t('list_common.logo')""
       :class="{ 'm-logo__img--loading': loading }"
       class="m-logo__img"
       @load="onLoad"
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+const { t } = useI18n()
 const props = withDefaults(
   defineProps<{
     logoSha?: string | null
@@ -72,7 +73,7 @@ const viewerOpen = ref(false)
 /** Просмотр: у логотипа он один, счётчика и стрелок в окне не будет. */
 const lightboxImages = computed(() =>
   props.logoSha
-    ? [{ sha256: props.logoSha, alt: props.title ? `Логотип: ${props.title}` : 'Логотип' }]
+    ? [{ sha256: props.logoSha, alt: props.title ? t('vendor_logo.alt_with_title', { title: props.title }) : t('list_common.logo') }]
     : [],
 )
 

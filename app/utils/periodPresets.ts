@@ -71,15 +71,21 @@ export function lastYearsRange(n: number): [string, string] {
 
 export type PeriodPreset = { label: string; range: () => [string, string] | null }
 
+/**
+ * Подписи периодов берутся из i18n, а не из строк здесь: список показывается
+ * в выпадающих меню трёх страниц, и на английском он остался бы русским.
+ */
 export function defaultPeriodPresets(): PeriodPreset[] {
+  const { t } = useI18n()
+
   return [
-    { label: 'Сегодня', range: () => lastNDaysRange(1) },
-    { label: 'Эта неделя', range: thisWeekRange },
-    { label: 'Этот месяц', range: currentMonthRange },
-    { label: 'Этот год', range: currentYearRange },
-    { label: 'Неделя', range: () => lastNDaysRange(7) },
-    { label: 'Месяц', range: () => lastMonthsRange(1) },
-    { label: 'Год', range: () => lastYearsRange(1) },
-    { label: 'Всё время', range: () => null },
+    { label: t('periods.today'), range: () => lastNDaysRange(1) },
+    { label: t('periods.this_week'), range: thisWeekRange },
+    { label: t('periods.this_month'), range: currentMonthRange },
+    { label: t('periods.this_year'), range: currentYearRange },
+    { label: t('periods.week'), range: () => lastNDaysRange(7) },
+    { label: t('periods.month'), range: () => lastMonthsRange(1) },
+    { label: t('periods.year'), range: () => lastYearsRange(1) },
+    { label: t('periods.all_time'), range: () => null },
   ]
 }

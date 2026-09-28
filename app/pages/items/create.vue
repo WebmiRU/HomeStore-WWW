@@ -1,39 +1,39 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление предмета</h3>
+    <h3 class="page-title">{{ t('items.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <form v-else @submit.prevent="save" class="create-form">
       <section v-if="activeTab === 'main'" class="tab-section">
         <label class="field">
-          <span class="field-label">Название</span>
+          <span class="field-label">{{ t('form.title') }}</span>
           <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
         </label>
 
         <label class="field">
-          <span class="field-label">Название для печати</span>
+          <span class="field-label">{{ t('form.title_print') }}</span>
           <input v-model="form.title_print" type="text" class="field-input" maxlength="500" />
         </label>
 
         <label class="field">
-          <span class="field-label">Производитель</span>
+          <span class="field-label">{{ t('form.vendor') }}</span>
           <select v-model="form.vendor_id" class="field-select">
-            <option :value="null">[НЕТ]</option>
+            <option :value="null">t('placeholders.none')</option>
             <option v-for="option in vendorOptions" :key="option.id" :value="option.id">
               {{ option.title }}
             </option>
           </select>
-          <span class="field-hint">Кто выпустил предмет: Bosch, Makita, собственный бренд</span>
+          <span class="field-hint">{{ t('items.vendor_hint') }}</span>
         </label>
 
         <label class="field">
-          <span class="field-label">Хранилище</span>
+          <span class="field-label">{{ t('form.store') }}</span>
           <select v-model.number="form.store_id" class="field-select">
-            <option :value="null">[НЕТ]</option>
+            <option :value="null">t('placeholders.none')</option>
             <optgroup v-for="group in storeGroups" :key="group.label" :label="group.label">
               <option
                 v-for="opt in group.options"
@@ -42,39 +42,39 @@
               >{{ opt.own ? '●' : '○' }} {{ '\u2014'.repeat(opt.depth) }}{{ opt.depth > 0 ? ' ' : '' }}{{ opt.title }}</option>
             </optgroup>
           </select>
-          <span class="field-hint">● — своё хранилище, ○ — доступ по правам</span>
+          <span class="field-hint">{{ t('items.own_storage_hint') }}</span>
         </label>
 
         <label class="field">
-          <span class="field-label">Категория</span>
+          <span class="field-label">{{ t('form.category') }}</span>
           <select v-model="form.category_id" class="field-select" @change="onCategoryChange">
-            <option :value="null">[НЕТ]</option>
+            <option :value="null">t('placeholders.none')</option>
             <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
               {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
             </option>
           </select>
-          <span class="field-hint">Задаёт набор свойств по умолчанию на вкладке «Свойства»</span>
+          <span class="field-hint">{{ t('items.category_hint') }}</span>
         </label>
 
         <div class="field">
-          <span class="field-label">Коды</span>
+          <span class="field-label">{{ t('items.codes') }}</span>
           <ItemCodesEditor v-model="codes" />
         </div>
 
         <label class="field">
-          <span class="field-label">Количество</span>
+          <span class="field-label">{{ t('form.quantity') }}</span>
           <input
             v-model="quantityInput"
             type="number"
             class="field-input"
             step="1"
-            placeholder="без количества"
+            :placeholder="t('items.quantity_placeholder')"
           />
         </label>
       </section>
 
       <section v-if="activeTab === 'properties'" class="tab-section">
-        <div v-if="propertiesLoading" class="loading">Загрузка свойств...</div>
+        <div v-if="propertiesLoading" class="loading">{{ t('form.loading') }}</div>
         <ItemPropertiesEditor
           v-else
           v-model="properties"
@@ -86,9 +86,9 @@
       </section>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <button type="button" @click="saveAndCopy" class="btn-save-copy" :disabled="saving">Сохранить и создать копию</button>
-        <NuxtLink to="/items" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <button type="button" @click="saveAndCopy" class="btn-save-copy" :disabled="saving">{{ t('form.save_and_clone') }}</button>
+        <NuxtLink to="/items" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -108,6 +108,7 @@ import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
 import { useCodeConflictNotice } from '~/composables/useCodeConflictNotice'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { notifyCodeConflicts } = useCodeConflictNotice()
 const router = useRouter()
 const route = useRoute()
@@ -168,16 +169,16 @@ function parseCopiedProperties(raw: unknown): ItemPropertyInput[] {
   }
 }
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'properties', label: 'Свойства' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('items.main_tab') },
+  { key: 'properties', label: t('form.properties_tab') },
+])
 
 // TabBar живёт на query, поэтому и здесь вкладка берётся из адреса, а не из
 // локального состояния: иначе переход по табу не совпал бы с содержимым.
 const activeTab = computed(() => {
   const q = route.query.tab
-  if (typeof q === 'string' && tabs.some((t) => t.key === q)) {
+  if (typeof q === 'string' && tabs.value.some((t) => t.key === q)) {
     return q
   }
   return 'main'
@@ -258,7 +259,7 @@ async function loadProperties(categoryId: number | null) {
     propertiesKey.value = String(categoryId)
   } catch (err: any) {
     categoryProperties.value = []
-    $notify.add(formatApiError(err, 'Ошибка загрузки свойств категории'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('categories.properties_load_failed')), { type: 'error', timer: 10 })
   } finally {
     propertiesLoading.value = false
   }
@@ -294,14 +295,14 @@ async function save() {
   saving.value = true
   try {
     const created = await $api.item.create(itemPayload())
-    $notify.add('Предмет создан', { type: 'success' })
+    $notify.add(t('form.created', { title: t('items.one') }), { type: 'success' })
     // Коллизии по кодам предупреждаем до перехода: после перехода на карточку
     // уведомление ещё висит, а если человек уйдёт дальше — предупреждение о
     // совпадении кода уже не увидит.
     notifyCodeConflicts(created)
     router.push(`/items/${created.payload.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -311,7 +312,7 @@ async function saveAndCopy() {
   saving.value = true
   try {
     await $api.item.create(itemPayload())
-    $notify.add('Предмет создан', { type: 'success' })
+    $notify.add(t('form.created', { title: t('items.one') }), { type: 'success' })
     router.push({
       path: '/items/create',
       query: {
@@ -330,7 +331,7 @@ async function saveAndCopy() {
       },
     })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

@@ -1,12 +1,12 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление пользователя</h3>
+    <h3 class="page-title">{{ t('team.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
     <form @submit.prevent="save" class="create-form">
       <label class="field">
-        <span class="field-label">Имя</span>
+        <span class="field-label">{{ t('common.name') }}</span>
         <input v-model="form.name" type="text" class="field-input" maxlength="255" required />
       </label>
 
@@ -16,13 +16,13 @@
       </label>
 
       <label class="field">
-        <span class="field-label">Пароль</span>
+        <span class="field-label">{{ t('team.password') }}</span>
         <input v-model="form.password" type="password" class="field-input" minlength="6" maxlength="255" required autocomplete="new-password" />
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/users" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/users" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -33,11 +33,12 @@ import { reactive, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const router = useRouter()
 
 const saving = ref(false)
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('form.main') }])
 
 const form = reactive({
   name: '',
@@ -49,10 +50,10 @@ async function save() {
   saving.value = true
   try {
     const created = await $api.userProfile.create({ ...form })
-    $notify.add('Пользователь создан', { type: 'success' })
+    $notify.add(t('form.created', { title: t('team.one') }), { type: 'success' })
     router.push(`/users/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

@@ -5,13 +5,13 @@
       class="mass-btn"
       @click.stop="toggle"
     >
-      Добавить в этикетки ({{ totalCount }})
+      {{ t('label_lists.add_to_labels', { count: totalCount }) }}
     </button>
 
     <div v-if="open" class="mass-dropdown" @click.stop>
-      <div v-if="loading" class="mass-loading">Загрузка...</div>
+      <div v-if="loading" class="mass-loading">{{ t('form.loading') }}</div>
       <template v-else-if="lists.length === 0">
-        <div class="mass-empty">Нет списков</div>
+        <div class="mass-empty">{{ t('label_lists.no_lists') }}</div>
       </template>
       <template v-else>
         <div
@@ -42,6 +42,7 @@ const emit = defineEmits<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 
 const rootEl = ref<HTMLElement | null>(null)
 const open = ref(false)
@@ -67,7 +68,7 @@ async function loadLists() {
   try {
     lists.value = await $api.labelList.all()
   } catch {
-    $notify.add('Ошибка загрузки списков', { type: 'error', timer: 5 })
+    $notify.add(t('label_lists.load_failed'), { type: 'error', timer: 5 })
   } finally {
     loading.value = false
   }
@@ -84,11 +85,11 @@ async function addToList(list: LabelListResponse) {
     for (const storeId of props.storeIds) {
       await $api.labelList.attachStore(list.id, storeId)
     }
-    $notify.add(`Добавлено в «${list.title}»`, { type: 'success' })
+    $notify.add(t('label_lists.added_to', { title: list.title }), { type: 'success' })
     open.value = false
     emit('done')
   } catch {
-    $notify.add('Ошибка добавления', { type: 'error', timer: 5 })
+    $notify.add(t('label_lists.add_failed'), { type: 'error', timer: 5 })
   } finally {
     busy.value = null
   }

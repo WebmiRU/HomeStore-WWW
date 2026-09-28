@@ -1,32 +1,32 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление категории</h3>
+    <h3 class="page-title">{{ t('categories.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <form v-else class="create-form" @submit.prevent="save">
       <label class="field">
-        <span class="field-label">Название</span>
+        <span class="field-label">{{ t('form.title') }}</span>
         <input v-model="form.title" type="text" class="field-input" maxlength="200" required />
       </label>
 
       <label class="field">
-        <span class="field-label">Родительская категория</span>
+        <span class="field-label">{{ t('categories.parent') }}</span>
         <select v-model="form.parent_id" class="field-select">
-          <option :value="null">[КОРЕНЬ]</option>
+          <option :value="null">t('placeholders.root')</option>
           <option v-for="option in parentOptions" :key="option.id" :value="option.id">
             {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
           </option>
         </select>
-        <span class="field-hint">Без родителя категория будет в корне дерева</span>
+        <span class="field-hint">{{ t('categories.parent_hint') }}</span>
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/categories" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/categories" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -39,6 +39,7 @@ import { categoryParentOptions } from '~/composables/categorySelectOptions'
 import type { CategoryResponse } from '~/repository/modules/category'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -48,7 +49,7 @@ const saving = ref(false)
 
 const categories = ref<CategoryResponse[]>([])
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('categories.main_tab') }])
 
 // Открывается как «добавить внутрь» из страницы категории: ?parent_id=3
 const preselectedParent = typeof route.query.parent_id === 'string' ? Number(route.query.parent_id) : null
@@ -68,7 +69,7 @@ async function load() {
   try {
     categories.value = await $api.category.all()
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки категорий')
+    loadError.value = formatApiError(err, t('categories.load_failed'))
   } finally {
     loading.value = false
   }
@@ -78,10 +79,10 @@ async function save() {
   saving.value = true
   try {
     const created = await $api.category.create({ title: form.title, parent_id: form.parent_id })
-    $notify.add('Категория создана', { type: 'success' })
+    $notify.add(t('form.created', { title: t('categories.one') }), { type: 'success' })
     router.push(`/categories/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

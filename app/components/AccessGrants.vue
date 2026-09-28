@@ -1,27 +1,27 @@
 <template>
   <div class="access-grants">
-    <div v-if="loading" class="state">Загрузка...</div>
+    <div v-if="loading" class="state">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="state state--error">{{ error }}</div>
 
     <template v-else>
       <table v-if="grants.length" class="grants-table">
         <thead>
           <tr>
-            <th v-if="!scopedWarehouse">Склад</th>
-            <th>Пользователь</th>
-            <th>Доступ</th>
-            <th>Создан</th>
+            <th v-if="!scopedWarehouse">{{ t('form.warehouse') }}</th>
+            <th>{{ t('access_rights.user') }}</th>
+            <th>{{ t('access_rights.access') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="grant in grants" :key="grant.id">
-            <td v-if="!scopedWarehouse" data-label="Склад">{{ grant.warehouse?.title ?? '—' }}</td>
-            <td data-label="Пользователь">
+            <td v-if="!scopedWarehouse" :data-label="t('form.warehouse')">{{ grant.warehouse?.title ?? '—' }}</td>
+            <td :data-label="t('access_rights.user')">
               <div class="grant-user">{{ grant.user?.name ?? '—' }}</div>
               <div v-if="grant.user" class="grant-email">{{ grant.user.email }}</div>
             </td>
-            <td data-label="Доступ">
+            <td :data-label="t('access_rights.access')">
               <div class="grant-rights">
                 <label class="grant-check grant-check--readonly">
                   <input type="checkbox" checked readonly @click.prevent @keydown.space.prevent @keydown.enter.prevent />
@@ -38,9 +38,9 @@
                 </label>
               </div>
             </td>
-            <td data-label="Создан">{{ formatDate(grant.created_at) }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(grant.created_at) }}</td>
             <td class="actions">
-              <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="removeGrant(grant)">
+              <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="removeGrant(grant)">
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
               </a>
             </td>
@@ -48,29 +48,29 @@
         </tbody>
       </table>
 
-      <div v-else class="state">{{ scopedWarehouse ? 'Нет выданных прав' : 'Нет выданных прав' }}</div>
+      <div v-else class="state">{{ t('access_rights.no_grants') }}</div>
 
       <form class="grant-form" @submit.prevent="addGrant">
-        <div class="grant-form__title">{{ scopedWarehouse ? `Выдать право на склад «${scopedWarehouseTitle}»` : 'Выдать право' }}</div>
+        <div class="grant-form__title">{{ scopedWarehouse ? t('access_rights.grant_for', { title: scopedWarehouseTitle }) : t('access_rights.grant') }}</div>
 
         <label v-if="!scopedWarehouse" class="field">
-          <span class="field-label">Склад</span>
+          <span class="field-label">{{ t('form.warehouse') }}</span>
           <select v-model.number="form.warehouse_id" class="field-select" required>
-            <option :value="null" disabled>Выберите склад</option>
+            <option :value="null" disabled>{{ t('access_rights.pick_warehouse') }}</option>
             <option v-for="w in ownWarehouses" :key="w.id" :value="w.id">{{ w.title }}</option>
           </select>
         </label>
 
         <label class="field">
-          <span class="field-label">Пользователь</span>
+          <span class="field-label">{{ t('access_rights.user') }}</span>
           <select v-model.number="form.user_id" class="field-select" required>
-            <option :value="null" disabled>Выберите пользователя</option>
+            <option :value="null" disabled>{{ t('access_rights.pick_user') }}</option>
             <option v-for="u in grantableUsers" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
           </select>
         </label>
 
         <div class="field">
-          <span class="field-label">Права</span>
+          <span class="field-label">{{ t('form.rights_tab') }}</span>
           <div class="grant-rights">
             <label class="grant-check grant-check--readonly">
               <input type="checkbox" checked readonly @click.prevent @keydown.space.prevent @keydown.enter.prevent />
@@ -88,7 +88,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-add" :disabled="sending">Выдать</button>
+        <button type="submit" class="btn-add" :disabled="sending">{{ t('access_rights.grant_submit') }}</button>
       </form>
     </template>
   </div>
@@ -107,13 +107,14 @@ const props = defineProps<{
 }>()
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { currentUserId } = useCurrentUser()
 
 const rightOptions: { key: AccessRight; label: string }[] = [
-  { key: 'view', label: 'Просмотр' },
-  { key: 'create', label: 'Создание' },
-  { key: 'edit', label: 'Изменение' },
-  { key: 'delete', label: 'Удаление' },
+  { key: 'view', label: t('access_rights.view') },
+  { key: 'create', label: t('access_rights.create') },
+  { key: 'edit', label: t('access_rights.edit') },
+  { key: 'delete', label: t('access_rights.delete') },
 ]
 
 const loading = ref(true)
@@ -195,12 +196,12 @@ async function addGrant() {
       user_id: form.user_id,
       rights: ['view', ...form.rights],
     })
-    $notify.add('Права выданы', { type: 'success' })
+    $notify.add(t('access_rights.granted'), { type: 'success' })
     form.user_id = null
     form.rights = []
     await load()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка выдачи прав'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('access_rights.grant_failed')), { type: 'error', timer: 10 })
   } finally {
     sending.value = false
   }
@@ -213,7 +214,7 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
 
   const rights = normalizeRights(updatedRights)
   if (!rights.length) {
-    $notify.add('Нужно хотя бы одно право. Чтобы убрать доступ полностью — удалите его', {
+    $notify.add(t('access_rights.need_one'), {
       type: 'warning',
       timer: 5,
     })
@@ -229,23 +230,23 @@ async function toggleRight(grant: AccessGrantResponse, right: AccessRight) {
   try {
     const updated = await $api.access.update(grant.id, { rights })
     grants.value = grants.value.map((g) => (g.id === grant.id ? { ...g, rights: normalizeRights(updated.rights) } : g))
-    $notify.add('Права обновлены', { type: 'success', timer: 3 })
+    $notify.add(t('access_rights.updated'), { type: 'success', timer: 3 })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка обновления прав'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('access_rights.update_failed')), { type: 'error', timer: 10 })
   } finally {
     savingRow.value = null
   }
 }
 
 async function removeGrant(grant: AccessGrantResponse) {
-  if (!confirm(`Убрать доступ пользователю «${grant.user?.name ?? '#' + grant.id}»?`)) return
+  if (!confirm(t('access_rights.revoke_confirm', { name: grant.user?.name ?? '#' + grant.id }))) return
   savingRow.value = grant.id
   try {
     await $api.access.delete(grant.id)
     grants.value = grants.value.filter((g) => g.id !== grant.id)
-    $notify.add('Доступ убран', { type: 'success' })
+    $notify.add(t('access_rights.revoked'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления доступа'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('access_rights.revoke_failed')), { type: 'error', timer: 10 })
   } finally {
     savingRow.value = null
   }

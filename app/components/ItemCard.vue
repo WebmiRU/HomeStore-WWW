@@ -8,7 +8,7 @@
         {{ item.title_print }}
       </div>
       <div v-if="code" class="item-card__code">
-        Код: {{ code }}
+        {{ t('form.code') }}: {{ code }}
         <!--
           Метка ставится, когда тот же код заведён на нескольких предметах.
           Жёлтым, а не красным: коллизия — не ошибка, а «код не разбирает, по
@@ -18,8 +18,8 @@
         <span
           v-if="collisionCount > 1"
           class="item-card__collision"
-          :title="`Этот код есть у ${collisionCount} предметов`"
-        >код у {{ collisionCount }} {{ plural(collisionCount, 'предмета', 'предметов', 'предметов') }}</span>
+          :title="tp('item_card.collision_title', collisionCount)"
+        >{{ t('items.collision_of', { count: tp('words.item_gen', collisionCount) }) }}</span>
       </div>
 
       <!--
@@ -32,12 +32,12 @@
       -->
       <div class="item-card__foot">
         <slot name="foot">
-          <div v-if="item.quantity != null" class="item-card__stock">В наличии: {{ item.quantity }}</div>
-          <div v-else-if="kind !== 'store'" class="item-card__hint">Еединичный предмет — операция на 1 шт.</div>
+          <div v-if="item.quantity != null" class="item-card__stock">{{ t('item_card.in_stock', { count: item.quantity }) }}</div>
+          <div v-else-if="kind !== 'store'" class="item-card__hint">{{ t('item_card.single_hint') }}</div>
         </slot>
       </div>
 
-      <div class="item-card__meta">Создано: {{ formatDate(item.created_at) }}</div>
+      <div class="item-card__meta">{{ t('item_card.created_at', { date: formatDate(item.created_at) }) }}</div>
     </div>
 
     <!--
@@ -60,7 +60,7 @@
         v-if="kind"
         class="item-card__kind"
         :class="kind === 'store' ? 'item-card__kind--store' : 'item-card__kind--item'"
-      >{{ kind === 'store' ? 'Хранилище' : 'Предмет' }}</span>
+      >{{ kind === 'store' ? t('form.store') : t('items.one') }}</span>
     </div>
 
     <div class="item-card__where">
@@ -72,7 +72,7 @@
       </span>
 
       <LocationChain :chain="chain" />
-      <span v-if="chain.length === 0" class="item-card__none">Без склада</span>
+      <span v-if="chain.length === 0" class="item-card__none">{{ t('item_card.no_warehouse') }}</span>
     </div>
   </component>
 </template>
@@ -97,7 +97,6 @@ import type { ImageResponse } from '~/repository/modules/image'
 import type { UserBrief } from '~/repository/modules/code'
 import type { ChainCrumb } from '~/composables/useLocationChain'
 import { useCurrentUser } from '~/composables/useCurrentUser'
-import { plural } from '~/utils/plural'
 
 /**
  * Всё, что карточке нужно знать о предмете.
@@ -116,6 +115,8 @@ type CardItem = {
   images?: ImageResponse[]
   user?: UserBrief | null
 }
+
+const { t, tp } = useI18n()
 
 const props = withDefaults(defineProps<{
   item: CardItem

@@ -2,7 +2,7 @@
   <div class="entity-stats">
     <div class="stats-controls">
       <div class="preset-row">
-        <span class="control-label">Период:</span>
+        <span class="control-label">{{ t('journal.period_label') }}</span>
         <button
           v-for="preset in periodPresets"
           :key="preset.label"
@@ -17,7 +17,7 @@
 
       <div class="preset-row">
         <div class="control-group date-group">
-          <span class="control-label">Свои даты:</span>
+          <span class="control-label">{{ t('journal.own_dates') }}</span>
           <ClientOnly>
             <VueDatepicker
               v-model="dateRange"
@@ -33,7 +33,7 @@
         </div>
 
         <div class="control-group">
-          <span class="control-label">Шаг:</span>
+          <span class="control-label">{{ t('journal.step_label') }}</span>
           <button
             v-for="g in granularities"
             :key="g.value"
@@ -48,60 +48,59 @@
       </div>
     </div>
 
-    <div v-if="statsLoading" class="loading">Загрузка статистики...</div>
+    <div v-if="statsLoading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="statsError" class="error">{{ statsError }}</div>
 
     <div v-else class="chart-card chart-card--wide">
       <div class="chart-head">
-        <h4 class="chart-title">Активность и действия</h4>
-        <span v-if="activityTotal" class="stats-summary">Всего за период: <b>{{ activityTotal }}</b></span>
+        <h4 class="chart-title">{{ t('journal.activity') }}</h4>
+        <span v-if="activityTotal" class="stats-summary">{{ t('journal.total_for_period') }} <b>{{ activityTotal }}</b></span>
       </div>
       <p class="chart-subtitle">
-        Ось X — дата, ось Y — число событий. Цвет сегмента — действие (пополнение, списание,
-        изменение и т.д.); высота столбца — общая активность, белая линия — итог за день/час.
+        {{ t('journal.chart_x_hint') }}
       </p>
-      <AuditActivityChart :points="actionPoints" :labels="ACTION_LABELS" />
+      <AuditActivityChart :points="actionPoints" :labels="actionLabels" />
     </div>
 
     <hr class="section-divider" />
 
     <div class="journal-table-head">
-      <span class="total" v-if="meta.total">Всего записей: {{ meta.total }}</span>
+      <span class="total" v-if="meta.total">{{ t('journal.total_entries', { count: meta.total }) }}</span>
     </div>
 
-    <div v-if="listLoading" class="loading">Загрузка записей...</div>
+    <div v-if="listLoading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="listError" class="error">{{ listError }}</div>
 
     <template v-else>
       <table v-if="entries.length" class="journal-table">
         <thead>
           <tr>
-            <th>Когда</th>
-            <th>Действие</th>
-            <th>Кто</th>
-            <th>Детали</th>
+            <th>{{ t('journal.when') }}</th>
+            <th>{{ t('journal.action') }}</th>
+            <th>{{ t('journal.actor') }}</th>
+            <th>{{ t('journal.details') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="entry in entries" :key="entry.id">
-            <td data-label="Когда">{{ formatDate(entry.created_at) }}</td>
-            <td data-label="Действие">
+            <td :data-label="t('journal.when')">{{ formatDate(entry.created_at) }}</td>
+            <td :data-label="t('journal.action')">
               <span class="action-badge" :class="actionBadgeClass(entry.action)">
                 {{ actionLabel(entry.action) }}
               </span>
             </td>
-            <td data-label="Кто">
+            <td :data-label="t('journal.actor')">
               <span v-if="entry.actor">{{ entry.actor.name }}</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Детали" class="details-cell">
+            <td :data-label="t('journal.details')" class="details-cell">
               <span class="details-text">{{ summarize(entry) }}</span>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div v-else class="empty">Записей не найдено</div>
+      <div v-else class="empty">{{ t('journal.empty') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -110,7 +109,7 @@
           class="page-btn"
           @click="goToPage(meta.current_page - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
         <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
         <button
@@ -119,7 +118,7 @@
           class="page-btn"
           @click="goToPage(meta.current_page + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -129,7 +128,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { defineAsyncComponent } from 'vue'
-import { actionLabel, actionBadgeClass, formatDate, summarize, ACTION_LABELS } from '~/utils/auditLabels'
+import { actionLabel, actionBadgeClass, formatDate, summarize, useAuditLabelMaps } from '~/utils/auditLabels'
 import {
   isoLocal,
   todayRange,
@@ -148,12 +147,15 @@ const props = defineProps<{
   entityId: number
 }>()
 
+const { t } = useI18n()
+
 const { $api } = useNuxtApp()
+const { actions: actionLabels } = useAuditLabelMaps()
 
 // ---- период / шаг (как на странице журнала) ----
 const granularities = [
-  { label: 'дни', value: 'day' },
-  { label: 'часы', value: 'hour' },
+  { label: t('journal.days'), value: 'day' },
+  { label: t('journal.hours'), value: 'hour' },
 ]
 const granularity = ref<'day' | 'hour'>('day')
 

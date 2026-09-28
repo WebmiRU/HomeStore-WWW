@@ -5,7 +5,7 @@
       @click="$emit('go', page - 1)"
       class="page-btn"
     >
-      ← Назад
+      ← {{ t('common.back') }}
     </button>
     <span class="page-info">{{ page }} / {{ lastPage }}</span>
     <button
@@ -13,7 +13,7 @@
       @click="$emit('go', page + 1)"
       class="page-btn"
     >
-      Вперёд →
+      {{ t('common.forward') }} →
     </button>
   </div>
 </template>
@@ -24,6 +24,8 @@
 // Раньше разметка и стили этой полосы жили в странице предметов, а список
 // хранилищ и поиск обходились без постраничного вывода. Три копии одного и
 // того же разъезжались: добавили в одну — забыли про другую. Здесь она одна.
+
+const { t } = useI18n()
 
 withDefaults(defineProps<{
   page: number

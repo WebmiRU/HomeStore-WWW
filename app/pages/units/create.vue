@@ -1,25 +1,25 @@
 <template>
   <div class="create-page">
-    <h3 class="page-title">Добавление единицы измерения</h3>
+    <h3 class="page-title">{{ t('properties.unit_titles.create_title') }}</h3>
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
     <form class="create-form" @submit.prevent="save">
       <label class="field">
-        <span class="field-label">Обозначение</span>
+        <span class="field-label">{{ t('properties.abbreviation') }}</span>
         <input v-model="form.title_short" type="text" class="field-input" maxlength="50" required />
-        <span class="field-hint">Короткое обозначение, как на линейке: мм, кг, шт</span>
+        <span class="field-hint">{{ t('properties.unit_hint') }}</span>
       </label>
 
       <label class="field">
-        <span class="field-label">Название</span>
+        <span class="field-label">{{ t('form.title') }}</span>
         <input v-model="form.title_full" type="text" class="field-input" maxlength="200" required />
-        <span class="field-hint">Полное название: миллиметр, килограмм, штука</span>
+        <span class="field-hint">{{ t('properties.unit_full_hint') }}</span>
       </label>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-        <NuxtLink to="/units" class="btn-cancel">Отмена</NuxtLink>
+        <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/units" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
   </div>
@@ -30,11 +30,12 @@ import { reactive, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const router = useRouter()
 
 const saving = ref(false)
 
-const tabs = [{ key: 'main', label: 'Основные параметры' }]
+const tabs = computed(() => [{ key: 'main', label: t('properties.main_tab') }])
 
 const form = reactive({
   title_short: '',
@@ -48,10 +49,10 @@ async function save() {
       title_short: form.title_short,
       title_full: form.title_full,
     })
-    $notify.add('Единица измерения создана', { type: 'success' })
+    $notify.add(t('form.created', { title: t('properties.unit_one') }), { type: 'success' })
     router.push(`/units/${created.id}`)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.create_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }

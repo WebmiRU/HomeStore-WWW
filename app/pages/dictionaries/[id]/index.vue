@@ -1,8 +1,8 @@
 <template>
   <div class="edit-page">
-    <h3 class="page-title">Редактирование справочника #{{ id }}</h3>
+    <h3 class="page-title">{{ t('properties.dictionary_titles.edit_title', { id }) }}</h3>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
     <template v-else>
@@ -11,13 +11,13 @@
       <section v-if="activeTab === 'main'" class="tab-section">
         <form class="edit-form" @submit.prevent="save">
           <label class="field">
-            <span class="field-label">Название</span>
+            <span class="field-label">{{ t('form.title') }}</span>
             <input v-model="form.title" type="text" class="field-input" maxlength="200" required />
           </label>
 
           <div class="form-actions">
-            <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
-            <NuxtLink to="/dictionaries" class="btn-cancel">Отмена</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+            <NuxtLink to="/dictionaries" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
           </div>
         </form>
       </section>
@@ -29,24 +29,24 @@
             type="text"
             class="field-input"
             maxlength="200"
-            placeholder="Новое значение"
+            :placeholder="t('properties.new_value')"
           />
-          <button type="submit" class="btn-add" :disabled="adding || newValue.trim() === ''">Добавить</button>
+          <button type="submit" class="btn-add" :disabled="adding || newValue.trim() === ''">{{ t('common.add') }}</button>
         </form>
 
         <table v-if="values.length" class="values-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>Значение</th>
-              <th>Создан</th>
+              <th>{{ t('properties.value') }}</th>
+              <th>{{ t('common.created') }}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="value in values" :key="value.id">
               <td data-label="ID">{{ value.id }}</td>
-              <td data-label="Значение">
+              <td :data-label="t('properties.value')">
                 <input
                   v-model="edits[value.id]"
                   type="text"
@@ -55,14 +55,14 @@
                   @keydown.enter.prevent="saveValue(value)"
                 />
               </td>
-              <td data-label="Создан">{{ formatDate(value.created_at) }}</td>
+              <td :data-label="t('common.created')">{{ formatDate(value.created_at) }}</td>
               <td class="actions">
                 <button
                   type="button"
                   class="action-link action-save"
                   :disabled="!isDirty(value)"
-                  title="Сохранить"
-                  aria-label="Сохранить"
+                  :title="t('common.save')"
+                  :aria-label="t('common.save')"
                   @click="saveValue(value)"
                 >
                   <img src="/img/icon/edit.svg" class="action-icon" alt="" />
@@ -70,8 +70,8 @@
                 <button
                   type="button"
                   class="action-link action-del"
-                  title="Удалить"
-                  aria-label="Удалить"
+                  :title="t('common.delete')"
+                  :aria-label="t('common.delete')"
                   @click="deleteValue(value)"
                 >
                   <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -82,13 +82,11 @@
         </table>
 
         <div v-else class="empty">
-          В справочнике пока нет значений — без них выбирать его в свойствах нечего
+          {{ t('properties.no_values') }}
         </div>
 
         <p class="values-hint">
-          Значение нельзя удалить, если оно уже выбрано в каком-нибудь предмете: сервер
-          вернёт ошибку. Сначала перезаполните эти предметы.
-        </p>
+          {{ t('properties.value_delete_hint') }}</p>
       </section>
 
       <section v-if="activeTab === 'stats'" class="tab-section">
@@ -105,6 +103,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { DictionaryValueResponse } from '~/repository/modules/dictionary'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 
 const id = route.params.id as string
@@ -121,11 +120,11 @@ const values = ref<DictionaryValueResponse[]>([])
 const edits = reactive<Record<number, string>>({})
 const newValue = ref('')
 
-const tabs = [
-  { key: 'main', label: 'Основные параметры' },
-  { key: 'values', label: 'Значения' },
-  { key: 'stats', label: 'Статистика' },
-]
+const tabs = computed(() => [
+  { key: 'main', label: t('properties.main_tab') },
+  { key: 'values', label: t('form.values_tab') },
+  { key: 'stats', label: t('form.stats_tab') },
+])
 
 const activeTab = computed(() => {
   const tab = route.query.tab
@@ -142,7 +141,7 @@ async function load() {
     values.value = dictionary.values ?? []
     seedEdits()
   } catch (err: any) {
-    loadError.value = formatApiError(err, 'Ошибка загрузки справочника')
+    loadError.value = formatApiError(err, t('properties.dictionary_card_load_failed'))
   } finally {
     loading.value = false
   }
@@ -164,9 +163,9 @@ async function save() {
   saving.value = true
   try {
     await $api.dictionary.update(Number(id), { title: form.title })
-    $notify.add('Справочник сохранён', { type: 'success' })
+    $notify.add(t('form.saved', { title: t('properties.dictionary_one') }), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка сохранения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
     saving.value = false
   }
@@ -183,9 +182,9 @@ async function addValue() {
     values.value = [...values.value, created]
     edits[created.id] = created.title
     newValue.value = ''
-    $notify.add('Значение добавлено', { type: 'success' })
+    $notify.add(t('properties.value_added'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка добавления значения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('properties.value_add_failed')), { type: 'error', timer: 10 })
   } finally {
     adding.value = false
   }
@@ -198,25 +197,25 @@ async function saveValue(value: DictionaryValueResponse) {
     const updated = await $api.dictionary.updateValue(Number(id), value.id, { title: edits[value.id] })
     values.value = values.value.map((item) => (item.id === updated.id ? updated : item))
     edits[updated.id] = updated.title
-    $notify.add('Значение сохранено', { type: 'success' })
+    $notify.add(t('properties.value_saved'), { type: 'success' })
   } catch (err: any) {
     // Название не принято — показываем то, что осталось в базе, иначе в
     // строке осталось бы правило, которое сервер отверг.
     edits[value.id] = value.title
-    $notify.add(formatApiError(err, 'Ошибка сохранения значения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('properties.value_save_failed')), { type: 'error', timer: 10 })
   }
 }
 
 async function deleteValue(value: DictionaryValueResponse) {
-  if (!confirm(`Удалить значение «${value.title}»?`)) return
+  if (!confirm(t('properties.value_delete_confirm', { title: value.title }))) return
 
   try {
     await $api.dictionary.deleteValue(Number(id), value.id)
     values.value = values.value.filter((item) => item.id !== value.id)
     delete edits[value.id]
-    $notify.add('Значение удалено', { type: 'success' })
+    $notify.add(t('properties.value_deleted'), { type: 'success' })
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления значения'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('properties.value_delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

@@ -5,7 +5,7 @@
     viewBox="0 0 84 84"
     xmlns="http://www.w3.org/2000/svg"
     role="img"
-    aria-label="Нет фото"
+    :aria-label="t('images.no_photo')"
   >
     <!-- рамка-заглушка -->
     <rect
@@ -45,7 +45,7 @@
       fill="currentColor"
       stroke="none"
     >
-      Нет фото
+      {{ t('images.no_photo') }}
     </text>
   </svg>
 </template>
@@ -53,6 +53,7 @@
 <script setup lang="ts">
 // Заглушка фотографии предмета. Позже будет заменена на реальное изображение.
 
+const { t } = useI18n()
 const props = defineProps<{
   /** Явный размер в CSS-пикселях. Без него — из стилей, как у ItemPhoto. */
   size?: number | null

@@ -1,32 +1,26 @@
 <template>
   <div class="mvlist">
-    <div v-if="loading" class="mvlist__state">Загрузка...</div>
+    <div v-if="loading" class="mvlist__state">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="mvlist__state mvlist__state--error">{{ error }}</div>
     <div v-else-if="!operations.length" class="mvlist__state">
-      Списаний и пополнений по предмету не было
+      {{ t('item_movements.empty') }}
     </div>
 
     <template v-else>
       <div class="mvlist__sum">
-        <span class="mvlist__sum-item">
-          Списано: <b>{{ summary.writeoff.units }}</b> шт.
-        </span>
-        <span class="mvlist__sum-item">
-          Пополнено: <b>{{ summary.replenish.units }}</b> шт.
-        </span>
-        <span class="mvlist__sum-item">
-          Возвратов: <b>{{ summary.reversals }}</b>
-        </span>
+        <span class="mvlist__sum-item">{{ t('main.done_writeoff') }}: <b>{{ summary.writeoff.units }}</b> {{ t('units.pcs') }}</span>
+        <span class="mvlist__sum-item">{{ t('main.done_replenish') }}: <b>{{ summary.replenish.units }}</b> {{ t('units.pcs') }}</span>
+        <span class="mvlist__sum-item">{{ t('movements.reversals') }}: <b>{{ summary.reversals }}</b></span>
       </div>
 
       <table class="mvlist__table">
         <thead>
           <tr>
-            <th>Дата</th>
-            <th>Операция</th>
-            <th>Комментарий</th>
-            <th>Количество</th>
-            <th>Остаток</th>
+            <th>{{ t('item_movements.date') }}</th>
+            <th>{{ t('item_movements.operation') }}</th>
+            <th>{{ t('item_movements.comment') }}</th>
+            <th>{{ t('form.quantity') }}</th>
+            <th>{{ t('item_movements.remainder') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -37,13 +31,13 @@
                 {{ op.direction === 'replenish' ? '+' : '−' }}
               </span>
               {{ op.direction_label }}
-              <span v-if="op.is_reversal" class="mvlist__tag">возврат №{{ op.reversed_operation_id }}</span>
+              <span v-if="op.is_reversal" class="mvlist__tag">{{ t('item_movements.reversal_of', { id: op.reversed_operation_id }) }}</span>
             </td>
             <td class="mvlist__cell-comment">{{ op.comment || '—' }}</td>
             <td class="mvlist__cell-qty">
               {{ mineOf(op) }}
               <span v-if="op.rows.some((r) => r.is_returned)" class="mvlist__returned">
-                возврат {{ returnedOf(op) }}
+                t('item_movements.reversal_of', { id: returnedOf(op) })
               </span>
             </td>
             <td class="mvlist__cell-balance">
@@ -80,6 +74,7 @@ import type { StockOperation } from '~/repository/modules/stockOperation'
 const props = defineProps<{ itemId: number }>()
 
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 
 const operations = ref<StockOperation[]>([])
 const loading = ref(true)
@@ -135,7 +130,7 @@ async function load(page = 1) {
     operations.value = result.data
     meta.value = { current_page: result.meta.current_page, last_page: result.meta.last_page }
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки движений')
+    error.value = formatApiError(err, t('item_movements.load_failed'))
   } finally {
     loading.value = false
   }

@@ -27,15 +27,15 @@
     -->
     <footer v-if="showCodeBlock" class="page-footer">
       <div class="uuid-search">
-        <span class="uuid-label">КОД:</span>
+        <span class="uuid-label">{{ t('scanner.code_label') }}</span>
         <input
           v-model="uuidQuery"
           type="text"
-          placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+          :placeholder="t('scanner.code_placeholder')"
           class="uuid-input"
           @keydown.enter="doUuidSearch"
         />
-        <button class="uuid-btn" @click="doUuidSearch">Найти</button>
+        <button class="uuid-btn" @click="doUuidSearch">{{ t('scanner.find') }}</button>
       </div>
     </footer>
   </div>
@@ -50,6 +50,7 @@ const { $api, $notify } = useNuxtApp()
 const { items, remove: removeNotify } = $notify
 const router = useRouter()
 const { options, load: loadOptions } = useOptions()
+const { t } = useI18n()
 
 // Прячется по настройке, а настройки приезжают после монтирования: до ответа
 // блок виден, как и раньше, и исчезает сам. Прыгать им на сервере нельзя —
@@ -124,7 +125,7 @@ async function doSearch(q: string) {
     // сработает; форсируем повторный поиск меткой-триггером.
     triggerSearch()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка поиска'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('notify.search_failed')), { type: 'error', timer: 10 })
   }
 }
 

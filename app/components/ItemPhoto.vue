@@ -11,7 +11,7 @@
     :class="{ 'item-photo-wrap--openable': lightbox }"
     :style="frameStyle"
     :type="lightbox ? 'button' : undefined"
-    :aria-label="lightbox ? `Открыть фото: ${alt ?? ''}` : undefined"
+    :aria-label="lightbox ? t('item_photo.open', { alt: alt ?? '' }) : undefined"
     @click="openViewer"
   >
     <span v-if="loading" class="item-photo-spinner" aria-hidden="true" />
@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import type { ImageResponse } from '~/repository/modules/image'
 
+const { t } = useI18n()
 const props = defineProps<{
   images?: ImageResponse[] | null
   alt?: string | null

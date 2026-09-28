@@ -2,16 +2,16 @@
   <div class="contents">
     <div class="contents__bar">
       <span class="contents__summary">
-        {{ root?.items_total ?? 0 }} {{ plural(root?.items_total ?? 0, 'предмет', 'предмета', 'предметов') }}
-        в {{ nodeWord }}
+        {{ tp('words.item_count', root?.items_total ?? 0) }}
+        v {{ nodeWord }}
       </span>
       <div class="contents__tools">
-        <button type="button" class="btn-tool" @click="expandAll(true)">Развернуть всё</button>
-        <button type="button" class="btn-tool" @click="expandAll(false)">Свернуть всё</button>
+        <button type="button" class="btn-tool" @click="expandAll(true)">{{ t('contents.expand_all') }}</button>
+        <button type="button" class="btn-tool" @click="expandAll(false)">{{ t('contents.collapse_all') }}</button>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка содержимого...</div>
+    <div v-if="loading" class="loading">{{ t('contents.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="root" class="contents__tree">
       <ContentsNodeRow
@@ -23,14 +23,13 @@
         @show-all="showAll"
       />
     </div>
-    <div v-else class="empty">Здесь пусто</div>
+    <div v-else class="empty">{{ t('contents.empty') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
-import { plural } from '~/utils/plural'
 import type { ContentsNode as Node } from '~/repository/modules/store'
 
 const props = defineProps<{
@@ -39,6 +38,7 @@ const props = defineProps<{
   entityId: number
 }>()
 
+const { tp } = useI18n()
 const { $api, $notify } = useNuxtApp()
 
 const root = ref<Node | null>(null)
@@ -51,7 +51,9 @@ const expanded = ref<Set<number>>(new Set())
 /** Узлы, у которых человек нажал «показать все», и их полные списки. */
 const shownItems = ref<Record<number, Node['items']>>({})
 
-const nodeWord = computed(() => (props.kind === 'warehouse' ? 'складе' : 'хранилище'))
+// Предложный падеж: «в складе» или «в хранилище» — от рода узла зависит
+    // и подпись в подсказке, поэтому она тоже из словаря.
+    const nodeWord = computed(() => t(props.kind === 'warehouse' ? 'contents.in_warehouse' : 'contents.in_storage'))
 
 /**
  * Все узлы дерева сразу.
@@ -79,7 +81,7 @@ async function load() {
 
     expanded.value = root.value ? new Set(collectIds(root.value)) : new Set()
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки содержимого')
+    error.value = formatApiError(err, t('contents.load_failed'))
   } finally {
     loading.value = false
   }
@@ -116,7 +118,7 @@ async function showAll(node: Node) {
 
     shownItems.value = { ...shownItems.value, [node.id]: items }
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка загрузки предметов'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('contents.items_load_failed')), { type: 'error', timer: 10 })
   }
 }
 

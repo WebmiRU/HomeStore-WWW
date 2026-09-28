@@ -1,11 +1,11 @@
 <template>
   <div class="categories-page">
     <div class="page-header">
-      <h3 class="page-title">Категории</h3>
-      <NuxtLink to="/categories/create" class="btn-add">Добавить</NuxtLink>
+      <h3 class="page-title">{{ t('categories.list') }}</h3>
+      <NuxtLink to="/categories/create" class="btn-add">{{ t('categories.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -13,25 +13,25 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Название</th>
-            <th>Предметов</th>
-            <th>Создан</th>
+            <th>{{ t('categories.title') }}</th>
+            <th>{{ t('list_common.items_count') }}</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.id" @dblclick="openRow($event, `/categories/${row.id}`)">
             <td data-label="ID">{{ row.id }}</td>
-            <td data-label="Название">
+            <td :data-label="t('categories.title')">
               <span class="tree-prefix">{{ '—'.repeat(row.depth) }}</span>
               <span v-if="row.depth > 0" class="tree-space"> </span>
               {{ row.title }}
             </td>
-            <td data-label="Предметов">
+            <td :data-label="t('list_common.items_count')">
               <span v-if="row.itemsCount">{{ row.itemsCount }}</span>
               <span v-else class="muted">—</span>
             </td>
-            <td data-label="Создан">{{ formatDate(row.createdAt) }}</td>
+            <td :data-label="t('common.created')">{{ formatDate(row.createdAt) }}</td>
             <td class="actions">
               <!--
                 Воронка, а не глаз: пункт ведёт в список предметов, отобранных
@@ -43,24 +43,24 @@
               <NuxtLink
                 :to="`/items?category_id=${row.id}`"
                 class="action-link action-view"
-                title="Предметы категории"
-                aria-label="Предметы категории"
+                :title="t('categories.items_of_category')"
+                :aria-label="t('categories.items_of_category')"
               >
                 <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
               </NuxtLink>
               <NuxtLink
                 :to="`/categories/${row.id}`"
                 class="action-link action-edit"
-                title="Редактировать"
-                aria-label="Редактировать"
+                :title="t('common.edit')"
+                :aria-label="t('common.edit')"
               >
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a
                 href="#"
                 class="action-link action-del"
-                title="Удалить"
-                aria-label="Удалить"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
                 @click.prevent="deleteCategory(row)"
               >
                 <img src="/img/icon/delete.svg" class="action-icon" alt="" />
@@ -70,12 +70,10 @@
         </tbody>
       </table>
 
-      <div v-else class="empty">Нет категорий</div>
+      <div v-else class="empty">{{ t('categories.no_categories') }}</div>
 
       <p class="page-hint">
-        Счётчик показывает только предметы самой категории. Удаление уносит всю ветвь
-        вложенных категорий, а предметы остаются — у них просто пропадает категория.
-      </p>
+        {{ t('categories.counter_hint') }}</p>
     </template>
   </div>
 </template>
@@ -88,6 +86,7 @@ import { categorySelectOptions } from '~/composables/categorySelectOptions'
 import type { CategoryResponse } from '~/repository/modules/category'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const { openRow } = useRowOpen()
 
 const categories = ref<CategoryResponse[]>([])
@@ -109,7 +108,7 @@ async function load() {
   try {
     categories.value = await $api.category.all()
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки категорий')
+    error.value = formatApiError(err, t('categories.load_failed'))
   } finally {
     loading.value = false
   }
@@ -140,18 +139,18 @@ function branchSize(selfId: number): number {
 async function deleteCategory(row: { id: number; title: string }) {
   const size = branchSize(row.id)
   const message = size > 1
-    ? `Удалить категорию «${row.title}» вместе со всей её ветвью (${size} шт.)?\n\n` +
-      'Предметы сохранятся, но останутся без категории.'
-    : `Удалить категорию «${row.title}»?\n\nПредметы сохранятся, но останутся без категории.`
+    ? t('categories.delete_branch_confirm', { title: row.title, count: size }) + '\n\n' +
+      t('categories.keep_warning')
+    : t('categories.delete_confirm', { title: row.title }) + '\n\n' + t('categories.keep_warning')
 
   if (!confirm(message)) return
 
   try {
     await $api.category.delete(row.id)
-    $notify.add('Категория удалена', { type: 'success' })
+    $notify.add(t('categories.delete_done'), { type: 'success' })
     await load()
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   }
 }
 

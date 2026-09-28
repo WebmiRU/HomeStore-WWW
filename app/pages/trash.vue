@@ -1,11 +1,8 @@
 <template>
   <div class="trash-page">
     <div class="page-header">
-      <h3 class="page-title">Корзина</h3>
-      <p class="page-hint">
-        Удалённое здесь не пропало: записи лежат в базе и их можно вернуть.
-        Окончательное удаление необратимо.
-      </p>
+      <h3 class="page-title">{{ t('trash.title') }}</h3>
+      <p class="page-hint">{{ t('trash.hint') }}</p>
     </div>
 
     <!-- Перенос, а не прокрутка: вкладок тринадцать, и в прокрутке половина
@@ -20,14 +17,14 @@
           :indeterminate.prop="someSelected && !allSelected"
           @change="toggleAll"
         />
-        Выделить все
+        {{ t('trash.select_all') }}
       </label>
 
-      <span class="trash-count">Выбрано: {{ selected.size }}</span>
+      <span class="trash-count">{{ t('trash.selected') }}: {{ selected.size }}</span>
 
       <div class="trash-actions">
         <button type="button" class="btn-restore" :disabled="!selected.size || busy" @click="restoreSelected">
-          Восстановить
+          {{ t('trash.restore') }}
         </button>
         <button
           v-if="canPurge"
@@ -36,12 +33,12 @@
           :disabled="!selected.size || busy"
           @click="purgeSelected"
         >
-          Удалить совсем
+          {{ t('trash.purge') }}
         </button>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -49,8 +46,8 @@
         <thead>
           <tr>
             <th class="cb-col"></th>
-            <th>Название</th>
-            <th>Удалён</th>
+            <th>{{ t('common.title') }}</th>
+            <th>{{ t('list_common.deleted') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -58,13 +55,13 @@
             <td class="cb-col">
               <input type="checkbox" :checked="selected.has(e.id)" @change="toggleOne(e.id)" />
             </td>
-            <td data-label="Название">{{ e.title }}</td>
-            <td data-label="Удалён">{{ e.deleted_date ?? '—' }}</td>
+            <td :data-label="t('common.title')">{{ e.title }}</td>
+            <td :data-label="t('list_common.deleted')">{{ e.deleted_date ?? '—' }}</td>
           </tr>
         </tbody>
       </table>
 
-      <div v-else class="empty">Здесь пусто</div>
+      <div v-else class="empty">{{ t('trash.empty') }}</div>
 
       <div v-if="meta.last_page > 1" class="pagination">
         <button
@@ -72,15 +69,15 @@
           class="page-btn"
           @click="goToPage((meta.current_page || 1) - 1)"
         >
-          ← Назад
+          ← {{ t('common.back') }}
         </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }} · всего {{ meta.total }}</span>
+        <span class="page-info">{{ t('trash.page_info', { current: meta.current_page, last: meta.last_page, total: meta.total }) }}</span>
         <button
           :disabled="!meta.current_page || meta.current_page >= meta.last_page"
           class="page-btn"
           @click="goToPage((meta.current_page || 1) + 1)"
         >
-          Вперёд →
+          {{ t('common.forward') }} →
         </button>
       </div>
     </template>
@@ -93,6 +90,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import type { TrashEntry } from '~/repository/modules/trash'
 
 const { $api, $notify } = useNuxtApp()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -102,19 +100,19 @@ const router = useRouter()
  * «восстановить по прямой адрес».
  */
 const sections = [
-  { key: 'warehouse', label: 'Склады' },
-  { key: 'store', label: 'Хранилища' },
-  { key: 'item', label: 'Предметы' },
-  { key: 'category', label: 'Категории' },
-  { key: 'vendor', label: 'Производители' },
-  { key: 'unit', label: 'Ед. изм.' },
-  { key: 'property', label: 'Свойства' },
-  { key: 'property-group', label: 'Группы свойств' },
-  { key: 'dictionary', label: 'Справочники' },
-  { key: 'dictionary-value', label: 'Значения справочников' },
-  { key: 'label-preset', label: 'Шаблоны' },
-  { key: 'label-list', label: 'Списки этикеток' },
-  { key: 'user', label: 'Пользователи' },
+  { key: 'warehouse', label: t('access_sections.warehouses') },
+  { key: 'store', label: t('access_sections.stores') },
+  { key: 'item', label: t('access_sections.items') },
+  { key: 'category', label: t('nav.categories') },
+  { key: 'vendor', label: t('nav.vendors') },
+  { key: 'unit', label: t('properties.unit_short') },
+  { key: 'property', label: t('nav.property_list') },
+  { key: 'property-group', label: t('nav.property_groups') },
+  { key: 'dictionary', label: t('nav.dictionaries') },
+  { key: 'dictionary-value', label: t('properties.dictionary_values') },
+  { key: 'label-preset', label: t('access_sections.label_presets') },
+  { key: 'label-list', label: t('access_sections.label_lists') },
+  { key: 'user', label: t('access_sections.users') },
 ]
 
 const counts = ref<Record<string, number>>({})
@@ -180,7 +178,7 @@ async function load(page?: number) {
     // записей там другие, и «удалить совсем» ушло бы не туда.
     selected.value = new Set()
   } catch (err: any) {
-    error.value = formatApiError(err, 'Ошибка загрузки корзины')
+    error.value = formatApiError(err, t('trash.load_failed'))
   } finally {
     loading.value = false
   }
@@ -218,8 +216,8 @@ async function restoreSelected() {
     if (result.restored > 0) {
       $notify.add(
         refused.length > 0
-          ? `Восстановлено: ${result.restored}, не восстановлено: ${refused.length}`
-          : `Восстановлено: ${result.restored}`,
+          ? t('trash.restored_partly', { restored: result.restored, refused: refused.length })
+          : t('trash.restored', { count: result.restored }),
         { type: 'success' },
       )
     }
@@ -228,14 +226,14 @@ async function restoreSelected() {
       // Причины показываем списком: иначе непонятно, что делать дальше —
       // молчаливый отказ читается как «ничего не произошло».
       $notify.add(
-        `Не восстановлено: ${refused.map((title) => `${title} — ${result.failed[title]}`).join('; ')}`,
+        t('trash.not_restored', { items: refused.map((title) => `${title} — ${result.failed[title]}`).join('; ') }),
         { type: 'error', timer: 15 },
       )
     }
 
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка восстановления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('trash.restore_failed')), { type: 'error', timer: 10 })
   } finally {
     busy.value = false
   }
@@ -247,16 +245,16 @@ async function purgeSelected() {
 
   // Явное подтверждение с числом: восстановить потом будет нечего, а из
   // каскадов выживают не все — удаление хранилища уносит вложенные.
-  if (!confirm(`Удалить выбранные (${ids.length}) совсем, безвозвратно?`)) return
+  if (!confirm(t('trash.purge_confirm', { count: ids.length }))) return
 
   busy.value = true
   try {
     const result = await $api.trash.purge(activeSection.value, ids)
 
-    $notify.add(`Удалено совсем: ${result.purged}`, { type: 'success' })
+    $notify.add(t('trash.purged', { count: result.purged }), { type: 'success' })
     await load(meta.value.current_page)
   } catch (err: any) {
-    $notify.add(formatApiError(err, 'Ошибка удаления'), { type: 'error', timer: 10 })
+    $notify.add(formatApiError(err, t('list_common.delete_failed')), { type: 'error', timer: 10 })
   } finally {
     busy.value = false
   }

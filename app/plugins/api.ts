@@ -47,6 +47,10 @@ interface IApiInstance {
 }
 
 export default defineNuxtPlugin(() => {
+  // Ответы сервера (сообщения об ошибках, валидация) приходят на том же
+  // языке, на котором читается интерфейс: заголовок Accept-Language.
+  const { locale } = useI18n()
+
   // В dev-режиме запросы идут через Nuxt server proxy (/api/...),
   // в production — напрямую к API (если настроен reverse proxy на том же домене)
   const apiBaseUrl = '/api'
@@ -56,6 +60,8 @@ export default defineNuxtPlugin(() => {
   const fetchOptions: FetchOptions = {
     baseURL: apiBaseUrl,
     onRequest({ options, request }) {
+      options.headers = { ...options.headers, 'Accept-Language': locale.value }
+
       if (isLoginRequest(String(request))) {
         return
       }

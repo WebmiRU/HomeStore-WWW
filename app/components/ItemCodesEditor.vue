@@ -11,14 +11,14 @@
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
-          title="Выше"
+          :title="t('images.order_up')"
           :disabled="index === 0"
           @click="moveCode(index, -1)"
         >▲</button>
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
-          title="Ниже"
+          :title="t('images.order_down')"
           :disabled="index === codes.length - 1"
           @click="moveCode(index, 1)"
         >▼</button>
@@ -30,7 +30,7 @@
         type="text"
         class="field-input input-group__control"
         maxlength="256"
-        placeholder="отсканируйте или введите код"
+        :placeholder="t('items.code_hint')"
         :readonly="readonly"
         autocomplete="off"
         @input="onInput(index, $event)"
@@ -47,7 +47,7 @@
         v-if="!readonly"
         type="button"
         class="input-group__btn input-group__btn--minus input-group__btn--icon"
-        :title="index === 0 ? 'Очистить код' : 'Убрать код'"
+        :title="index === 0 ? t('items.code_clear') : t('items.code_remove')"
         @click="removeCode(index)"
       >−</button>
 
@@ -55,15 +55,13 @@
         v-if="!readonly && index === codes.length - 1"
         type="button"
         class="input-group__btn input-group__btn--icon input-group__btn--add"
-        title="Добавить ещё код"
+        :title="t('items.code_add_more')"
         @click="addCode"
       >+</button>
     </div>
 
     <p class="field-hint">
-      Кодов может быть несколько — по одному на наклейку. Верхний считается главным:
-      он печатается на этикетке по умолчанию и показывается в карточке. Поставьте курсор
-      в поле — и сканер вставит код прямо в него, а не уведёт на главную.
+      {{ t('items.codes_hint') }}
     </p>
   </div>
 </template>
@@ -81,6 +79,8 @@
  */
 import { nextTick, ref, watch } from 'vue'
 import { useScanIntoField } from '~/composables/useScanIntoField'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   modelValue: string[]

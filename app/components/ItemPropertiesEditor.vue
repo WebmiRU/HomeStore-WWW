@@ -1,14 +1,14 @@
 <template>
   <div class="props-editor">
     <div class="props-editor__head">
-      <span class="field-label">Свойства</span>
+      <span class="field-label">{{ t('form.properties_tab') }}</span>
       <span class="field-hint">{{ hint }}</span>
     </div>
 
     <div v-if="!readonly" class="input-group props-picker">
       <select v-model="pendingId" class="field-select input-group__control" :disabled="!pickGroups.length">
         <option value="" disabled>
-          {{ pickGroups.length ? '[ВЫБЕРИТЕ СВОЙСТВО]' : '[ВСЕ СВОЙСТВА УЖЕ ДОБАВЛЕНЫ]' }}
+          {{ pickGroups.length ? t('placeholders.pick_property') : t('placeholders.all_properties_added') }}
         </option>
         <optgroup v-for="group in pickGroups" :key="group.key" :label="group.label">
           <option v-for="option in group.properties" :key="option.id" :value="option.id">
@@ -20,17 +20,15 @@
         type="button"
         class="input-group__btn input-group__btn--primary"
         :disabled="pendingId === ''"
-        title="Добавить выбранное свойство"
+        :title="t('item_properties.add_chosen')"
         @click="addProperty"
-      >Добавить</button>
+      >{{ t('common.add') }}</button>
     </div>
     <p v-if="!readonly" class="field-hint props-picker__hint">
-      Список свойств по умолчанию считается по уже заполненным значениям в этой категории.
-      Любое другое свойство можно добавить отсюда — набор по умолчанию не ограничивает.
-    </p>
+      {{ t('item_properties.default_set_hint') }}</p>
 
     <p v-if="!visible.length" class="props-editor__empty">
-      Пока нет ни одного свойства. Выберите его в списке выше — и заполните значение.
+      {{ t('item_properties.empty') }}
     </p>
 
     <div v-for="group in grouped" :key="group.key" class="props-group">
@@ -55,11 +53,11 @@
               v-if="!readonly && !isDefault(property.id)"
               type="button"
               class="prop-row__remove"
-              title="Убрать свойство у предмета"
+              :title="t('item_properties.remove_from_item')"
               @click="removeProperty(property.id)"
             >×</button>
           </span>
-          <span v-if="isDefault(property.id)" class="prop-row__default">по умолчанию</span>
+          <span v-if="isDefault(property.id)" class="prop-row__default">{{ t('item_properties.by_default') }}</span>
         </span>
 
         <div class="prop-row__values">
@@ -71,7 +69,7 @@
               :disabled="readonly"
               @change="onDictionaryChange(property.id, index, $event)"
             >
-              <option value="">[НЕ ВЫБРАНО]</option>
+              <option value="">t('placeholders.not_chosen')</option>
               <option v-for="option in dictionaryOptions(property)" :key="option.id" :value="option.id">
                 {{ option.title }}
               </option>
@@ -84,9 +82,9 @@
               :disabled="readonly"
               @change="onTextChange(property.id, index, $event)"
             >
-              <option value="">[НЕ ЗАПОЛНЕНО]</option>
-              <option value="да">да</option>
-              <option value="нет">нет</option>
+              <option value="">t('placeholders.not_filled')</option>
+              <option value="да">{{ t('item_properties.yes_value') }}</option>
+              <option value="нет">{{ t('item_properties.no_value') }}</option>
             </select>
 
             <input
@@ -119,7 +117,7 @@
               type="button"
               class="input-group__btn input-group__btn--minus input-group__btn--icon"
               :class="{ 'input-group__btn--wide': index !== valuesOf(property.id).length - 1 }"
-              :title="valuesOf(property.id).length === 1 ? 'Очистить значение' : 'Убрать значение'"
+              :title="valuesOf(property.id).length === 1 ? t('item_properties.clear_value') : t('item_properties.remove_value')"
               @click="removeValue(property.id, index)"
             >−</button>
 
@@ -135,7 +133,7 @@
               v-if="!readonly && index === valuesOf(property.id).length - 1"
               type="button"
               class="input-group__btn input-group__btn--icon input-group__btn--add"
-              title="Добавить ещё значение"
+              :title="t('item_properties.add_more')"
               @click="addValue(property.id)"
             >+</button>
           </div>
@@ -172,6 +170,8 @@ type Slot = { value: string; dictionaryValueId: number | null }
  * modelValue: буфер перезаписывается только при смене resetKey, иначе
  * собственная выдача component'а затирала бы наполовину введённую строку.
  */
+const { t } = useI18n()
+
 const props = defineProps<{
   /** Набор по умолчанию — то, что сервер насчитал для категории. */
   defaultProperties: PropertyResponse[]
@@ -278,8 +278,8 @@ const pickGroups = computed(() => {
 const hint = computed(() => {
   const n = props.defaultProperties.length
 
-  if (n === 0) return 'Набор по умолчанию для категории пуст'
-  return `По умолчанию ${n} шт. — набор считается по уже заполненным значениям`
+  if (n === 0) return t('item_properties.default_set_empty')
+  return t('item_properties.default_count', { count: n })
 })
 
 function isDefault(propertyId: number): boolean {

@@ -2,7 +2,7 @@
   <div class="balance-chart">
     <div class="controls">
       <div class="control-group">
-        <span class="control-label">Период:</span>
+        <span class="control-label">{{ t('journal.period_label') }}</span>
         <button
           v-for="range in ranges"
           :key="range.value"
@@ -16,20 +16,20 @@
       </div>
 
       <div v-if="points.length" class="summary">
-        <span>Остаток: <b class="sum-val">{{ lastQty }}</b></span>
-        <span>Мин: {{ minQty }}</span>
-        <span>Макс: {{ maxQty }}</span>
+        <span>{{ t('balance.remainder') }}: <b class="sum-val">{{ lastQty }}</b></span>
+        <span>{{ t('balance.min') }}: {{ minQty }}</span>
+        <span>{{ t('balance.max') }}: {{ maxQty }}</span>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <div v-else class="chart-wrap">
       <ClientOnly>
         <div v-if="visible.length" ref="chartEl" class="chart"></div>
         <template v-else>
-          <div class="empty">Нет данных</div>
+          <div class="empty">{{ t('balance.no_data') }}</div>
         </template>
       </ClientOnly>
     </div>
@@ -47,12 +47,13 @@ const props = defineProps<{
 }>()
 
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 
 const ranges = [
-  { label: 'День', value: 'day' },
-  { label: 'Месяц', value: 'month' },
-  { label: 'Год', value: 'year' },
-  { label: 'Всё время', value: 'all' },
+  { label: t('balance.day'), value: 'day' },
+  { label: t('balance.month'), value: 'month' },
+  { label: t('balance.year'), value: 'year' },
+  { label: t('balance.all_time'), value: 'all' },
 ]
 
 const period = ref<string>('year')
@@ -132,7 +133,7 @@ function buildOption(): any {
       backgroundColor: '#2a2a2e',
       borderColor: '#3a3a3e',
       textStyle: { color: '#ccc', fontSize: 13 },
-      valueFormatter: (v: number | null) => (v == null ? '' : `${Math.round(v)} шт.`),
+      valueFormatter: (v: number | null) => (v == null ? '' : `${Math.round(v)} ${t('units.pcs')}`),
       axisPointer: { lineStyle: { color: '#555' } },
     },
     xAxis: {
@@ -152,7 +153,7 @@ function buildOption(): any {
     },
     series: [
       {
-        name: 'Остаток',
+        name: t('balance.remainder_word'),
         type: 'line',
         step: 'end',
         data,

@@ -8,6 +8,9 @@ import type { $Fetch } from 'ofetch'
  */
 export type OperationMode = 'search' | 'replenish' | 'writeoff'
 
+/** Язык интерфейса и сообщений. Русский по умолчанию. */
+export type Locale = 'ru' | 'en'
+
 export type OptionResponse = {
   /**
    * Ключи пунктов меню в порядке пользователя, верхнего уровня и вложенные
@@ -17,6 +20,8 @@ export type OptionResponse = {
   /** Ключи пунктов, которые человек спрятал. */
   menu_hidden: string[]
   operation_mode: OperationMode
+  /** Язык интерфейса и сообщений: по нему сервер отвечает на русском или на английском. */
+  locale: Locale
   /** Показывать ли блок ввода кода внизу страниц. */
   show_code_block: boolean
   /**

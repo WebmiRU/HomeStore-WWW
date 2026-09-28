@@ -53,15 +53,20 @@ export function useStoreSelectOptions(stores: StoreResponse[], keepId: number | 
   // Текущее хранилище предмета — видно, даже если права create нет.
   walk(roots, 0)
 
+  // Хранилище верхнего уровня лежит вне склада — это не ошибка данных, а
+  // норма, поэтому подпись «Без склада» берём из словаря.
+  const { t } = useI18n()
+  const withoutWarehouse = t('item_card.no_warehouse')
+
   const labelById = new Map<number, string>(
-    stores.map((s) => [s.id, s.warehouse?.title ?? 'Без склада'])
+    stores.map((s) => [s.id, s.warehouse?.title ?? withoutWarehouse])
   )
 
   const order: string[] = []
   const groups = new Map<string, StoreSelectOption[]>()
 
   for (const opt of flat) {
-    const label = labelById.get(opt.id) ?? 'Без склада'
+    const label = labelById.get(opt.id) ?? withoutWarehouse
     if (!groups.has(label)) {
       groups.set(label, [])
       order.push(label)

@@ -1,6 +1,6 @@
 <template>
   <div class="chart-box" :style="{ minHeight: `${props.height + 40}px` }">
-    <div v-if="!series.length" class="empty">Нет данных за выбранный период</div>
+    <div v-if="!series.length" class="empty">{{ t('audit_chart.no_data') }}</div>
     <ClientOnly>
       <div v-if="series.length" ref="chartEl" class="chart" :style="{ height: `${props.height}px` }"></div>
     </ClientOnly>
@@ -28,7 +28,11 @@ const GRAFANA_COLORS = [
   '#447EBC', '#C15C17', '#F4D598', '#F29191', '#AEA2E0',
 ]
 
-const TOTAL_NAME = 'Всего'
+const { t } = useI18n()
+
+// computed, а не константа: язык приезжает из настроек после монтирования, и
+// зафиксированная при setup подпись осталась бы русской.
+const totalName = computed(() => t('audit_chart.total'))
 const ROTATE_AFTER = 16
 const ZOOM_AFTER = 40
 
@@ -71,8 +75,8 @@ const series = computed(() => {
     const source = isRest ? rest : [k]
     const data = bs.map((_, i) => source.reduce((s, r) => s + (byKey[r]?.[i] ?? 0), 0))
     const name = isRest
-      ? 'Прочее'
-      : (props.labels[k] ?? (k || 'Без категории'))
+      ? t('audit_chart.other')
+      : (props.labels[k] ?? (k || t('audit_chart.no_category')))
     return { key: k, name, data, total: totals[k] }
   })
 })
@@ -110,7 +114,7 @@ function buildOption(): any {
   }))
 
   const totalLine = {
-    name: TOTAL_NAME,
+    name: totalName.value,
     type: 'line',
     data: totalByBucket.value,
     symbol: 'none',
@@ -135,11 +139,11 @@ function buildOption(): any {
       formatter: (params: any[]) => {
         if (!params || !params.length) return ''
         const rows = params
-          .filter((p) => p.seriesName !== TOTAL_NAME)
+          .filter((p) => p.seriesName !== totalName.value)
           .map((p) => `${p.marker} ${p.seriesName}: <b style="color:#fff">${p.value ?? 0}</b>`)
           .join('<br/>')
         const total = params.reduce((s, p) => s + (Number(p.value) || 0), 0)
-        return `<b style="color:#eee">${formatBucket(params[0].axisValue)}</b><br/>${rows}<div style="border-top:1px solid #3a3a3a;margin:4px 0 2px;padding-top:3px">Итого: <b style="color:#fff">${total}</b></div>`
+        return `<b style="color:#eee">${formatBucket(params[0].axisValue)}</b><br/>${rows}<div style="border-top:1px solid #3a3a3a;margin:4px 0 2px;padding-top:3px">${t('audit_chart.total')}: <b style="color:#fff">${total}</b></div>`
       },
     },
     legend: {
@@ -215,7 +219,9 @@ function onResize() {
   chart?.resize()
 }
 
-watch(() => props.points, () => render())
+// Язык в источнике: подписи легенды и «Итого» приходят из словаря, и без
+// перерисовки смены языка на графике не было бы видно.
+watch([() => props.points, totalName], () => render())
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
