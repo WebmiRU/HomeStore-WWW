@@ -24,6 +24,8 @@ export type VendorResponse = {
   /** Размеры логотипа: нужны, чтобы не предлагать увеличенные варианты. */
   logo_width: number | null
   logo_height: number | null
+  /** Пределы миниатюр логотипа: см. ImageResponse.thumbs. */
+  logo_thumbs: { cover: number; contain: number } | null
   created_at: string
   updated_at: string
 }

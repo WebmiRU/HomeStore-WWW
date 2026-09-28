@@ -113,6 +113,7 @@ const form = reactive({
 
 const currentAvatarWidth = ref<number | null>(null)
 const currentAvatarHeight = ref<number | null>(null)
+const currentAvatarThumbs = ref<{ cover: number; contain: number } | null>(null)
 
 const previewUser = computed<UserProfileResponse>(() => ({
   id,
@@ -122,6 +123,7 @@ const previewUser = computed<UserProfileResponse>(() => ({
   avatar_sha: currentAvatarSha.value,
   avatar_width: currentAvatarWidth.value,
   avatar_height: currentAvatarHeight.value,
+  avatar_thumbs: currentAvatarThumbs.value,
   created_at: '',
   updated_at: '',
 }))
@@ -137,6 +139,7 @@ async function load() {
     currentAvatarSha.value = user.avatar_sha ?? null
     currentAvatarWidth.value = user.avatar_width ?? null
     currentAvatarHeight.value = user.avatar_height ?? null
+    currentAvatarThumbs.value = user.avatar_thumbs ?? null
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
   } finally {
@@ -156,6 +159,7 @@ async function save() {
     currentAvatarSha.value = updated.avatar_sha ?? null
     currentAvatarWidth.value = updated.avatar_width ?? null
     currentAvatarHeight.value = updated.avatar_height ?? null
+    currentAvatarThumbs.value = updated.avatar_thumbs ?? null
     if (isMe.value) {
       setProfile(updated)
     }
@@ -180,6 +184,7 @@ async function onAvatarChange(event: Event) {
     currentAvatarSha.value = updated.avatar_sha ?? null
     currentAvatarWidth.value = updated.avatar_width ?? null
     currentAvatarHeight.value = updated.avatar_height ?? null
+    currentAvatarThumbs.value = updated.avatar_thumbs ?? null
     if (isMe.value) {
       setProfile(updated)
     }

@@ -13,8 +13,10 @@
           <div class="logo-block">
             <VendorLogo
               :logo-sha="logoSha"
+              :logo-url="logoUrl"
               :logo-width="logoWidth"
               :logo-height="logoHeight"
+              :logo-thumbs="logoThumbs"
               :title="form.title || t('vendors.one')"
               :size="120"
             />
@@ -94,9 +96,11 @@ const logoInput = ref<HTMLInputElement | null>(null)
 // по нему и браузер, и компонент логотипа берут миниатюру; оригинал в
 // интерфейсе не используется.
 const logoSha = ref<string | null>(null)
+const logoUrl = ref<string | null>(null)
 /** Размеры логотипа: без них srcset предложил бы увеличенные варианты. */
 const logoWidth = ref<number | null>(null)
 const logoHeight = ref<number | null>(null)
+const logoThumbs = ref<{ cover: number; contain: number } | null>(null)
 
 const hasLogo = computed(() => Boolean(logoSha.value))
 
@@ -117,8 +121,10 @@ const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'
 
 function applyLogo(vendor: { logo_sha: string | null }) {
   logoSha.value = vendor.logo_sha ?? null
+  logoUrl.value = vendor.logo_url ?? null
   logoWidth.value = vendor.logo_width ?? null
   logoHeight.value = vendor.logo_height ?? null
+  logoThumbs.value = vendor.logo_thumbs ?? null
 }
 
 async function load() {

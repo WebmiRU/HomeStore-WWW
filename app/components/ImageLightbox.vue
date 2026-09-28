@@ -17,7 +17,7 @@
           v-if="src"
           :src="src"
           :srcset="srcset"
-          sizes="min(800px, calc(100vw - 60px))"
+          :sizes="sizes"
           :alt="current?.alt ?? ''"
           :class="{ 'lightbox__img--loading': loading }"
           class="lightbox__img"
@@ -51,6 +51,8 @@ type LightboxImage = {
   /** Размеры оригинала: по ним варианты режутся, чтобы не предлагать лишнее. */
   width?: number | null
   height?: number | null
+  /** Пределы миниатюр, посчитанные сервером: см. ImageResponse.thumbs. */
+  thumbs?: { cover: number; contain: number } | null
 }
 
 const { t } = useI18n()
@@ -67,7 +69,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ close: [] }>()
 
-const { thumbUrlFor, thumbSrcset } = useThumbnail()
+const { thumbUrlFor, thumbVariants } = useThumbnail()
 
 /**
  * Предел кадра в css-пикселях: ровно тот, что задан в стилях (min(800px,
@@ -113,7 +115,18 @@ const candidates = computed<string[]>(() => {
   return [...new Set(urls)].filter((url) => url !== '')
 })
 
-const srcset = computed<string>(() => thumbSrcset(current.value, MAX_DISPLAY, 'contain'))
+/**
+ * Варианты, размер и обещание ширины — одним куском.
+ *
+ * Снимок 473×162 не станет полноэкранным: в sizes обещание ограничено тем,
+ * что реально есть, иначе браузер растянет оригинал до 800 и получится мыло.
+ */
+const variants = computed(() =>
+  thumbVariants(current.value, MAX_DISPLAY, 'contain', current.value?.url ?? null, 'min(800px, calc(100vw - 60px))'),
+)
+
+const srcset = computed<string>(() => variants.value.srcset)
+const sizes = computed<string>(() => variants.value.sizes)
 
 const attempt = ref(0)
 const src = computed<string | null>(() => (failed.value ? null : (candidates.value[attempt.value] ?? null)))

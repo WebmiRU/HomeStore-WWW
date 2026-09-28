@@ -63,9 +63,9 @@
               <div class="thumb-wrap">
                 <span v-if="!loadedIds.has(img.id)" class="thumb-spinner" aria-hidden="true" />
                 <img
-                  :src="thumbSrc(img)"
-                  :srcset="thumbSet(img)"
-                  sizes="80px"
+                  :src="variantsOf(img).src"
+                  :srcset="variantsOf(img).srcset"
+                  :sizes="variantsOf(img).sizes"
                   :class="{ 'thumb--loading': !loadedIds.has(img.id) }"
                   :alt="img.alt ?? ''"
                   loading="lazy"
@@ -123,7 +123,7 @@ const emit = defineEmits<{
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
-const { thumbUrlFor, thumbSrcset } = useThumbnail()
+const { thumbVariants } = useThumbnail()
 
 /**
  * Методы по типу сущности.
@@ -160,12 +160,12 @@ const methods = computed(() => METHODS[props.entity])
 // Retina. Логотип в списке и фото здесь вписываются, а не режутся.
 const THUMB_SIZE = 80
 
-function thumbSrc(img: ImageResponse): string {
-  return thumbUrlFor(img, THUMB_SIZE, 'contain', img.url) ?? img.url
-}
-
-function thumbSet(img: ImageResponse): string {
-  return thumbSrcset(img, THUMB_SIZE, 'contain')
+/**
+ * Три атрибута считаются вместе: если sizes пообещает браузеру больше, чем
+ * есть в файлах, он растянет маленький оригинал до этого размера.
+ */
+function variantsOf(img: ImageResponse) {
+  return thumbVariants(img, THUMB_SIZE, 'contain', img.url)
 }
 
 const loadedIds = ref<Set<number>>(new Set())

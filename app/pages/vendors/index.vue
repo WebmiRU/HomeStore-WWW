@@ -29,8 +29,10 @@
               <VendorLogo
                 :size="38"
                 :logo-sha="m.logo_sha"
+                :logo-url="m.logo_url"
                 :logo-width="m.logo_width"
                 :logo-height="m.logo_height"
+                :logo-thumbs="m.logo_thumbs"
                 :title="m.title"
                 lightbox
               />

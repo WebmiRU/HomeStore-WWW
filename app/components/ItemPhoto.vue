@@ -18,9 +18,9 @@
     <img
       class="item-photo"
       :class="{ 'item-photo--loading': loading }"
-      :src="src"
-      :srcset="srcset"
-      :sizes="`${cssSize}px`"
+      :src="variants.src"
+      :srcset="variants.srcset"
+      :sizes="variants.sizes"
       :alt="alt ?? ''"
       loading="lazy"
       @load="onLoad"
@@ -53,7 +53,7 @@ const props = defineProps<{
   lightbox?: boolean
 }>()
 
-const { thumbUrlFor, thumbSrcset } = useThumbnail()
+const { thumbUrlFor, thumbVariants } = useThumbnail()
 
 /**
  * Без явного размера фото занимает 84px — столько оно и рисуется.
@@ -87,13 +87,13 @@ const attempt = ref(0)
 const viewerOpen = ref(false)
 
 /** Просмотр крупным кадром. Список фото целиком: их может быть несколько. */
-const lightboxImages = computed(() =>
-  (props.images ?? []).map((image) => ({
-    url: image.url,
-    sha256: image.sha256,
-    alt: image.alt,
-  })),
-)
+/**
+ * В модалку уходит та же картинка, что и в списке, целиком: размеры и пределы
+ * нужны и там. Раньше объект пересобирался из трёх полей, и модалка решала,
+ * какие размеры доступны, вслепую — предлагала 800, 1200 и 1600 даже там, где
+ * оригинал мельче.
+ */
+const lightboxImages = computed(() => props.images ?? [])
 
 function openViewer() {
   if (!props.lightbox) return
@@ -122,7 +122,13 @@ const candidates = computed<string[]>(() => {
  * Сколько именно пикселей достанется картинке — его дело, а не наше: список
  * предметов на обычном мониторе берёт 38×38, на ретине — 76×76.
  */
-const srcset = computed<string>(() => thumbSrcset(first.value, cssSize.value, 'cover'))
+/**
+ * Размер, srcset и src считаются одним куском: обещание в sizes не должно
+ * превышать того, что есть в файлах, иначе браузер растянет картинку.
+ */
+const variants = computed(() =>
+  thumbVariants(first.value, cssSize.value, 'cover', first.value?.url ?? null),
+)
 
 const src = computed<string | null>(() => candidates.value[attempt.value] ?? null)
 

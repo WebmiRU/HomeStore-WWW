@@ -15,9 +15,9 @@
     <span v-if="src && loading" class="m-logo__spinner" aria-hidden="true" />
     <img
       v-if="src"
-      :src="src"
-      :srcset="srcset"
-      :sizes="`${size}px`"
+      :src="variants.src"
+      :srcset="variants.srcset"
+      :sizes="variants.sizes"
       :alt="title || t('list_common.logo')""
       :class="{ 'm-logo__img--loading': loading }"
       class="m-logo__img"
@@ -37,8 +37,10 @@ const { t } = useI18n()
 const props = withDefaults(
   defineProps<{
     logoSha?: string | null
+    logoUrl?: string | null
     logoWidth?: number | null
     logoHeight?: number | null
+    logoThumbs?: { cover: number; contain: number } | null
     title?: string | null
     size?: number
     /**
@@ -54,14 +56,23 @@ const props = withDefaults(
   },
 )
 
-const { thumbUrlFor, thumbSrcset } = useThumbnail()
+const { thumbVariants } = useThumbnail()
 
 const logoSource = computed<ThumbSource | null>(() =>
-  props.logoSha ? { sha256: props.logoSha, width: props.logoWidth, height: props.logoHeight } : null,
+  props.logoSha
+    ? {
+        sha256: props.logoSha,
+        width: props.logoWidth,
+        height: props.logoHeight,
+        thumbs: props.logoThumbs ?? null,
+      }
+    : null,
 )
 
 /** Всегда с вписыванием: логотип обрезать нельзя, срезались бы края. */
-const srcset = computed<string>(() => thumbSrcset(logoSource.value, props.size, 'contain'))
+const variants = computed(() =>
+  thumbVariants(logoSource.value, props.size, 'contain', props.logoUrl ?? null),
+)
 
 /**
  * Сколько ждать миниатюру, прежде чем перестать ждать.
@@ -85,6 +96,7 @@ const lightboxImages = computed(() =>
           sha256: props.logoSha,
           width: props.logoWidth,
           height: props.logoHeight,
+          thumbs: props.logoThumbs ?? null,
           alt: props.title
             ? t('vendor_logo.alt_with_title', { title: props.title })
             : t('list_common.logo'),
@@ -102,11 +114,7 @@ const lightboxImages = computed(() =>
  * экране всё равно ужимается браузером. Если миниатюры нет — показываем
  * первую букву названия, это честнее битой картинки.
  */
-const src = computed<string | null>(() => {
-  if (failed.value) return null
-
-  return thumbUrlFor(logoSource.value, props.size, 'contain')
-})
+const src = computed<string | null>(() => (failed.value ? null : variants.value.src))
 
 /**
  * Кнопка-просмотр — только когда есть что показывать.

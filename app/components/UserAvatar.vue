@@ -14,9 +14,9 @@
   >
     <img
       v-if="src"
-      :src="src"
-      :srcset="srcset"
-      :sizes="`${size}px`"
+      :src="variants.src"
+      :srcset="variants.srcset"
+      :sizes="variants.sizes"
       :alt="user.name ?? t('user_avatar.default_name')"
       class="avatar__img"
       @error="onError"
@@ -38,8 +38,10 @@ const props = withDefaults(
       name?: string | null
       avatar_url?: string | null
       avatar_sha?: string | null
+      avatar_url?: string | null
       avatar_width?: number | null
       avatar_height?: number | null
+      avatar_thumbs?: { cover: number; contain: number } | null
     } | null
     size?: number
     /** Открывать ли аватар по клику в просмотре крупным кадром. */
@@ -48,7 +50,7 @@ const props = withDefaults(
   { size: 56 }
 )
 
-const { thumbUrlFor, thumbSrcset } = useThumbnail()
+const { thumbVariants } = useThumbnail()
 
 /**
  * Аватар показывается и 40px в списке людей, и 120px в карточке, поэтому
@@ -57,11 +59,18 @@ const { thumbUrlFor, thumbSrcset } = useThumbnail()
  */
 const avatarSource = computed<ThumbSource | null>(() =>
   props.user?.avatar_sha
-    ? { sha256: props.user.avatar_sha, width: props.user.avatar_width, height: props.user.avatar_height }
+    ? {
+        sha256: props.user.avatar_sha,
+        width: props.user.avatar_width,
+        height: props.user.avatar_height,
+        thumbs: props.user.avatar_thumbs ?? null,
+      }
     : null,
 )
 
-const srcset = computed<string>(() => thumbSrcset(avatarSource.value, props.size, 'cover'))
+const variants = computed(() =>
+  thumbVariants(avatarSource.value, props.size, 'cover', props.user?.avatar_url ?? null),
+)
 
 const failed = ref(false)
 const viewerOpen = ref(false)
@@ -75,6 +84,7 @@ const lightboxImages = computed(() =>
           sha256: props.user?.avatar_sha,
           width: props.user?.avatar_width,
           height: props.user?.avatar_height,
+          thumbs: props.user?.avatar_thumbs ?? null,
           alt: props.user?.name ?? t('user_avatar.default_title'),
         },
       ]
@@ -103,11 +113,7 @@ watch(
   }
 )
 
-const src = computed(() => {
-  if (failed.value) return props.user?.avatar_url ?? ''
-
-  return thumbUrlFor(avatarSource.value, props.size, 'cover', props.user?.avatar_url ?? null) ?? ''
-})
+const src = computed(() => (failed.value ? props.user?.avatar_url ?? '' : variants.value.src ?? ''))
 
 function onError() {
   failed.value = true

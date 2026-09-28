@@ -16,6 +16,13 @@ export type ImageResponse = {
   height: number | null
   /** Вес оригинала в байтах. */
   size: number | null
+  /**
+   * Наибольшая сторона миниатюры по обрезке, которую ещё можно получить из
+   * оригинала без увеличения. Считает сервер: клиент не должен угадывать, что
+   * можно, а что нельзя, — он берёт ступени не выше этих чисел, а где ступени
+   * не хватает, подставляет оригинал.
+   */
+  thumbs: { cover: number; contain: number } | null
   alt: string | null
   weight: number | null
   created_at: string | null
