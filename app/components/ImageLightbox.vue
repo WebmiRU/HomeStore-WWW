@@ -16,6 +16,8 @@
         <img
           v-if="src"
           :src="src"
+          :srcset="srcset"
+          sizes="min(800px, calc(100vw - 60px))"
           :alt="current?.alt ?? ''"
           :class="{ 'lightbox__img--loading': loading }"
           class="lightbox__img"
@@ -46,6 +48,9 @@ type LightboxImage = {
   url?: string | null
   sha256?: string | null
   alt?: string | null
+  /** Размеры оригинала: по ним варианты режутся, чтобы не предлагать лишнее. */
+  width?: number | null
+  height?: number | null
 }
 
 const { t } = useI18n()
@@ -54,18 +59,23 @@ const props = withDefaults(
     images: LightboxImage[]
     // С какой картинки открывать.
     index?: number
-    // Ключ миниатюры из каталога thumbnail.
-    thumbKey?: string
   }>(),
   {
     index: 0,
-    thumbKey: '800x800_contain',
   },
 )
 
 const emit = defineEmits<{ close: [] }>()
 
-const { thumbUrl } = useThumbnail()
+const { thumbUrlFor, thumbSrcset } = useThumbnail()
+
+/**
+ * Предел кадра в css-пикселях: ровно тот, что задан в стилях (min(800px,
+ * calc(100vw - 60px))). Варианты в srcset строятся под него, а sizes отдаёт
+ * браузеру ту же формулу: на узком окне он возьмёт вариант поменьше, и
+ * считать это вручную на каждый resize незачем.
+ */
+const MAX_DISPLAY = 800
 
 /**
  * Сколько ждать превью, прежде чем признать его неудачным.
@@ -97,10 +107,13 @@ const current = computed<LightboxImage | null>(() => props.images[index.value] ?
 const candidates = computed<string[]>(() => {
   const image = current.value
   if (image === null) return []
-  const thumb = thumbUrl(image.sha256, props.thumbKey)
-  const urls = [thumb, image.url ?? '']
+
+  const urls = [thumbUrlFor(image, MAX_DISPLAY, 'contain', image.url), image.url ?? '']
+
   return [...new Set(urls)].filter((url) => url !== '')
 })
+
+const srcset = computed<string>(() => thumbSrcset(current.value, MAX_DISPLAY, 'contain'))
 
 const attempt = ref(0)
 const src = computed<string | null>(() => (failed.value ? null : (candidates.value[attempt.value] ?? null)))

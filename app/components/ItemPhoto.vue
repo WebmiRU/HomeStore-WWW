@@ -19,6 +19,8 @@
       class="item-photo"
       :class="{ 'item-photo--loading': loading }"
       :src="src"
+      :srcset="srcset"
+      :sizes="`${cssSize}px`"
       :alt="alt ?? ''"
       loading="lazy"
       @load="onLoad"
@@ -51,16 +53,19 @@ const props = defineProps<{
   lightbox?: boolean
 }>()
 
-const { thumbUrl, thumbKeyFor } = useThumbnail()
+const { thumbUrlFor, thumbSrcset } = useThumbnail()
 
 /**
- * Без явного размера фото занимает 84px, а на узком экране 56px — берём по
- * первому: 200×200 на ретине хватает и там, и там, а 100×100 на 84 было бы
- * мылом.
+ * Без явного размера фото занимает 84px — столько оно и рисуется.
+ *
+ * Размер подсказывает, какие варианты класть в srcset; выбирает из них
+ * браузер по своему экрану. Поэтому он должен быть равен ширине элемента в
+ * css-пикселях, а не округлённому «на глаз» числу: при 40 вместо 38 лестница
+ * брала следующую ступень и клала в список файл больше нужного.
  */
 const DEFAULT_SIZE = 84
 
-const thumbKey = computed(() => thumbKeyFor(props.size ?? DEFAULT_SIZE))
+const cssSize = computed(() => props.size ?? DEFAULT_SIZE)
 
 /**
  * Сколько ждать картинку, прежде чем перестать ждать.
@@ -107,8 +112,17 @@ const first = computed<ImageResponse | null>(() => (props.images ?? [])[0] ?? nu
 const candidates = computed<string[]>(() => {
   const img = first.value
   if (!img) return []
-  return [...new Set([thumbUrl(img.sha256, thumbKey.value) ?? img.url, img.url])]
+  return [...new Set([thumbUrlFor(img, cssSize.value, 'cover', img.url) ?? '', img.url ?? ''])].filter(
+    (url) => url !== '',
+  )
 })
+
+/**
+ * Три варианта по ширине, которую браузер сам сопоставит со своим экраном.
+ * Сколько именно пикселей достанется картинке — его дело, а не наше: список
+ * предметов на обычном мониторе берёт 38×38, на ретине — 76×76.
+ */
+const srcset = computed<string>(() => thumbSrcset(first.value, cssSize.value, 'cover'))
 
 const src = computed<string | null>(() => candidates.value[attempt.value] ?? null)
 

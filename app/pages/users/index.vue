@@ -24,7 +24,7 @@
           <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}`)">
             <td data-label="ID">{{ u.id }}</td>
             <td :data-label="t('team.avatar')" class="img-col">
-              <UserAvatar :user="u" :size="40" lightbox />
+              <UserAvatar :user="u" :size="38" lightbox />
             </td>
             <td :data-label="t('common.name')">{{ u.name }}</td>
             <td data-label="E-mail">{{ u.email }}</td>

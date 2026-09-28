@@ -7,6 +7,15 @@ export type ImageResponse = {
   sha256: string | null
   original_name: string | null
   mime: string | null
+  /**
+   * Размеры оригинала в пикселях: по ним клиент кладёт в srcset только те
+   * варианты, которые не пришлось бы увеличивать, — браузер узнал бы об
+   * этом лишь после загрузки, то есть уже заплатив лишние байты.
+   */
+  width: number | null
+  height: number | null
+  /** Вес оригинала в байтах. */
+  size: number | null
   alt: string | null
   weight: number | null
   created_at: string | null
@@ -46,6 +55,14 @@ class ImageModule extends FetchFactory<any> {
     return this.unwrapUpload(result)
   }
 
+  /** Фото склада: снимок с парковки, по которому склад узнают. */
+  async uploadForWarehouse(warehouseId: number, file: File): Promise<ImageUploadResult> {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await this.call('POST', `${this.baseUrl}/warehouse/${warehouseId}`, form)
+    return this.unwrapUpload(result)
+  }
+
   private unwrapUpload(result: any): ImageUploadResult {
     return {
       image: ((result as any)?.data ?? result) as ImageResponse,
@@ -66,6 +83,12 @@ class ImageModule extends FetchFactory<any> {
     return unwrapped as ImageResponse
   }
 
+  async updateAltForWarehouse(warehouseId: number, imageId: number, alt: string | null): Promise<ImageResponse> {
+    const result = await this.call('PATCH', `${this.baseUrl}/warehouse/${warehouseId}/image/${imageId}/alt`, { alt })
+    const unwrapped = (result as any)?.data ?? result
+    return unwrapped as ImageResponse
+  }
+
   async reorderForItem(itemId: number, ids: number[]): Promise<void> {
     await this.call('POST', `${this.baseUrl}/item/${itemId}/image/reorder`, { ids })
   }
@@ -74,12 +97,20 @@ class ImageModule extends FetchFactory<any> {
     await this.call('POST', `${this.baseUrl}/store/${storeId}/image/reorder`, { ids })
   }
 
+  async reorderForWarehouse(warehouseId: number, ids: number[]): Promise<void> {
+    await this.call('POST', `${this.baseUrl}/warehouse/${warehouseId}/image/reorder`, { ids })
+  }
+
   async deleteForItem(itemId: number, imageId: number): Promise<void> {
     await this.call('DELETE', `${this.baseUrl}/item/${itemId}/image/${imageId}`)
   }
 
   async deleteForStore(storeId: number, imageId: number): Promise<void> {
     await this.call('DELETE', `${this.baseUrl}/store/${storeId}/image/${imageId}`)
+  }
+
+  async deleteForWarehouse(warehouseId: number, imageId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/warehouse/${warehouseId}/image/${imageId}`)
   }
 }
 

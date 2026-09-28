@@ -11,6 +11,9 @@ export type UserProfileResponse = {
    * грузить оригинал целиком.
    */
   avatar_sha: string | null
+  /** Размеры аватара: нужны, чтобы не предлагать увеличенные варианты. */
+  avatar_width: number | null
+  avatar_height: number | null
   created_at: string
   updated_at: string
 }

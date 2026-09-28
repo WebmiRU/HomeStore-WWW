@@ -26,7 +26,14 @@
             @dblclick="openRow($event, `/vendors/${m.id}`)"
           >
             <td :data-label="t('list_common.logo')" class="cell-logo">
-              <VendorLogo :logo-sha="m.logo_sha" :title="m.title" lightbox />
+              <VendorLogo
+                :size="38"
+                :logo-sha="m.logo_sha"
+                :logo-width="m.logo_width"
+                :logo-height="m.logo_height"
+                :title="m.title"
+                lightbox
+              />
             </td>
             <td :data-label="t('vendors.title')">{{ m.title }}</td>
             <!-- Описание в списке обрезаем: в таблице ему место в одну строку,

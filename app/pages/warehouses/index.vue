@@ -13,6 +13,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th class="img-col">{{ t('list_common.photo') }}</th>
             <th>{{ t('common.title') }}</th>
             <th>{{ t('common.created') }}</th>
             <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
@@ -22,6 +23,9 @@
         <tbody>
           <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}`)">
             <td data-label="ID">{{ w.id }}</td>
+            <td class="img-col">
+              <ItemPhoto :images="w.images" :alt="w.title" :size="38" lightbox />
+            </td>
             <td :data-label="t('common.title')">{{ w.title }}</td>
             <td :data-label="t('common.created')">{{ formatDate(w.created_at) }}</td>
             <td v-if="showOwnerColumn" :data-label="t('common.owner')">

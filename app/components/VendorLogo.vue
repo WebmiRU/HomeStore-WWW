@@ -16,6 +16,8 @@
     <img
       v-if="src"
       :src="src"
+      :srcset="srcset"
+      :sizes="`${size}px`"
       :alt="title || t('list_common.logo')""
       :class="{ 'm-logo__img--loading': loading }"
       class="m-logo__img"
@@ -35,9 +37,10 @@ const { t } = useI18n()
 const props = withDefaults(
   defineProps<{
     logoSha?: string | null
+    logoWidth?: number | null
+    logoHeight?: number | null
     title?: string | null
     size?: number
-    thumbKey?: string
     /**
      * Открывать ли логотип по клику в просмотре крупным кадром. Включается в
      * индексных таблицах, где логотип стоит в строке списка.
@@ -51,10 +54,14 @@ const props = withDefaults(
   },
 )
 
-const { thumbUrl, thumbKeyFor } = useThumbnail()
+const { thumbUrlFor, thumbSrcset } = useThumbnail()
 
-/** Ключ по размеру, но всегда с вписыванием: логотип обрезать нельзя. */
-const thumbKey = computed(() => props.thumbKey ?? thumbKeyFor(props.size, 'contain'))
+const logoSource = computed<ThumbSource | null>(() =>
+  props.logoSha ? { sha256: props.logoSha, width: props.logoWidth, height: props.logoHeight } : null,
+)
+
+/** Всегда с вписыванием: логотип обрезать нельзя, срезались бы края. */
+const srcset = computed<string>(() => thumbSrcset(logoSource.value, props.size, 'contain'))
 
 /**
  * Сколько ждать миниатюру, прежде чем перестать ждать.
@@ -73,7 +80,16 @@ const viewerOpen = ref(false)
 /** Просмотр: у логотипа он один, счётчика и стрелок в окне не будет. */
 const lightboxImages = computed(() =>
   props.logoSha
-    ? [{ sha256: props.logoSha, alt: props.title ? t('vendor_logo.alt_with_title', { title: props.title }) : t('list_common.logo') }]
+    ? [
+        {
+          sha256: props.logoSha,
+          width: props.logoWidth,
+          height: props.logoHeight,
+          alt: props.title
+            ? t('vendor_logo.alt_with_title', { title: props.title })
+            : t('list_common.logo'),
+        },
+      ]
     : [],
 )
 
@@ -89,7 +105,7 @@ const lightboxImages = computed(() =>
 const src = computed<string | null>(() => {
   if (failed.value) return null
 
-  return thumbUrl(props.logoSha, thumbKey.value)
+  return thumbUrlFor(logoSource.value, props.size, 'contain')
 })
 
 /**

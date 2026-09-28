@@ -2,6 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { AccessRight } from './access'
 import type { UserProfileResponse } from './userProfile'
+import type { ImageResponse } from './image'
 import type { ContentsNode } from './store'
 
 export type WarehouseResponse = {
@@ -12,6 +13,8 @@ export type WarehouseResponse = {
   is_owner: boolean
   can_create: boolean
   user?: UserProfileResponse | null
+  /** Фотографии склада: снимок с парковки, по которому склад узнают. */
+  images?: ImageResponse[]
   created_at: string
   updated_at: string
 }

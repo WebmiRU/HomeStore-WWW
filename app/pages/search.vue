@@ -52,7 +52,7 @@
                    предмет. При этом она всё равно много компактнее прежних
                    84px по умолчанию — те растягивали строку и съедали
                    «Название». -->
-              <ItemPhoto :images="r.payload.images" :alt="r.payload.title" :size="72" lightbox />
+              <ItemPhoto :images="r.payload.images" :alt="r.payload.title" :size="70" lightbox />
             </td>
             <td :data-label="t('search.type')">
               <span v-if="r.type === 'item'" class="type-badge type-item">{{ t('search.type_item') }}</span>

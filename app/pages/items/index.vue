@@ -75,7 +75,7 @@
             </td>
             <td data-label="ID">{{ item.payload.id }}</td>
             <td class="img-col">
-              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="40" lightbox />
+              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="38" lightbox />
             </td>
             <td :data-label="t('items.title')">{{ item.payload.title }}</td>
             <td :data-label="t('items.vendor')">

@@ -64,6 +64,8 @@
                 <span v-if="!loadedIds.has(img.id)" class="thumb-spinner" aria-hidden="true" />
                 <img
                   :src="thumbSrc(img)"
+                  :srcset="thumbSet(img)"
+                  sizes="80px"
                   :class="{ 'thumb--loading': !loadedIds.has(img.id) }"
                   :alt="img.alt ?? ''"
                   loading="lazy"
@@ -107,7 +109,7 @@ import { ref, computed, watch } from 'vue'
 import type { ImageResponse } from '~/repository/modules/image'
 
 const props = withDefaults(defineProps<{
-  entity: 'item' | 'store'
+  entity: 'item' | 'store' | 'warehouse'
   entityId: number
   modelValue: ImageResponse[]
   readonly?: boolean
@@ -121,12 +123,49 @@ const emit = defineEmits<{
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
-const { thumbUrl } = useThumbnail()
+const { thumbUrlFor, thumbSrcset } = useThumbnail()
 
-const THUMB_KEY = '100x100_contain'
+/**
+ * Методы по типу сущности.
+ *
+ * Раньше здесь стояли троичные условия «предмет, иначе хранилище», и склад
+ * пришлось бы дописывать в каждом из них. Карта выросла на одну строку вместе
+ * с числом сущностей.
+ */
+const METHODS = {
+  item: {
+    upload: (id: number, file: File) => $api.image.uploadForItem(id, file),
+    remove: (id: number, imageId: number) => $api.image.deleteForItem(id, imageId),
+    saveAlt: (id: number, imageId: number, alt: string | null) => $api.image.updateAltForItem(id, imageId, alt),
+    reorder: (id: number, ids: number[]) => $api.image.reorderForItem(id, ids),
+  },
+  store: {
+    upload: (id: number, file: File) => $api.image.uploadForStore(id, file),
+    remove: (id: number, imageId: number) => $api.image.deleteForStore(id, imageId),
+    saveAlt: (id: number, imageId: number, alt: string | null) => $api.image.updateAltForStore(id, imageId, alt),
+    reorder: (id: number, ids: number[]) => $api.image.reorderForStore(id, ids),
+  },
+  warehouse: {
+    upload: (id: number, file: File) => $api.image.uploadForWarehouse(id, file),
+    remove: (id: number, imageId: number) => $api.image.deleteForWarehouse(id, imageId),
+    saveAlt: (id: number, imageId: number, alt: string | null) => $api.image.updateAltForWarehouse(id, imageId, alt),
+    reorder: (id: number, ids: number[]) => $api.image.reorderForWarehouse(id, ids),
+  },
+} as const
+
+const methods = computed(() => METHODS[props.entity])
+
+// Ячейка занимает 80×60 css-пикселей. Дальше браузер сам возьмёт из трёх
+// вариантов тот, который нужен его экрану: 80 на обычном, 120 на 1.5×, 160 на
+// Retina. Логотип в списке и фото здесь вписываются, а не режутся.
+const THUMB_SIZE = 80
 
 function thumbSrc(img: ImageResponse): string {
-  return thumbUrl(img.sha256, THUMB_KEY) ?? img.url
+  return thumbUrlFor(img, THUMB_SIZE, 'contain', img.url) ?? img.url
+}
+
+function thumbSet(img: ImageResponse): string {
+  return thumbSrcset(img, THUMB_SIZE, 'contain')
 }
 
 const loadedIds = ref<Set<number>>(new Set())
@@ -187,11 +226,7 @@ async function persistOrder() {
   const ids = sortedImages.value.map((img) => img.id)
   reordering.value = true
   try {
-    if (props.entity === 'item') {
-      await $api.image.reorderForItem(props.entityId, ids)
-    } else {
-      await $api.image.reorderForStore(props.entityId, ids)
-    }
+    await methods.value.reorder(props.entityId, ids)
   } catch (err: any) {
     $notify.add(formatApiError(err, t('images.order_save_failed')), { type: 'error', timer: 10 })
     items.value = [...props.modelValue]
@@ -281,9 +316,7 @@ async function onFileChange(event: Event) {
 
     try {
       const uploaded =
-        props.entity === 'item'
-          ? await $api.image.uploadForItem(props.entityId, file)
-          : await $api.image.uploadForStore(props.entityId, file)
+        await methods.value.upload(props.entityId, file)
 
       // Дубль: картинка уже была в списке, сервер новую привязку не создал.
       // В списке она уже есть, добавлять её второй раз нельзя — вместо
@@ -317,9 +350,7 @@ async function removeImage(imageId: number) {
   if (props.readonly) return
   removingId.value = imageId
   try {
-    await (props.entity === 'item'
-      ? $api.image.deleteForItem(props.entityId, imageId)
-      : $api.image.deleteForStore(props.entityId, imageId))
+    await methods.value.remove(props.entityId, imageId)
     items.value = items.value.filter((img) => img.id !== imageId)
     emitItems()
     $notify.add(t('images.deleted'), { type: 'success' })
@@ -339,9 +370,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   savingAltId.value = img.id
   try {
     const updated =
-      props.entity === 'item'
-        ? await $api.image.updateAltForItem(props.entityId, img.id, value || null)
-        : await $api.image.updateAltForStore(props.entityId, img.id, value || null)
+      await methods.value.saveAlt(props.entityId, img.id, value || null)
     const idx = items.value.findIndex((i) => i.id === img.id)
     if (idx !== -1) {
       items.value[idx] = { ...items.value[idx], alt: updated.alt ?? null }

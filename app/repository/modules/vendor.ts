@@ -21,6 +21,9 @@ export type VendorResponse = {
   logo_url: string | null
   /** sha256 логотипа: по нему берётся лёгкая миниатюра. */
   logo_sha: string | null
+  /** Размеры логотипа: нужны, чтобы не предлагать увеличенные варианты. */
+  logo_width: number | null
+  logo_height: number | null
   created_at: string
   updated_at: string
 }

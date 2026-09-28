@@ -32,6 +32,10 @@
           <ContentsTree kind="warehouse" :entity-id="Number(id)" />
         </section>
 
+        <section v-if="activeTab === 'images'" class="tab-section">
+          <ImagesTable v-model="images" entity="warehouse" :entity-id="Number(id)" :readonly="!canEdit" />
+        </section>
+
         <section v-if="activeTab === 'rights'" class="tab-section">
           <AccessGrants :scoped-warehouse="warehouse" />
         </section>
@@ -50,6 +54,7 @@ import { formatApiError } from '~/composables/formatApiError'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
+import type { ImageResponse } from '~/repository/modules/image'
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
@@ -63,6 +68,8 @@ const loadError = ref<string | null>(null)
 const saving = ref(false)
 const users = ref<UserProfileResponse[]>([])
 const warehouse = ref<WarehouseResponse | null>(null)
+/** Фотографии склада: правятся вкладкой «Изображения», как у предмета. */
+const images = ref<ImageResponse[]>([])
 
 const form = reactive({
   title: '',
@@ -73,6 +80,7 @@ const tabs = computed(() => {
   const base = [{ key: 'main', label: t('warehouses.main_tab') }]
   const isOwner = currentUserId.value !== null && warehouse.value?.user_id === currentUserId.value
   base.push({ key: 'contents', label: t('warehouses.contents_tab') })
+  base.push({ key: 'images', label: t('warehouses.images_tab') })
   if (isOwner) {
     base.push({ key: 'rights', label: t('warehouses.rights_tab') })
   }
@@ -99,6 +107,7 @@ async function load() {
       $api.userProfile.all(),
     ])
     warehouse.value = warehouseResult
+    images.value = warehouseResult.images ?? []
     form.title = warehouseResult.title
     form.user_id = warehouseResult.user_id
     users.value = usersList

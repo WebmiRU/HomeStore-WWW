@@ -38,7 +38,7 @@ const props = defineProps<{
   entityId: number
 }>()
 
-const { tp } = useI18n()
+const { t, tp } = useI18n()
 const { $api, $notify } = useNuxtApp()
 
 const root = ref<Node | null>(null)

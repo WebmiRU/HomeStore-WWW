@@ -53,6 +53,8 @@ import { ref, watch } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
 import { useLocationChain, type ChainCrumb } from '~/composables/useLocationChain'
 
+const { t } = useI18n()
+
 export type AmbiguityRequest = {
   code: string
   items: ItemPayload[]
