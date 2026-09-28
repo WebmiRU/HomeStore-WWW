@@ -37,7 +37,11 @@
         <ItemPhotoPlaceholder v-else :size="28" />
       </span>
 
-      <NuxtLink v-if="isStore" :to="`/stores/${node.id}/edit`" class="cnode__title">
+      <!--
+        Корень на странице склада — сам склад, и он тоже открывается: раньше
+        ссылка была только у хранилищ, и «Домашний склад» оставался текстом.
+      -->
+      <NuxtLink v-if="nodeHref" :to="nodeHref" class="cnode__title" :class="{ 'cnode__title--root': isRoot }">
         {{ node.title }}
       </NuxtLink>
       <span v-else class="cnode__title cnode__title--root">{{ node.title }}</span>
@@ -107,7 +111,14 @@ defineEmits<{
 }>()
 
 const isOpen = computed(() => props.expanded.has(props.node.id))
-const isStore = computed(() => props.node.kind === 'store')
+
+/** Куда ведёт название: у склада и хранилища это разные карточки. */
+const nodeHref = computed<string | null>(() => {
+  if (props.node.kind === 'warehouse') return `/warehouses/${props.node.id}/edit`
+  if (props.node.kind === 'store') return `/stores/${props.node.id}/edit`
+
+  return null
+})
 
 /** Лист: потомков нет, а значит нет и вертикали, которая их соединяла бы. */
 const isLeaf = computed(() => props.node.children.length === 0)
