@@ -16,7 +16,6 @@
     <div v-else-if="root" class="contents__tree">
       <ContentsNodeRow
         :node="root"
-        :depth="0"
         is-root
         :expanded="expanded"
         :shown-items="shownItems"
