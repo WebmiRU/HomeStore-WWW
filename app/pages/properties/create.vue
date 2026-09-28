@@ -154,7 +154,7 @@ async function save() {
       dictionary_id: needsDictionary.value ? form.dictionary_id : null,
     })
     $notify.add('Свойство создано', { type: 'success' })
-    router.push(`/properties/${created.id}/edit`)
+    router.push(`/properties/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

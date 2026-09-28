@@ -74,7 +74,7 @@ async function save() {
       print_all_codes: form.print_all_codes,
     })
     $notify.add('Список создан', { type: 'success' })
-    router.push(`/label-lists/${created.id}/edit`)
+    router.push(`/label-lists/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

@@ -25,8 +25,8 @@ defineProps<{
 }>()
 
 function crumbLink(crumb: ChainCrumb): string {
-  if (crumb.type === 'warehouse') return `/warehouses/${crumb.id}/edit`
-  return `/stores/${crumb.id}/edit`
+  if (crumb.type === 'warehouse') return `/warehouses/${crumb.id}`
+  return `/stores/${crumb.id}`
 }
 </script>
 

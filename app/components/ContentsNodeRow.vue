@@ -66,7 +66,7 @@
             <ItemPhoto v-if="item.image" :images="[item.image]" :alt="item.title" :size="22" />
             <ItemPhotoPlaceholder v-else :size="22" />
           </span>
-          <NuxtLink :to="`/items/${item.id}/edit`" class="cnode__item">{{ item.title }}</NuxtLink>
+          <NuxtLink :to="`/items/${item.id}`" class="cnode__item">{{ item.title }}</NuxtLink>
         </li>
 
         <li v-if="node.items_hidden > 0 && !isShownAll" class="cnode__itemrow">
@@ -114,8 +114,8 @@ const isOpen = computed(() => props.expanded.has(props.node.id))
 
 /** Куда ведёт название: у склада и хранилища это разные карточки. */
 const nodeHref = computed<string | null>(() => {
-  if (props.node.kind === 'warehouse') return `/warehouses/${props.node.id}/edit`
-  if (props.node.kind === 'store') return `/stores/${props.node.id}/edit`
+  if (props.node.kind === 'warehouse') return `/warehouses/${props.node.id}`
+  if (props.node.kind === 'store') return `/stores/${props.node.id}`
 
   return null
 })

@@ -66,7 +66,7 @@
               </option>
             </select>
             <span v-if="dictionary" class="field-hint">
-              <NuxtLink :to="`/dictionaries/${dictionary.id}/edit?tab=values`" class="row-link">
+              <NuxtLink :to="`/dictionaries/${dictionary.id}?tab=values`" class="row-link">
                 {{ dictionary.title }}: открыть значения
               </NuxtLink>
             </span>

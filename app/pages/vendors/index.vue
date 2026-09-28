@@ -23,7 +23,7 @@
           <tr
             v-for="m in vendors"
             :key="m.id"
-            @dblclick="openRow($event, `/vendors/${m.id}/edit`)"
+            @dblclick="openRow($event, `/vendors/${m.id}`)"
           >
             <td data-label="Логотип" class="cell-logo">
               <VendorLogo :logo-sha="m.logo_sha" :title="m.title" lightbox />
@@ -35,7 +35,7 @@
             <td data-label="Создан">{{ formatDate(m.created_at) }}</td>
             <td class="actions">
               <NuxtLink
-                :to="`/vendors/${m.id}/edit`"
+                :to="`/vendors/${m.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"

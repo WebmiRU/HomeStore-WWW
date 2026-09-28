@@ -45,7 +45,7 @@ export function useCodeConflictNotice() {
         timer: TIMER,
         links: items.slice(0, MAX_LINKS).map((item) => ({
           label: item.title,
-          to: `/items/${item.id}/edit`,
+          to: `/items/${item.id}`,
         })),
         more: items.length > MAX_LINKS ? `…и ещё ${items.length - MAX_LINKS}` : '',
       },

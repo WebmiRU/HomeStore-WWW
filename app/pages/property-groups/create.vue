@@ -37,7 +37,7 @@ async function save() {
   try {
     const created = await $api.propertyGroup.create({ title: form.title })
     $notify.add('Группа свойств создана', { type: 'success' })
-    router.push(`/property-groups/${created.id}/edit`)
+    router.push(`/property-groups/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

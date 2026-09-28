@@ -65,7 +65,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.payload.id" @dblclick="openRow($event, `/items/${item.payload.id}/edit`)">
+          <tr v-for="item in items" :key="item.payload.id" @dblclick="openRow($event, `/items/${item.payload.id}`)">
             <td class="cb-col">
               <input
                 type="checkbox"
@@ -79,14 +79,14 @@
             </td>
             <td data-label="Название">{{ item.payload.title }}</td>
             <td data-label="Производитель">
-              <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}/edit`" class="row-link">
+              <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
                 {{ item.vendor.title }}
               </NuxtLink>
               <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} [удалено]</span>
               <span v-else class="muted">—</span>
             </td>
             <td data-label="Категория">
-              <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}/edit`" class="row-link">
+              <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
                 {{ item.category.title }}
               </NuxtLink>
               <span v-else-if="item.category" class="muted">{{ item.category.title }} [удалено]</span>
@@ -97,7 +97,7 @@
                    В цепочке store первым идёт само хранилище, дальше — предки.
                    У удалённого ссылки нет: переход вёл бы в 404, поэтому
                   название остаётся текстом с пометкой. -->
-              <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}/edit`" class="row-link">
+              <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
                 {{ item.store[0].title }}
               </NuxtLink>
               <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} [удалено]</span>
@@ -118,7 +118,7 @@
               <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
               <NuxtLink
                 v-if="canEdit(item)"
-                :to="`/items/${item.payload.id}/edit`"
+                :to="`/items/${item.payload.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"
@@ -127,7 +127,7 @@
               </NuxtLink>
               <NuxtLink
                 v-else
-                :to="`/items/${item.payload.id}/edit`"
+                :to="`/items/${item.payload.id}`"
                 class="action-link action-view"
                 title="Открыть"
                 aria-label="Открыть"

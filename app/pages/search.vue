@@ -77,7 +77,7 @@
                   @changed="onTogglerChanged"
                 />
                 <NuxtLink
-                  :to="r.type === 'item' ? `/items/${r.payload.id}/edit` : `/stores/${r.payload.id}/edit`"
+                  :to="r.type === 'item' ? `/items/${r.payload.id}` : `/stores/${r.payload.id}`"
                   class="action-link"
                   :class="canEdit(r) ? 'action-edit' : 'action-view'"
                   :title="canEdit(r) ? 'Редактировать' : 'Открыть'"

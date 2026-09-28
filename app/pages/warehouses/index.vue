@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}/edit`)">
+          <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}`)">
             <td data-label="ID">{{ w.id }}</td>
             <td data-label="Название">{{ w.title }}</td>
             <td data-label="Создан">{{ formatDate(w.created_at) }}</td>
@@ -35,7 +35,7 @@
             <td class="actions">
               <NuxtLink
                 v-if="canEdit(w)"
-                :to="`/warehouses/${w.id}/edit`"
+                :to="`/warehouses/${w.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"
@@ -44,7 +44,7 @@
               </NuxtLink>
               <NuxtLink
                 v-else
-                :to="`/warehouses/${w.id}/edit`"
+                :to="`/warehouses/${w.id}`"
                 class="action-link action-view"
                 title="Открыть"
                 aria-label="Открыть"

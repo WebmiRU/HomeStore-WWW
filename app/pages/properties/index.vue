@@ -23,7 +23,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in properties" :key="p.id" @dblclick="openRow($event, `/properties/${p.id}/edit`)">
+          <tr v-for="p in properties" :key="p.id" @dblclick="openRow($event, `/properties/${p.id}`)">
             <td data-label="ID">{{ p.id }}</td>
             <td data-label="Название">{{ p.title }}</td>
             <td data-label="Тип">{{ p.type_label }}</td>
@@ -42,7 +42,7 @@
             <td data-label="Значений">{{ p.values_count ?? 0 }}</td>
             <td class="actions">
               <NuxtLink
-                :to="`/properties/${p.id}/edit`"
+                :to="`/properties/${p.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"

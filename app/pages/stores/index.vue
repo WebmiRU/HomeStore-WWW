@@ -37,7 +37,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="node in pageList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}/edit`)">
+          <tr v-for="node in pageList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}`)">
             <td class="cb-col">
               <input
                 type="checkbox"
@@ -68,7 +68,7 @@
               <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
               <NuxtLink
                 v-if="canEdit(node.store)"
-                :to="`/stores/${node.store.id}/edit`"
+                :to="`/stores/${node.store.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"
@@ -77,7 +77,7 @@
               </NuxtLink>
               <NuxtLink
                 v-else
-                :to="`/stores/${node.store.id}/edit`"
+                :to="`/stores/${node.store.id}`"
                 class="action-link action-view"
                 title="Открыть"
                 aria-label="Открыть"

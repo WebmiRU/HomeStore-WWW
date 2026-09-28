@@ -19,13 +19,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="g in groups" :key="g.id" @dblclick="openRow($event, `/property-groups/${g.id}/edit`)">
+          <tr v-for="g in groups" :key="g.id" @dblclick="openRow($event, `/property-groups/${g.id}`)">
             <td data-label="ID">{{ g.id }}</td>
             <td data-label="Название">{{ g.title }}</td>
             <td data-label="Создан">{{ formatDate(g.created_at) }}</td>
             <td class="actions">
               <NuxtLink
-                :to="`/property-groups/${g.id}/edit`"
+                :to="`/property-groups/${g.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"

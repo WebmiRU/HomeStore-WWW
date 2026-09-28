@@ -299,7 +299,7 @@ async function save() {
     // уведомление ещё висит, а если человек уйдёт дальше — предупреждение о
     // совпадении кода уже не увидит.
     notifyCodeConflicts(created)
-    router.push(`/items/${created.payload.id}/edit`)
+    router.push(`/items/${created.payload.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

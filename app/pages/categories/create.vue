@@ -79,7 +79,7 @@ async function save() {
   try {
     const created = await $api.category.create({ title: form.title, parent_id: form.parent_id })
     $notify.add('Категория создана', { type: 'success' })
-    router.push(`/categories/${created.id}/edit`)
+    router.push(`/categories/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

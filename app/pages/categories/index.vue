@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in rows" :key="row.id" @dblclick="openRow($event, `/categories/${row.id}/edit`)">
+          <tr v-for="row in rows" :key="row.id" @dblclick="openRow($event, `/categories/${row.id}`)">
             <td data-label="ID">{{ row.id }}</td>
             <td data-label="Название">
               <span class="tree-prefix">{{ '—'.repeat(row.depth) }}</span>
@@ -49,7 +49,7 @@
                 <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
               </NuxtLink>
               <NuxtLink
-                :to="`/categories/${row.id}/edit`"
+                :to="`/categories/${row.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"

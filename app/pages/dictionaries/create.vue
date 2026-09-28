@@ -39,7 +39,7 @@ async function save() {
     $notify.add('Справочник создан', { type: 'success' })
     // Сразу на страницу редактирования: там добавляются значения, а
     // пустой справочник отдельно показывать нечего.
-    router.push(`/dictionaries/${created.id}/edit`)
+    router.push(`/dictionaries/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

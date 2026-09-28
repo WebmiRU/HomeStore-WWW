@@ -26,7 +26,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}/edit`)">
+          <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}`)">
             <td data-label="ID">{{ list.id }}</td>
             <td data-label="Название">
               {{ list.title }}
@@ -51,7 +51,7 @@
               <span v-else>—</span>
             </td>
             <td class="actions">
-              <NuxtLink :to="`/label-lists/${list.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink :to="`/label-lists/${list.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteList(list)">

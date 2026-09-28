@@ -55,7 +55,7 @@ async function save() {
       description: form.description,
     })
     $notify.add('Производитель создан', { type: 'success' })
-    router.push(`/vendors/${created.id}/edit`)
+    router.push(`/vendors/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

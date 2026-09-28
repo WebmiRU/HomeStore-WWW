@@ -40,7 +40,7 @@
 
           <ul v-if="children.length" class="children__list">
             <li v-for="child in children" :key="child.id" class="children__item">
-              <NuxtLink :to="`/categories/${child.id}/edit`" class="children__link">{{ child.title }}</NuxtLink>
+              <NuxtLink :to="`/categories/${child.id}`" class="children__link">{{ child.title }}</NuxtLink>
               <span class="children__count">
                 {{ child.items_count ? `${child.items_count} предм.` : 'пусто' }}
               </span>
@@ -77,7 +77,7 @@
               <tr v-for="property in properties" :key="property.id">
                 <td data-label="ID">{{ property.id }}</td>
                 <td data-label="Название">
-                  <NuxtLink :to="`/properties/${property.id}/edit`" class="row-link">{{ property.title }}</NuxtLink>
+                  <NuxtLink :to="`/properties/${property.id}`" class="row-link">{{ property.title }}</NuxtLink>
                 </td>
                 <td data-label="Тип">{{ property.type_label }}</td>
                 <td data-label="Группа">
@@ -90,7 +90,7 @@
                 </td>
                 <td data-label="Справочник">
                   <span v-if="property.dictionary">
-                    <NuxtLink :to="`/dictionaries/${property.dictionary.id}/edit?tab=values`" class="row-link">
+                    <NuxtLink :to="`/dictionaries/${property.dictionary.id}?tab=values`" class="row-link">
                       {{ property.dictionary.title }}
                     </NuxtLink>
                   </span>

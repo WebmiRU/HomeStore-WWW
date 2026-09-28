@@ -48,7 +48,7 @@
               <td>
                 <ul class="items">
                   <li v-for="item in row.items" :key="item.id">
-                    <NuxtLink :to="`/items/${item.id}/edit`" class="item-link">{{ item.title }}</NuxtLink>
+                    <NuxtLink :to="`/items/${item.id}`" class="item-link">{{ item.title }}</NuxtLink>
                     <span class="item-id">#{{ item.id }}</span>
                   </li>
                 </ul>

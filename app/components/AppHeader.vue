@@ -144,7 +144,7 @@ watch(
 )
 
 const profileHref = computed<string | null>(() =>
-  currentUserId.value !== null ? `/users/${currentUserId.value}/edit` : null
+  currentUserId.value !== null ? `/users/${currentUserId.value}` : null
 )
 
 function doSearch() {

@@ -28,7 +28,7 @@
           <tr
             v-for="p in presets"
             :key="p.id"
-            @dblclick="p.is_system ? null : openRow($event, `/label-presets/${p.id}/edit`)"
+            @dblclick="p.is_system ? null : openRow($event, `/label-presets/${p.id}`)"
           >
             <td data-label="ID">{{ p.id }}</td>
             <td data-label="Название">
@@ -59,7 +59,7 @@
                 </span>
               </template>
               <template v-else>
-                <NuxtLink :to="`/label-presets/${p.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+                <NuxtLink :to="`/label-presets/${p.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                   <img src="/img/icon/edit.svg" class="action-icon" alt="" />
                 </NuxtLink>
                 <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deletePreset(p.id)">

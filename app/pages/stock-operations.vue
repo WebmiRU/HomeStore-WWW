@@ -148,7 +148,7 @@
           <tbody>
             <tr v-for="row in op.rows" :key="row.id" class="mv-row">
               <td class="mv-row__title">
-                <NuxtLink v-if="row.item_id" :to="`/items/${row.item_id}/edit`" class="mv-row__link">
+                <NuxtLink v-if="row.item_id" :to="`/items/${row.item_id}`" class="mv-row__link">
                   {{ row.item_title }}
                 </NuxtLink>
                 <span v-else class="mv-row__plain">{{ row.item_title }}</span>

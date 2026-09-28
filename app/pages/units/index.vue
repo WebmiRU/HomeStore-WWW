@@ -20,14 +20,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in units" :key="u.id" @dblclick="openRow($event, `/units/${u.id}/edit`)">
+          <tr v-for="u in units" :key="u.id" @dblclick="openRow($event, `/units/${u.id}`)">
             <td data-label="ID">{{ u.id }}</td>
             <td data-label="Обозначение">{{ u.title_short }}</td>
             <td data-label="Название">{{ u.title_full }}</td>
             <td data-label="Создан">{{ formatDate(u.created_at) }}</td>
             <td class="actions">
               <NuxtLink
-                :to="`/units/${u.id}/edit`"
+                :to="`/units/${u.id}`"
                 class="action-link action-edit"
                 title="Редактировать"
                 aria-label="Редактировать"

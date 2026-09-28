@@ -61,7 +61,7 @@ async function save() {
   try {
     const created = await $api.warehouse.create({ title: form.title, user_id: form.user_id })
     $notify.add('Склад создан', { type: 'success' })
-    router.push(`/warehouses/${created.id}/edit`)
+    router.push(`/warehouses/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

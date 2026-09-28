@@ -20,14 +20,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="d in dictionaries" :key="d.id" @dblclick="openRow($event, `/dictionaries/${d.id}/edit`)">
+          <tr v-for="d in dictionaries" :key="d.id" @dblclick="openRow($event, `/dictionaries/${d.id}`)">
             <td data-label="ID">{{ d.id }}</td>
             <td data-label="Название">{{ d.title }}</td>
             <td data-label="Значений">{{ d.values_count }}</td>
             <td data-label="Создан">{{ formatDate(d.created_at) }}</td>
             <td class="actions">
               <NuxtLink
-                :to="`/dictionaries/${d.id}/edit`"
+                :to="`/dictionaries/${d.id}`"
                 class="action-link action-edit"
                 title="Значения справочника"
                 aria-label="Значения справочника"

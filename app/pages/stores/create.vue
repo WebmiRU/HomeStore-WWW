@@ -163,7 +163,7 @@ async function save() {
       code: form.code.trim() || null,
     })
     $notify.add('Хранилище создано', { type: 'success' })
-    router.push(`/stores/${created.id}/edit`)
+    router.push(`/stores/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

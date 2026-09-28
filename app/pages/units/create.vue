@@ -49,7 +49,7 @@ async function save() {
       title_full: form.title_full,
     })
     $notify.add('Единица измерения создана', { type: 'success' })
-    router.push(`/units/${created.id}/edit`)
+    router.push(`/units/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {

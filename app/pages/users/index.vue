@@ -21,7 +21,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}/edit`)">
+          <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}`)">
             <td data-label="ID">{{ u.id }}</td>
             <td data-label="Аватар" class="img-col">
               <UserAvatar :user="u" :size="40" lightbox />
@@ -30,7 +30,7 @@
             <td data-label="E-mail">{{ u.email }}</td>
             <td data-label="Создан">{{ formatDate(u.created_at) }}</td>
             <td class="actions">
-              <NuxtLink :to="`/users/${u.id}/edit`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
+              <NuxtLink :to="`/users/${u.id}`" class="action-link action-edit" title="Редактировать" aria-label="Редактировать">
                 <img src="/img/icon/edit.svg" class="action-icon" alt="" />
               </NuxtLink>
               <a href="#" class="action-link action-del" title="Удалить" aria-label="Удалить" @click.prevent="deleteUser(u.id)">

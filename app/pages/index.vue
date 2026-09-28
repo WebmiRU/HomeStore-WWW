@@ -105,7 +105,7 @@
         :chain="matchChains[m.payload.id] ?? []"
       >
         <template #side>
-          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}/edit`">Открыть</NuxtLink>
+          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}`">Открыть</NuxtLink>
         </template>
       </ItemCard>
     </div>
@@ -400,8 +400,8 @@ const listTitle = computed(() =>
 const editLink = computed(() => {
   if (!found.value) return ''
   return found.value.type === 'item'
-    ? `/items/${found.value.payload.id}/edit`
-    : `/stores/${found.value.payload.id}/edit`
+    ? `/items/${found.value.payload.id}`
+    : `/stores/${found.value.payload.id}`
 })
 
 function setMode(mode: Mode) {

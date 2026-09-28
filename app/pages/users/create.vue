@@ -50,7 +50,7 @@ async function save() {
   try {
     const created = await $api.userProfile.create({ ...form })
     $notify.add('Пользователь создан', { type: 'success' })
-    router.push(`/users/${created.id}/edit`)
+    router.push(`/users/${created.id}`)
   } catch (err: any) {
     $notify.add(formatApiError(err, 'Ошибка создания'), { type: 'error', timer: 10 })
   } finally {
