@@ -15,8 +15,11 @@ const defaultOptions = (): OptionResponse => ({
   locale: 'ru',
   show_code_block: true,
   remember_operation_mode: true,
-  theme: 'dark',
-  accent: 'green',
+  // Те же умолчания, что отдаёт сервер: тема «как в системе» и синий акцент.
+  // Дублирование неприятное, но без него на первый экран, пока настройки не
+  // приехали, показалось бы тёмное с зелёным, а потом щёлкнуло на другое.
+  theme: 'system',
+  accent: 'blue',
 })
 
 export function useOptions() {
@@ -72,19 +75,26 @@ export function useOptions() {
    */
   const visibleTree = computed<NavEntry[]>(() => {
     const order = options.value.menu_order
+    const visible = navTree.filter((entry) => !isHidden(entry.key))
     const shown = (keys: string[]) => sortNavKeys(keys.filter((key) => !isHidden(key)), order)
 
-    const topShown = shown(navTree.filter((entry) => !isNavGroup(entry)).map((entry) => entry.key))
-    const top = new Map(topShown.map((key, index) => [key, index]))
+    // Верхний уровень сортируется целиком, вместе с группами. Раньше в карту
+    // порядка попадали только пункты без вложенных: у группы в карте не было
+    // ключа, сравнение давало NaN, а сортировка на NaN ничего не меняет. Из-за
+    // этого группу с вложенными пунктами нельзя было переставить вообще —
+    // ни настройкой, ни вручную.
+    const topKeys = shown(visible.map((entry) => entry.key))
 
-    return navTree
-      .filter((entry) => !isHidden(entry.key))
-      .map((entry) =>
-        isNavGroup(entry)
-          ? { ...entry, items: shown(entry.items.map((item) => item.key)).map((key) => entry.items.find((item) => item.key === key)!) }
-          : entry,
-      )
-      .sort((a, b) => top.get(a.key)! - top.get(b.key)!)
+    return topKeys.map((key) => {
+      const entry = visible.find((item) => item.key === key)!
+
+      if (!isNavGroup(entry)) return entry
+
+      return {
+        ...entry,
+        items: shown(entry.items.map((item) => item.key)).map((itemKey) => entry.items.find((item) => item.key === itemKey)!),
+      }
+    })
   })
 
   return { options, loaded, load, save, reset, isHidden, visibleTree }

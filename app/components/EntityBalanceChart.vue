@@ -268,9 +268,9 @@ onBeforeUnmount(() => {
 }
 
 .ctl-btn.active {
-  background: var(--info-bg);
-  color: var(--info);
-  border-color: var(--info-bg);
+  background: var(--accent-bg);
+  color: var(--link);
+  border-color: var(--accent);
 }
 
 .summary {

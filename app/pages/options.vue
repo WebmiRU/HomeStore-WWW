@@ -618,8 +618,8 @@ watch(options, fillFromOptions)
 }
 
 .mode-choice--on {
-  color: var(--info-ink);
-  background: var(--info-bg);
-  border-color: var(--info-bg);
+  color: var(--link);
+  background: var(--accent-bg);
+  border-color: var(--accent);
 }
 </style>

@@ -347,9 +347,9 @@ watch(
 }
 
 .ctl-btn.active {
-  background: var(--info-bg);
-  color: var(--info);
-  border-color: var(--info-bg);
+  background: var(--accent-bg);
+  color: var(--link);
+  border-color: var(--accent);
 }
 
 .chart-card--wide {
@@ -417,10 +417,10 @@ watch(
 .date-group :deep(.dp__theme_light) {
   --dp-background-color: var(--bg);
   --dp-text-color: var(--text);
-  --dp-hover-color: var(--info-bg);
+  --dp-hover-color: var(--accent-bg);
   --dp-hover-text-color: var(--text);
   --dp-hover-icon-color: var(--text);
-  --dp-primary-color: var(--info);
+  --dp-primary-color: var(--accent);
   --dp-primary-text-color: var(--text);
   --dp-secondary-color: var(--border);
   --dp-border-color: var(--border);

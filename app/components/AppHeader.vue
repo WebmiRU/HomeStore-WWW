@@ -193,7 +193,17 @@ function measureMenu(): void {
   const anchor = node.parentElement?.getBoundingClientRect()
   if (anchor === undefined) return
 
-  menuAlignRight.value = anchor.right + node.offsetWidth > window.innerWidth - EDGE
+  const room = window.innerWidth - EDGE
+  const right = anchor.right + node.offsetWidth
+  const left = anchor.left - node.offsetWidth
+
+  // По умолчанию раскрываем вправо — так список выходит из-под кнопки. Влево
+  // разворачиваем, только когда вправо не помещается, а влево помещается:
+  // оба края проверяются, потому что порядок меню меняет пользователь и
+  // группа с вложенными пунктами может оказаться где угодно. Если не
+  // помещается ни так, ни так — оставляем вправо: чуть вылезти лучше, чем
+  // перевернуть и вылезти в другую сторону.
+  menuAlignRight.value = right > room && left >= EDGE
 }
 
 function onWindowResize(): void {
@@ -376,8 +386,10 @@ a.header-avatar:hover {
   width: 40px;
   height: 40px;
   padding: 0;
-  background: transparent;
-  border: 1px solid transparent;
+  /* Рамка постоянная, а не только при наведении: кнопка темы стоит в ряд с
+     поиском и выходом, и без рамки выглядит как дырка в ряду. */
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   color: var(--text-muted);
   cursor: pointer;
@@ -386,8 +398,8 @@ a.header-avatar:hover {
 
 .header-theme:hover {
   color: var(--text);
-  border-color: var(--border);
-  background: var(--bg-elevated);
+  border-color: var(--accent);
+  background: var(--bg-hover);
 }
 
 .header-theme__icon {

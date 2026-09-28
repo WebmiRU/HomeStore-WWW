@@ -339,7 +339,7 @@ onMounted(load)
 .grant-check input {
   width: 16px;
   height: 16px;
-  accent-color: var(--info-ink);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
