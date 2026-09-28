@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { themeToken, themeTokenAlpha } from '~/utils/themeToken'
 import * as echarts from 'echarts'
 import type { AuditLogBalancePoint } from '~/repository/modules/auditLog'
 
@@ -48,6 +49,9 @@ const props = defineProps<{
 
 const { $api } = useNuxtApp()
 const { t } = useI18n()
+// Тема нужна графику как данные: цвета линий и подписи берутся из токенов, и
+// без перерисовки на новом фоне остались бы цвета прежней темы.
+const { resolved } = useTheme()
 
 const ranges = [
   { label: t('balance.day'), value: 'day' },
@@ -130,26 +134,26 @@ function buildOption(): any {
     grid: { left: 44, right: 14, top: 12, bottom: 28 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#2a2a2e',
-      borderColor: '#3a3a3e',
-      textStyle: { color: '#ccc', fontSize: 13 },
+      backgroundColor: themeToken('--bg-elevated', '#2a2a2e'),
+      borderColor: themeToken('--border'),
+      textStyle: { color: themeToken('--text-secondary'), fontSize: 13 },
       valueFormatter: (v: number | null) => (v == null ? '' : `${Math.round(v)} ${t('units.pcs')}`),
-      axisPointer: { lineStyle: { color: '#555' } },
+      axisPointer: { lineStyle: { color: themeToken('--border-strong') } },
     },
     xAxis: {
       type: 'time',
-      axisLabel: { color: '#8a8a8a', fontSize: 11 },
-      axisLine: { lineStyle: { color: '#333' } },
+      axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
+      axisLine: { lineStyle: { color: themeToken('--border') } },
       axisTick: { show: false },
       splitLine: { show: false },
     },
     yAxis: {
       type: 'value',
       min: 0,
-      axisLabel: { color: '#8a8a8a', fontSize: 11 },
+      axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
       axisLine: { show: false },
       axisTick: { show: false },
-      splitLine: { lineStyle: { color: '#2a2a2a' } },
+      splitLine: { lineStyle: { color: themeToken('--border') } },
     },
     series: [
       {
@@ -159,8 +163,8 @@ function buildOption(): any {
         data,
         symbol: 'circle',
         symbolSize: 0,
-        lineStyle: { color: '#7aa8a4', width: 2 },
-        itemStyle: { color: '#7aa8a4' },
+        lineStyle: { color: themeToken('--chart-line', '#7aa8a4'), width: 2 },
+        itemStyle: { color: themeToken('--chart-line', '#7aa8a4') },
         areaStyle: {
           color: {
             type: 'linear',
@@ -169,8 +173,8 @@ function buildOption(): any {
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(122,168,164,0.30)' },
-              { offset: 1, color: 'rgba(122,168,164,0.02)' },
+              { offset: 0, color: themeTokenAlpha('--chart-line', 30, '#7aa8a4') },
+              { offset: 1, color: themeTokenAlpha('--chart-line', 2, '#7aa8a4') },
             ],
           },
         },
@@ -214,6 +218,8 @@ watch(
   },
 )
 
+watch(resolved, () => renderChart())
+
 onMounted(() => {
   window.addEventListener('resize', onResize)
   load()
@@ -243,57 +249,57 @@ onBeforeUnmount(() => {
 
 .control-label {
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .ctl-btn {
   padding: 5px 12px;
   font-size: 13px;
-  background: #2a2a2a;
-  color: #aaa;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .ctl-btn:hover {
-  background: #333;
-  color: #ddd;
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .ctl-btn.active {
-  background: #2a2a3a;
-  color: #aaf;
-  border-color: #3a3a5a;
+  background: var(--info-bg);
+  color: var(--info);
+  border-color: var(--info-bg);
 }
 
 .summary {
   display: flex;
   gap: 18px;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .sum-val {
-  color: #9dd;
+  color: var(--info);
   font-size: 15px;
 }
 
 .loading,
 .error {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
 .chart-wrap {
-  background: #1e1e1e;
-  border: 1px solid #2b2b2b;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px 14px 6px;
 }
@@ -305,6 +311,6 @@ onBeforeUnmount(() => {
 
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 </style>

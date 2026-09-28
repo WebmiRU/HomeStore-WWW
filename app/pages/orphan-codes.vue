@@ -238,33 +238,33 @@ onMounted(load)
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .btn-back {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   text-decoration: none;
 }
 
 .btn-back:hover {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .loading,
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -275,9 +275,9 @@ onMounted(load)
   padding: 12px 16px;
   font-size: 13px;
   line-height: 1.5;
-  color: #cdb8f0;
-  background: #241a33;
-  border: 1px solid #5a4480;
+  color: var(--note-ink);
+  background: var(--note-bg);
+  border: 1px solid var(--note);
   border-radius: 6px;
 }
 
@@ -290,7 +290,7 @@ onMounted(load)
 }
 
 .explain strong {
-  color: #e2d3f7;
+  color: var(--note-ink);
 }
 
 .summary {
@@ -299,8 +299,8 @@ onMounted(load)
   gap: 16px;
   margin-bottom: 18px;
   padding: 16px 20px;
-  background: #1e1e1e;
-  border: 1px solid #2b2b2b;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
@@ -308,27 +308,27 @@ onMounted(load)
   font-size: 40px;
   line-height: 1;
   font-weight: 700;
-  color: #cdb8f0;
+  color: var(--note-ink);
 }
 
 .summary__meta {
   font-size: 14px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .summary__dates {
   margin-top: 4px;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
   line-height: 1.6;
 }
 
 .picker {
   margin: 0 0 18px;
   padding: 14px 18px 16px;
-  border: 1px solid #2b2b2b;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #1e1e1e;
+  background: var(--bg);
 }
 
 .picker legend {
@@ -336,7 +336,7 @@ onMounted(load)
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .picker__row {
@@ -345,7 +345,7 @@ onMounted(load)
   gap: 10px;
   padding: 7px 0;
   font-size: 14px;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -355,7 +355,7 @@ onMounted(load)
 }
 
 .picker__row--all .picker__label {
-  color: #e2d3f7;
+  color: var(--note-ink);
 }
 
 .picker__label {
@@ -364,14 +364,14 @@ onMounted(load)
 
 .picker__count {
   font-variant-numeric: tabular-nums;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .picker__hint {
   margin: 12px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .actions {
@@ -391,33 +391,33 @@ onMounted(load)
 }
 
 .btn-preview {
-  background: #2f2a3d;
-  color: #cdb8f0;
-  border: 1px solid #5a4480;
+  background: var(--note-bg);
+  color: var(--note-ink);
+  border: 1px solid var(--note);
 }
 
 .btn-preview:hover:not(:disabled) {
-  background: #3b3350;
+  background: color-mix(in srgb, var(--note) 26%, var(--bg-elevated));
 }
 
 .btn-del {
-  background: #5a2a2a;
-  color: #f0c8c8;
-  border: 1px solid #8a3a3a;
+  background: var(--danger);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
 }
 
 .btn-del:hover:not(:disabled) {
-  background: #6e3434;
+  background: color-mix(in srgb, var(--danger) 26%, var(--bg-elevated));
 }
 
 .btn-cancel {
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .btn-preview:disabled,
@@ -429,8 +429,8 @@ onMounted(load)
 
 .confirm {
   padding: 14px 18px;
-  background: #2a1f1f;
-  border: 1px solid #6a3a3a;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
   border-radius: 6px;
 }
 
@@ -438,11 +438,11 @@ onMounted(load)
   margin: 0 0 10px;
   font-size: 14px;
   line-height: 1.5;
-  color: #ddd;
+  color: var(--text);
 }
 
 .confirm__text--warn {
-  color: #e8b0b0;
+  color: var(--danger-ink);
 }
 
 .confirm__actions {

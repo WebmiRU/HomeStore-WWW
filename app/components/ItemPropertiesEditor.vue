@@ -450,21 +450,21 @@ watch(
   display: block;
   margin-bottom: 4px;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .props-editor__head .field-hint {
   display: block;
   margin: 0;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .props-editor {
-  border: 1px solid #2f2f2f;
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 14px;
-  background: #202020;
+  background: var(--bg);
 }
 
 .props-editor__head {
@@ -486,21 +486,21 @@ watch(
 .props-editor__empty {
   margin: 0;
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
   line-height: 1.5;
 }
 
 .props-group + .props-group {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid #2b2b2b;
+  border-top: 1px solid var(--border);
 }
 
 .props-group__title {
   font-size: 11px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #666;
+  color: var(--text-faint);
   margin-bottom: 8px;
 }
 
@@ -523,7 +523,7 @@ watch(
   flex-direction: column;
   gap: 2px;
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   padding-top: 8px;
 }
 
@@ -540,7 +540,7 @@ watch(
 .prop-row__default {
   display: block;
   font-size: 11px;
-  color: #5f7f5f;
+  color: var(--success);
 }
 
 /*
@@ -576,15 +576,15 @@ watch(
   font-size: 13px;
   line-height: 1;
   font-family: inherit;
-  background: #3a1f1f;
-  color: #f8a8a8;
-  border: 1px solid #7a3a3a;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .prop-row__remove:hover {
-  background: #4d2a2a;
+  background: var(--danger-bg);
 }
 
 @media (max-width: 768px) {

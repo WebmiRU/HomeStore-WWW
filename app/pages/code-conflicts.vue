@@ -112,33 +112,33 @@ onMounted(() => load(1))
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .btn-back {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   text-decoration: none;
 }
 
 .btn-back:hover {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .loading,
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -149,9 +149,9 @@ onMounted(() => load(1))
   padding: 12px 16px;
   font-size: 13px;
   line-height: 1.5;
-  color: #d9c48a;
-  background: #221d10;
-  border: 1px solid #4a3d1c;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-bg);
   border-radius: 4px;
 }
 
@@ -164,7 +164,7 @@ onMounted(() => load(1))
 }
 
 .explain strong {
-  color: #f0cd77;
+  color: var(--warn-hover);
 }
 
 .table {
@@ -178,11 +178,11 @@ onMounted(() => load(1))
   padding: 8px 10px;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid #2b2b2b;
+  border-bottom: 1px solid var(--border);
 }
 
 .table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: normal;
   font-size: 12px;
 }
@@ -192,7 +192,7 @@ onMounted(() => load(1))
 .cell-code {
   width: 40%;
   font-family: monospace;
-  color: #9ab8d8;
+  color: var(--info-ink);
   word-break: break-all;
 }
 
@@ -207,7 +207,7 @@ onMounted(() => load(1))
 }
 
 .item-link {
-  color: #6cb6ff;
+  color: var(--info-hover);
   text-decoration: none;
 }
 
@@ -217,7 +217,7 @@ onMounted(() => load(1))
 
 .item-id {
   margin-left: 6px;
-  color: #666;
+  color: var(--text-faint);
   font-size: 12px;
 }
 
@@ -233,15 +233,15 @@ onMounted(() => load(1))
   padding: 6px 14px;
   font-size: 13px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .pager__btn:hover:not(:disabled) {
-  background: #3a3a3a;
+  background: color-mix(in srgb, var(--bg-hover) 80%, var(--text));
 }
 
 .pager__btn:disabled {
@@ -250,7 +250,7 @@ onMounted(() => load(1))
 }
 
 .pager__label {
-  color: #888;
+  color: var(--text-muted);
   font-size: 13px;
 }
 </style>

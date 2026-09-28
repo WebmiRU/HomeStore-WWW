@@ -80,7 +80,7 @@ const glyphStroke = computed(() => 1.5 * lineBoost.value)
   width: 84px;
   height: 84px;
   flex-shrink: 0;
-  color: #777;
+  color: var(--text-dim);
 }
 
 @media (max-width: 768px) {

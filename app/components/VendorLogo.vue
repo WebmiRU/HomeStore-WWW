@@ -201,8 +201,8 @@ const fallbackStyle = computed(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   flex-shrink: 0;
   vertical-align: middle;
@@ -215,8 +215,8 @@ const fallbackStyle = computed(() => {
   width: 18px;
   height: 18px;
   margin: -9px 0 0 -9px;
-  border: 2px solid #444;
-  border-top-color: #9fd8a6;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--success-hover);
   border-radius: 50%;
   animation: m-logo-spin 0.7s linear infinite;
 }
@@ -247,11 +247,11 @@ const fallbackStyle = computed(() => {
 }
 
 .m-logo--openable:hover {
-  border-color: #4a7a4a;
+  border-color: var(--accent-strong);
 }
 
 .m-logo__fallback {
-  color: #fff;
+  color: var(--accent-contrast);
   font-weight: 600;
   user-select: none;
   line-height: 1;

@@ -157,8 +157,8 @@ function doUuidSearch() {
 
 <style>
 body {
-  background: #1a1a1a;
-  color: #ccc;
+  background: var(--bg);
+  color: var(--text-secondary);
   font-family: 'Ubuntu Condensed', sans-serif;
 }
 
@@ -192,12 +192,12 @@ body {
   overflow: hidden;
   min-height: 52px;
   padding: 15px 48px 15px 18px;
-  border: 1px solid #333;
-  border-left: 4px solid #8b949e;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-muted);
   border-radius: 6px;
-  background-color: #1a1a2e;
-  box-shadow: 0 8px 24px rgba(1, 4, 9, 0.45);
-  color: #c9d1d9;
+  background-color: var(--bg-elevated);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--info-bg) 45%, transparent);
+  color: var(--text);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -219,7 +219,7 @@ body {
 .notification__link {
   display: block;
   margin-top: 4px;
-  color: #6cb6ff;
+  color: var(--info-hover);
   font-size: 13px;
   line-height: 1.4;
   text-decoration: none;
@@ -229,44 +229,44 @@ body {
 }
 
 .notification__link:hover {
-  color: #9ccdff;
+  color: var(--info-hover);
   text-decoration: underline;
 }
 
 .notification__more {
   margin-top: 4px;
-  color: #7d8590;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
 .notification--success {
-  border-left-color: #3fb950;
+  border-left-color: var(--success);
 }
 .notification--success .progress {
-  background-color: #3fb950;
+  background-color: var(--success);
 }
 
 .notification--error,
 .notification--danger {
-  border-left-color: #f85149;
+  border-left-color: var(--danger);
 }
 .notification--error .progress,
 .notification--danger .progress {
-  background-color: #f85149;
+  background-color: var(--danger);
 }
 
 .notification--warning {
-  border-left-color: #d29922;
+  border-left-color: var(--warn);
 }
 .notification--warning .progress {
-  background-color: #d29922;
+  background-color: var(--warn);
 }
 
 .notification--info {
-  border-left-color: #2f81f7;
+  border-left-color: var(--info);
 }
 .notification--info .progress {
-  background-color: #2f81f7;
+  background-color: var(--info);
 }
 
 .notification .delete {
@@ -278,7 +278,7 @@ body {
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: #8b949e;
+  color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s ease, background-color 0.15s ease;
 }
@@ -304,8 +304,8 @@ body {
 }
 
 .notification .delete:hover {
-  background-color: #21262d;
-  color: #f0f6fc;
+  background-color: var(--bg-elevated);
+  color: var(--text);
 }
 
 .notification .progress {
@@ -316,7 +316,7 @@ body {
   right: 0;
   bottom: 0;
   transform-origin: left;
-  background-color: #8b949e;
+  background-color: var(--text-muted);
   opacity: 0.8;
   animation: progress linear;
   animation-direction: reverse;
@@ -373,7 +373,7 @@ body {
   border: none;
   height: 1px;
   margin: 18px 0 8px;
-  background: linear-gradient(to right, #444, #2a2a2a 30%, #444);
+  background: linear-gradient(to right, var(--bg-hover), var(--bg-elevated) 30%, var(--bg-hover));
 }
 
 .page-footer {
@@ -388,14 +388,14 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
 .uuid-label {
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
@@ -404,30 +404,30 @@ body {
   padding: 6px 10px;
   font-size: 13px;
   font-family: monospace;
-  background: #2a2a2a;
-  color: #bbb;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
 }
 
 .uuid-input:focus {
-  border-color: #666;
-  color: #ddd;
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 .uuid-btn {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #aaa;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .uuid-btn:hover {
-  background: #444;
-  color: #ddd;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
+  color: var(--text);
 }
 </style>

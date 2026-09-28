@@ -143,8 +143,8 @@ const fallbackStyle = computed(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
 }
 
 /* Кнопка-просмотр: круглая рамка и фон те же, что у обёртки, отличается
@@ -155,7 +155,7 @@ const fallbackStyle = computed(() => {
 }
 
 .avatar--openable:hover {
-  border-color: #4a7a4a;
+  border-color: var(--accent-strong);
 }
 
 .avatar__img {
@@ -166,7 +166,7 @@ const fallbackStyle = computed(() => {
 }
 
 .avatar__fallback {
-  color: #fff;
+  color: var(--accent-contrast);
   font-weight: 600;
   user-select: none;
   line-height: 1;

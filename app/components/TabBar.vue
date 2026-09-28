@@ -50,7 +50,7 @@ function isActive(key: string): boolean {
   display: flex;
   align-items: center;
   gap: 4px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -75,7 +75,7 @@ function isActive(key: string): boolean {
    посреди блока, а не под ним, поэтому здесь активная помечается заливкой. */
 .tabbar--wrap .tabbar__item--active {
   border-bottom-color: transparent;
-  background: #2a2a3a;
+  background: var(--info-bg);
   border-radius: 4px;
 }
 
@@ -84,7 +84,7 @@ function isActive(key: string): boolean {
   white-space: nowrap;
   padding: 10px 16px;
   font-size: 15px;
-  color: #888;
+  color: var(--text-muted);
   text-decoration: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -92,12 +92,12 @@ function isActive(key: string): boolean {
 }
 
 .tabbar__item:hover {
-  color: #bbb;
+  color: var(--text-secondary);
 }
 
 .tabbar__item--active {
-  color: #aaf;
-  border-bottom-color: #6a7fdb;
+  color: var(--info);
+  border-bottom-color: var(--info-ink);
 }
 
 @media (max-width: 768px) {

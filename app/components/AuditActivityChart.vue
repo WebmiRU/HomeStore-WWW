@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { themeToken, themeTokenAlpha } from '~/utils/themeToken'
 import * as echarts from 'echarts'
 import type { AuditLogStatsPoint } from '~/repository/modules/auditLog'
 
@@ -21,14 +22,13 @@ const props = withDefaults(
   { labels: () => ({}), height: 320 },
 )
 
-// Классическая палитра Grafana (dark).
-const GRAFANA_COLORS = [
-  '#7EB26D', '#EAB839', '#6ED0E0', '#EF843C', '#E24D42',
-  '#1F78C4', '#BA43A9', '#705DA0', '#508642', '#CCA300',
-  '#447EBC', '#C15C17', '#F4D598', '#F29191', '#AEA2E0',
-]
+// Палитра серий — из токенов: canvas не берёт CSS-переменные сам, а зашитый
+// цвет на светлой теме остался бы тёмным на светлом. Читается при каждой
+// отрисовке, поэтому смена темы перекрашивает график.
+const SERIES_TOKENS = ['--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5', '--chart-6']
 
 const { t } = useI18n()
+const { resolved } = useTheme()
 
 // computed, а не константа: язык приезжает из настроек после монтирования, и
 // зафиксированная при setup подпись осталась бы русской.
@@ -102,6 +102,9 @@ function formatBucket(b: string): string {
 function buildOption(): any {
   const zoom = buckets.value.length > ZOOM_AFTER
   const rotate = buckets.value.length > ROTATE_AFTER ? 45 : 0
+  // Палитра читается здесь, а не один раз при загрузке: тема переключается
+  // на лету, и цвета серий должны меняться вместе с ней.
+  const palette = SERIES_TOKENS.map((token) => themeToken(token, '#7eb26d'))
 
   const barSeries = series.value.map((s, i) => ({
     name: s.name,
@@ -109,7 +112,7 @@ function buildOption(): any {
     stack: 'total',
     data: s.data,
     barMaxWidth: 26,
-    itemStyle: { color: GRAFANA_COLORS[i % GRAFANA_COLORS.length], borderRadius: 0 },
+    itemStyle: { color: palette[i % palette.length], borderRadius: 0 },
     emphasis: { focus: 'series' },
   }))
 
@@ -119,8 +122,8 @@ function buildOption(): any {
     data: totalByBucket.value,
     symbol: 'none',
     smooth: 0.15,
-    lineStyle: { color: 'rgba(255,255,255,0.85)', width: 2 },
-    itemStyle: { color: 'rgba(255,255,255,0.85)' },
+    lineStyle: { color: themeTokenAlpha('--text', 85, '#fff'), width: 2 },
+    itemStyle: { color: themeTokenAlpha('--text', 85, '#fff') },
     z: 10,
   }
 
@@ -131,19 +134,19 @@ function buildOption(): any {
     grid: { left: 46, right: 18, top: 40, bottom: many ? 58 : 28 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(30,30,30,0.94)',
-      borderColor: '#3a3a3a',
+      backgroundColor: themeTokenAlpha('--bg-elevated', 94, '#1e1e1e'),
+      borderColor: themeToken('--border'),
       padding: [8, 12],
-      textStyle: { color: '#ccc', fontSize: 12, lineHeight: 18 },
-      axisPointer: { type: 'line', lineStyle: { color: '#555', type: 'dashed' } },
+      textStyle: { color: themeToken('--text-secondary'), fontSize: 12, lineHeight: 18 },
+      axisPointer: { type: 'line', lineStyle: { color: themeToken('--border-strong'), type: 'dashed' } },
       formatter: (params: any[]) => {
         if (!params || !params.length) return ''
         const rows = params
           .filter((p) => p.seriesName !== totalName.value)
-          .map((p) => `${p.marker} ${p.seriesName}: <b style="color:#fff">${p.value ?? 0}</b>`)
+          .map((p) => `${p.marker} ${p.seriesName}: <b style="color:var(--text)">${p.value ?? 0}</b>`)
           .join('<br/>')
         const total = params.reduce((s, p) => s + (Number(p.value) || 0), 0)
-        return `<b style="color:#eee">${formatBucket(params[0].axisValue)}</b><br/>${rows}<div style="border-top:1px solid #3a3a3a;margin:4px 0 2px;padding-top:3px">${t('audit_chart.total')}: <b style="color:#fff">${total}</b></div>`
+        return `<b style="color:var(--text)">${formatBucket(params[0].axisValue)}</b><br/>${rows}<div style="border-top:1px solid var(--border);margin:4px 0 2px;padding-top:3px">${t('audit_chart.total')}: <b style="color:var(--text)">${total}</b></div>`
       },
     },
     legend: {
@@ -152,30 +155,30 @@ function buildOption(): any {
       icon: 'roundRect',
       itemWidth: 12,
       itemHeight: 8,
-      textStyle: { color: '#9a9a9a', fontSize: 11 },
-      pageIconColor: '#6a6a6a',
-      pageTextStyle: { color: '#8a8a8a', fontSize: 11 },
+      textStyle: { color: themeToken('--text-muted'), fontSize: 11 },
+      pageIconColor: themeToken('--text-dim'),
+      pageTextStyle: { color: themeToken('--text-muted'), fontSize: 11 },
     },
     xAxis: {
       type: 'category',
       data: buckets.value,
       axisLabel: {
-        color: '#8a8a8a',
+        color: themeToken('--text-muted'),
         fontSize: 11,
         interval: 'auto',
         rotate,
         formatter: formatBucket,
       },
-      axisLine: { lineStyle: { color: '#3a3a3a' } },
+      axisLine: { lineStyle: { color: themeToken('--border') } },
       axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       min: 0,
-      axisLabel: { color: '#8a8a8a', fontSize: 11 },
+      axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
       axisLine: { show: false },
       axisTick: { show: false },
-      splitLine: { lineStyle: { color: '#2a2a2a' } },
+      splitLine: { lineStyle: { color: themeToken('--border') } },
     },
     dataZoom: zoom
       ? [
@@ -184,12 +187,12 @@ function buildOption(): any {
             type: 'slider',
             height: 14,
             bottom: 6,
-            borderColor: '#3a3a3a',
+            borderColor: themeToken('--border'),
             backgroundColor: 'transparent',
-            fillerColor: 'rgba(90,138,90,0.25)',
-            handleStyle: { color: '#5a8a5a', borderWidth: 0 },
-            moveHandleStyle: { color: '#5a8a5a' },
-            textStyle: { color: '#8a8a8a', fontSize: 10 },
+            fillerColor: themeTokenAlpha('--accent', 25, '#3a7a3a'),
+            handleStyle: { color: themeToken('--accent'), borderWidth: 0 },
+            moveHandleStyle: { color: themeToken('--accent') },
+            textStyle: { color: themeToken('--text-muted'), fontSize: 10 },
           },
         ]
       : [],
@@ -221,7 +224,9 @@ function onResize() {
 
 // Язык в источнике: подписи легенды и «Итого» приходят из словаря, и без
 // перерисовки смены языка на графике не было бы видно.
-watch([() => props.points, totalName], () => render())
+// Тема в списке: переключение должно перерисовывать график, иначе на новом
+// фоне остались бы линии прежнего цвета.
+watch([() => props.points, totalName, resolved], () => render())
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
@@ -249,7 +254,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   height: 160px;
-  color: #666;
+  color: var(--text-faint);
   font-size: 13px;
 }
 </style>

@@ -333,7 +333,7 @@ watch(
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .page-header-actions {
@@ -358,79 +358,79 @@ watch(
 
 .filter-label {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .filter-select {
   padding: 6px 10px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
 }
 
 .filter-select:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .filter-hint {
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .filter-reset {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   margin-left: 4px;
 }
 
 .filter-reset:hover {
-  color: #aaf;
+  color: var(--info);
   text-decoration: underline;
 }
 
 .row-link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
 }
 
 .row-link:hover {
-  color: #aaf;
+  color: var(--info);
   text-decoration: underline;
 }
 
 .muted {
-  color: #666;
+  color: var(--text-faint);
 }
 
 .btn-add {
   padding: 6px 16px;
   font-size: 14px;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   text-decoration: none;
   cursor: pointer;
 }
 
 .btn-add:hover {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .loading,
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -443,23 +443,23 @@ watch(
 .items-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
 .items-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .items-table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .items-table tr:hover td {
-  background: #252525;
+  background: var(--bg-elevated);
 }
 
 .cb-col {
@@ -469,7 +469,7 @@ watch(
 }
 
 .cb-col input[type="checkbox"] {
-  accent-color: #3a7a3a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -478,7 +478,7 @@ watch(
 }
 
 .action-link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
@@ -494,28 +494,28 @@ watch(
 }
 
 .action-link:hover {
-  color: #aaf;
+  color: var(--info);
 }
 
 .action-del {
-  color: #a66;
+  color: var(--danger);
 }
 
 .action-del:hover {
-  color: #f88;
+  color: var(--danger);
 }
 
 .action-view {
-  color: #88a;
+  color: var(--info);
 }
 
 .action-del--forbidden {
-  color: #666;
+  color: var(--text-faint);
   cursor: not-allowed;
 }
 
 .action-del--forbidden:hover {
-  color: #666;
+  color: var(--text-faint);
 }
 
 .action-del--forbidden .action-icon {
@@ -526,7 +526,7 @@ watch(
 
 
 .page-btn:hover:not(:disabled) {
-  background: #444;
+  background: var(--bg-hover);
 }
 
 .page-btn:disabled {
@@ -556,10 +556,10 @@ watch(
     position: relative;
     margin-bottom: 14px;
     padding: 44px 14px 14px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .items-table td {
@@ -567,7 +567,7 @@ watch(
     box-sizing: border-box;
     padding: 6px 0;
     border-bottom: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
   }
@@ -615,7 +615,7 @@ watch(
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;

@@ -270,12 +270,12 @@ onMounted(load)
 <style scoped>
 .state {
   padding: 14px 0;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .state--error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
   padding: 12px;
 }
@@ -290,33 +290,33 @@ onMounted(load)
 .grants-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
 .grants-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .grants-table td {
-  color: #ccc;
+  color: var(--text-secondary);
   vertical-align: top;
 }
 
 .grants-table tr:hover td {
-  background: #252525;
+  background: var(--bg-elevated);
 }
 
 .grant-user {
-  color: #ddd;
+  color: var(--text);
 }
 
 .grant-email {
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .grant-rights {
@@ -331,7 +331,7 @@ onMounted(load)
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #aaa;
+  color: var(--text-muted);
   cursor: pointer;
   user-select: none;
 }
@@ -339,7 +339,7 @@ onMounted(load)
 .grant-check input {
   width: 16px;
   height: 16px;
-  accent-color: #6a7fdb;
+  accent-color: var(--info-ink);
   cursor: pointer;
 }
 
@@ -361,7 +361,7 @@ onMounted(load)
 }
 
 .action-link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -375,11 +375,11 @@ onMounted(load)
 }
 
 .action-del {
-  color: #a66;
+  color: var(--danger);
 }
 
 .action-del:hover {
-  color: #f88;
+  color: var(--danger);
 }
 
 .grant-form {
@@ -387,8 +387,8 @@ onMounted(load)
   flex-direction: column;
   gap: 14px;
   padding: 18px;
-  background: #1e1e1e;
-  border: 1px solid #2b2b2b;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 10px;
   max-width: 640px;
   box-sizing: border-box;
@@ -396,7 +396,7 @@ onMounted(load)
 
 .grant-form__title {
   font-size: 15px;
-  color: #ccc;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -407,7 +407,7 @@ onMounted(load)
 .field-label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -416,16 +416,16 @@ onMounted(load)
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
 }
 
 .field-select:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .btn-add {
@@ -433,15 +433,15 @@ onMounted(load)
   padding: 8px 22px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-add:hover:not(:disabled) {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .btn-add:disabled {
@@ -465,10 +465,10 @@ onMounted(load)
     position: relative;
     margin-bottom: 14px;
     padding: 44px 14px 14px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .grants-table td {
@@ -476,7 +476,7 @@ onMounted(load)
     box-sizing: border-box;
     padding: 6px 0;
     border-bottom: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
   }
@@ -494,7 +494,7 @@ onMounted(load)
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;

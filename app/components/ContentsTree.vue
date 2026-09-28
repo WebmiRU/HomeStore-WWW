@@ -143,7 +143,7 @@ watch(() => [props.kind, props.entityId], load)
 
 .contents__summary {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .contents__tools {
@@ -155,16 +155,16 @@ watch(() => [props.kind, props.entityId], load)
   padding: 5px 12px;
   font-size: 12px;
   font-family: inherit;
-  color: #9aa;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-tool:hover {
-  color: #ccc;
-  background: #333;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
 }
 
 .contents__tree {
@@ -176,12 +176,12 @@ watch(() => [props.kind, props.entityId], load)
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 

@@ -132,16 +132,16 @@ onBeforeUnmount(() => {
   padding: 6px 16px;
   font-size: 14px;
   font-family: inherit;
-  background: #4a3a5a;
-  color: #dcd0e8;
-  border: 1px solid #5a4480;
+  background: var(--note);
+  color: var(--note-ink);
+  border: 1px solid var(--note);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .blank-btn:hover:not(:disabled) {
-  background: #5a4480;
+  background: color-mix(in srgb, var(--note) 26%, var(--bg-elevated));
 }
 
 .blank-btn:disabled {
@@ -158,10 +158,10 @@ onBeforeUnmount(() => {
   max-width: calc(100vw - 40px);
   max-height: 320px;
   overflow-y: auto;
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-sunken) 50%, transparent);
   z-index: 100;
   padding: 4px 0;
 }
@@ -170,15 +170,15 @@ onBeforeUnmount(() => {
   padding: 10px 14px;
   font-size: 12px;
   line-height: 1.4;
-  color: #888;
-  border-bottom: 1px solid #2b2b2b;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
 }
 
 .blank-loading,
 .blank-empty {
   padding: 10px 14px;
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .blank-item {
@@ -188,13 +188,13 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 8px 14px;
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .blank-item:hover {
-  background: #2a2a2a;
+  background: var(--bg-elevated);
 }
 
 .blank-item.disabled {
@@ -211,6 +211,6 @@ onBeforeUnmount(() => {
 .blank-item-count {
   flex-shrink: 0;
   font-size: 12px;
-  color: #9a8ab8;
+  color: var(--note-muted);
 }
 </style>

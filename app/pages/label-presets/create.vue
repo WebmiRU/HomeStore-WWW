@@ -204,7 +204,7 @@ async function save() {
 .page-title {
   margin: 0 0 20px;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .create-tabs {
@@ -216,7 +216,7 @@ async function save() {
 }
 
 .fieldset {
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -224,7 +224,7 @@ async function save() {
 
 .legend {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   padding: 0 6px;
 }
 
@@ -245,7 +245,7 @@ async function save() {
 .field-label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -254,9 +254,9 @@ async function save() {
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
@@ -264,7 +264,7 @@ async function save() {
 
 .field-input:focus,
 .field-select:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .field-select {
@@ -272,9 +272,9 @@ async function save() {
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
@@ -306,15 +306,15 @@ async function save() {
   padding: 8px 24px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .btn-save:disabled {
@@ -325,17 +325,17 @@ async function save() {
 .btn-cancel {
   padding: 8px 16px;
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   text-decoration: none;
-  border: 1px dashed #555;
+  border: 1px dashed var(--border-strong);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
 }
 
 .btn-cancel:hover {
-  color: #ddd;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
   border-style: solid;
 }
 

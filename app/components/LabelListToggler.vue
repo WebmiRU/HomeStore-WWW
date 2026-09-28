@@ -162,14 +162,14 @@ onBeforeUnmount(() => {
   border-radius: 3px;
   cursor: pointer;
   line-height: 1;
-  color: #888;
+  color: var(--text-muted);
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .toggler-btn:hover {
-  background: #2a2a2a;
-  border-color: #444;
-  color: #ccc;
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
 }
 
 .toggler-icon {
@@ -177,14 +177,14 @@ onBeforeUnmount(() => {
   width: 18px;
   height: 18px;
   vertical-align: middle;
-  background-color: #cfcfcf;
+  background-color: var(--text);
   -webkit-mask: url('/img/icon/clipboard.svg') no-repeat center / contain;
   mask: url('/img/icon/clipboard.svg') no-repeat center / contain;
   transition: background-color 0.15s;
 }
 
 .toggler-icon--active {
-  background-color: #3fb950;
+  background-color: var(--success);
 }
 
 .toggler-dropdown {
@@ -196,10 +196,10 @@ onBeforeUnmount(() => {
   max-width: calc(100vw - 40px);
   max-height: 280px;
   overflow-y: auto;
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-sunken) 50%, transparent);
   z-index: 100;
   padding: 4px 0;
 }
@@ -208,7 +208,7 @@ onBeforeUnmount(() => {
 .toggler-empty {
   padding: 10px 14px;
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .toggler-item {
@@ -217,13 +217,13 @@ onBeforeUnmount(() => {
   gap: 8px;
   padding: 6px 14px;
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .toggler-item:hover {
-  background: #2a2a2a;
+  background: var(--bg-elevated);
 }
 
 .toggler-item.disabled {
@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
 }
 
 .toggler-item input[type="checkbox"] {
-  accent-color: #3a7a3a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 

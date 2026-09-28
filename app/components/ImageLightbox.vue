@@ -256,7 +256,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 30px;
-  background: rgba(0, 0, 0, 0.82);
+  background: var(--scrim);
 }
 
 .lightbox__stage {
@@ -280,8 +280,8 @@ onBeforeUnmount(() => {
   max-width: min(800px, calc(100vw - 60px));
   max-height: min(800px, calc(100vh - 60px));
   object-fit: contain;
-  background: #111;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  background: var(--bg-sunken);
+  box-shadow: 0 10px 40px var(--shadow);
 }
 
 .lightbox__img--loading {
@@ -295,8 +295,8 @@ onBeforeUnmount(() => {
   width: 34px;
   height: 34px;
   margin: -17px 0 0 -17px;
-  border: 3px solid #444;
-  border-top-color: #9fd8a6;
+  border: 3px solid var(--border-strong);
+  border-top-color: var(--success-hover);
   border-radius: 50%;
   animation: lightbox-spin 0.7s linear infinite;
 }
@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
 .lightbox__error {
   margin: 0;
   font-size: 14px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .lightbox__close,
@@ -322,9 +322,9 @@ onBeforeUnmount(() => {
   padding: 0;
   font-family: inherit;
   line-height: 1;
-  color: #ddd;
-  background: rgba(30, 30, 30, 0.8);
-  border: 1px solid #444;
+  color: var(--text);
+  background: var(--scrim);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -355,8 +355,8 @@ onBeforeUnmount(() => {
 
 .lightbox__close:hover,
 .lightbox__nav:hover {
-  color: #fff;
-  background: #2a2a2a;
+  color: var(--text);
+  background: var(--bg-elevated);
 }
 
 .lightbox__caption {
@@ -368,9 +368,9 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 4px 10px;
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-secondary);
   text-align: center;
-  background: rgba(20, 20, 20, 0.75);
+  background: var(--scrim);
   border-radius: 6px;
   /* Подпись не должна перехватывать клик по затемнению — им закрывается окно. */
   pointer-events: none;

@@ -203,7 +203,7 @@ const counts = computed(() => {
   left: 0;
   top: 0;
   bottom: 0;
-  border-left: 1px solid #3a3a3a;
+  border-left: 1px solid var(--border);
 }
 
 /* У последнего в группе, у свёрнутого и у корня линия уровня обрывается на
@@ -228,7 +228,7 @@ const counts = computed(() => {
   top: 0;
   width: 1px;
   height: 50%;
-  background: #3a3a3a;
+  background: var(--bg-hover);
 }
 
 /* Обрывается она только у корня: над ним линии уровня нет вообще, и короткий
@@ -284,7 +284,7 @@ const counts = computed(() => {
   left: calc(-1 * (var(--step) - var(--toggle) / 2));
   top: 50%;
   width: calc(var(--step) + var(--photogap) - var(--toggle) / 2);
-  border-top: 1px solid #3a3a3a;
+  border-top: 1px solid var(--border);
 }
 
 .cnode__head {
@@ -313,16 +313,16 @@ const counts = computed(() => {
   padding: 0;
   font-size: 12px;
   line-height: 1;
-  color: #aaa;
-  background: #24242c;
-  border: 1px solid #555;
+  color: var(--text-muted);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-strong);
   border-radius: 2px;
   cursor: pointer;
 }
 
 .cnode__toggle:hover {
-  color: #fff;
-  border-color: #8a8;
+  color: var(--text);
+  border-color: var(--note-muted);
 }
 
 /* У листа место под квадратик остаётся, чтобы строки стояли вровень, но сам
@@ -346,7 +346,7 @@ const counts = computed(() => {
 
 .cnode__title {
   font-size: 15px;
-  color: #cce;
+  color: var(--info);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -354,26 +354,26 @@ const counts = computed(() => {
 }
 
 .cnode__title:hover {
-  color: #aaf;
+  color: var(--info);
   text-decoration: underline;
 }
 
 .cnode__title--root {
   font-size: 17px;
-  color: #ddd;
+  color: var(--text);
 }
 
 .cnode__deleted {
   flex-shrink: 0;
   font-size: 12px;
-  color: #b98;
+  color: var(--danger-ink);
 }
 
 .cnode__counts {
   margin-left: auto;
   padding-left: 10px;
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -399,7 +399,7 @@ const counts = computed(() => {
   top: calc(-1 * var(--rowh) / 2);
   width: 1px;
   height: calc(var(--rowh) / 2);
-  background: #3a3a3a;
+  background: var(--bg-hover);
 }
 
 /*
@@ -425,7 +425,7 @@ const counts = computed(() => {
   top: calc(-1 * (var(--rowh) / 2 + var(--rowgap)));
   bottom: calc(var(--itemh) / 2);
   width: 1px;
-  background: #3a3a3a;
+  background: var(--bg-hover);
 }
 
 .cnode--branched .cnode__items::before {
@@ -446,12 +446,12 @@ const counts = computed(() => {
   left: calc(-1 * var(--itemstub));
   top: 50%;
   width: var(--itemstub);
-  border-top: 1px solid #3a3a3a;
+  border-top: 1px solid var(--border);
 }
 
 .cnode__item {
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -459,7 +459,7 @@ const counts = computed(() => {
 }
 
 .cnode__item:hover {
-  color: #ccf;
+  color: var(--info);
   text-decoration: underline;
 }
 
@@ -467,16 +467,16 @@ const counts = computed(() => {
   padding: 3px 10px;
   font-size: 12px;
   font-family: inherit;
-  color: #9aa;
+  color: var(--text-secondary);
   background: none;
-  border: 1px dashed #444;
+  border: 1px dashed var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .cnode__more:hover {
-  color: #ccc;
-  border-color: #666;
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 @media (max-width: 768px) {

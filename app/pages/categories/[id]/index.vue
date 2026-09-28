@@ -217,17 +217,17 @@ onMounted(load)
 .page-title {
   margin: 24px 0 8px;
   font-size: 20px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .loading,
 .error {
-  color: #888;
+  color: var(--text-muted);
   padding: 12px 0;
 }
 
 .error {
-  color: #f88;
+  color: var(--danger);
 }
 
 .edit-tabs {
@@ -252,7 +252,7 @@ onMounted(load)
 .field-label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -262,9 +262,9 @@ onMounted(load)
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
@@ -272,13 +272,13 @@ onMounted(load)
 
 .field-input:focus,
 .field-select:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .field-hint {
   display: block;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
   margin-top: 4px;
 }
 
@@ -293,9 +293,9 @@ onMounted(load)
   padding: 8px 20px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
@@ -304,7 +304,7 @@ onMounted(load)
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .btn-save:disabled {
@@ -315,25 +315,25 @@ onMounted(load)
 .btn-cancel {
   padding: 8px 16px;
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   text-decoration: none;
-  border: 1px dashed #555;
+  border: 1px dashed var(--border-strong);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
 }
 
 .btn-cancel:hover {
-  color: #ddd;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
   border-style: solid;
 }
 
 .children {
-  border: 1px solid #2f2f2f;
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 14px;
-  background: #202020;
+  background: var(--bg);
 }
 
 .children__head {
@@ -346,7 +346,7 @@ onMounted(load)
 
 .children__title {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .children__head .btn-add {
@@ -366,7 +366,7 @@ onMounted(load)
   justify-content: space-between;
   gap: 10px;
   padding: 5px 0;
-  border-bottom: 1px solid #2b2b2b;
+  border-bottom: 1px solid var(--border);
 }
 
 .children__item:last-child {
@@ -374,36 +374,36 @@ onMounted(load)
 }
 
 .children__link {
-  color: #88a;
+  color: var(--info);
   font-size: 14px;
   text-decoration: none;
 }
 
 .children__link:hover {
-  color: #aaf;
+  color: var(--info);
   text-decoration: underline;
 }
 
 .children__count {
   font-size: 12px;
-  color: #666;
+  color: var(--text-faint);
 }
 
 .children__empty {
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .section-hint {
   margin: 0;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
   line-height: 1.5;
 }
 
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .props-table {
@@ -415,37 +415,37 @@ onMounted(load)
 .props-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
 .props-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .props-table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .props-table tr:hover td {
-  background: #252525;
+  background: var(--bg-elevated);
 }
 
 .row-link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
 }
 
 .row-link:hover {
-  color: #aaf;
+  color: var(--info);
   text-decoration: underline;
 }
 
 .muted {
-  color: #666;
+  color: var(--text-faint);
 }
 
 @media (max-width: 768px) {
@@ -467,10 +467,10 @@ onMounted(load)
   .props-table tr {
     margin-bottom: 14px;
     padding: 10px 14px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .props-table td {
@@ -478,7 +478,7 @@ onMounted(load)
     box-sizing: border-box;
     padding: 6px 0;
     border-bottom: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
   }
@@ -487,7 +487,7 @@ onMounted(load)
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;

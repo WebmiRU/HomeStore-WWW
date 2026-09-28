@@ -142,12 +142,12 @@ onMounted(() => load(1))
 <style scoped>
 .mvlist__state {
   padding: 16px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .mvlist__state--error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -158,14 +158,14 @@ onMounted(() => load(1))
   padding: 10px 12px;
   margin-bottom: 12px;
   font-size: 13px;
-  color: #888;
-  background: #1e1e1e;
-  border: 1px solid #2b2b2b;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .mvlist__sum-item b {
-  color: #ddd;
+  color: var(--text);
 }
 
 .mvlist__table {
@@ -178,27 +178,27 @@ onMounted(() => load(1))
   padding: 7px 10px;
   text-align: left;
   font-size: 14px;
-  border-bottom: 1px solid #2b2b2b;
+  border-bottom: 1px solid var(--border);
 }
 
 .mvlist__table th {
   font-size: 12px;
   font-weight: 600;
-  color: #888;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .mvlist__table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .mvlist__row--return td {
-  color: #9cb8ba;
+  color: var(--info-ink);
 }
 
 .mvlist__cell-date {
   white-space: nowrap;
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -207,7 +207,7 @@ onMounted(() => load(1))
 }
 
 .mvlist__cell-comment {
-  color: #bbb;
+  color: var(--text-secondary);
 }
 
 .mvlist__cell-qty,
@@ -222,23 +222,23 @@ onMounted(() => load(1))
 }
 
 .mvlist__sign--replenish {
-  color: #3fb950;
+  color: var(--success);
 }
 
 .mvlist__sign--writeoff {
-  color: #d29922;
+  color: var(--warn);
 }
 
 .mvlist__tag {
   margin-left: 6px;
   font-size: 12px;
-  color: #6d8f92;
+  color: var(--text-dim);
 }
 
 .mvlist__returned {
   margin-left: 8px;
   font-size: 12px;
-  color: #6d8f92;
+  color: var(--text-dim);
 }
 
 .mvlist__pager {
@@ -252,9 +252,9 @@ onMounted(() => load(1))
 .mvlist__page {
   padding: 4px 12px;
   font-size: 13px;
-  color: #ccc;
-  background: #333;
-  border: 1px solid #444;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -266,6 +266,6 @@ onMounted(() => load(1))
 
 .mvlist__page-info {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 </style>

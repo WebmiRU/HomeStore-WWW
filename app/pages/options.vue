@@ -206,7 +206,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { isNavGroup, navTree, sortNavKeys, type NavGroup, type NavItem } from '~/utils/navigation'
-import type { Locale, OperationMode } from '~/repository/modules/option'
+import type { Accent, Locale, OperationMode, Theme } from '~/repository/modules/option'
 import type { TranslationKey } from '~/i18n/ru'
 import { formatApiError } from '~/composables/formatApiError'
 
@@ -370,26 +370,32 @@ function fillDefaults(): void {
 }
 
 /**
- * Оформление применяется и сохраняется сразу, без кнопки «Сохранить».
+ * Оформление показывается сразу, а сохраняется — этой же кнопкой.
  *
- * Тему и акцент выбирают, чтобы посмотреть на результат: ждать, пока форма
- * отправится в сервер и вернётся, незачем, а потом ещё и перерисовывать всё
- * заново. Остальные настройки формы ведут себя как раньше — их сохраняет кнопка.
+ * Тему и акцент выбирают, чтобы посмотреть на результат, но отправляет всё
+ * одна кнопка, как язык и порядок меню: иначе на странице настроек было бы
+ * два разных способа сохранить, и «Сохранить» не срабатывал бы, пока
+ * оформление не поменяли.
  */
-const { mode, resolved, accent, setTheme, setAccent } = useTheme()
+const { mode, resolved, accent, preview } = useTheme()
 
-const themeChoice = computed({
-  get: () => mode.value,
-  set: (value) => setTheme(value),
-})
-
-const accentChoice = computed({
-  get: () => accent.value,
-  set: (value) => setAccent(value),
-})
+const themeChoice = ref<Theme>(mode.value)
+const accentChoice = ref<Accent>(accent.value)
 
 /** Для превью акцентов: «как в системе» — это уже разрешённая тема. */
 const themePreview = computed(() => resolved.value)
+
+// Предпросмотр без сохранения: значение применяется к странице и в cookie,
+// но в настройки аккаунта уходит только с кнопкой.
+watch(themeChoice, (value) => preview({ theme: value }))
+watch(accentChoice, (value) => preview({ accent: value }))
+
+// Ответ сервера — источник истины: он заполняет форму, в том числе после
+// сохранения остальных настроек.
+watch([mode, accent], ([theme, value]) => {
+  themeChoice.value = theme
+  accentChoice.value = value
+})
 
 /** Ключи в том виде, в каком их видит человек с учётом сохранённого порядка. */
 const storedOrder = computed(() => [
@@ -404,7 +410,9 @@ const dirty = computed(
     operationMode.value !== options.value.operation_mode ||
     showCodeBlock.value !== options.value.show_code_block ||
     rememberOperationMode.value !== options.value.remember_operation_mode ||
-    localeChoice.value !== options.value.locale,
+    localeChoice.value !== options.value.locale ||
+    themeChoice.value !== options.value.theme ||
+    accentChoice.value !== options.value.accent,
 )
 
 async function saveAll(): Promise<void> {
@@ -420,6 +428,8 @@ async function saveAll(): Promise<void> {
       show_code_block: showCodeBlock.value,
       remember_operation_mode: rememberOperationMode.value,
       locale: localeChoice.value,
+      theme: themeChoice.value,
+      accent: accentChoice.value,
     })
 
     $notify.add(t('options_page.saved'), { type: 'success', timer: 4 })
@@ -457,7 +467,7 @@ watch(options, fillFromOptions)
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .page-header-actions {
@@ -473,26 +483,26 @@ watch(options, fillFromOptions)
 .options-hint {
   margin: 0;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .options-card {
   padding: 16px;
-  background: #232323;
-  border: 1px solid #2f2f2f;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
 .options-card__title {
   margin: 0 0 4px;
   font-size: 15px;
-  color: #ddd;
+  color: var(--text);
 }
 
 .options-card__hint {
   margin: 0 0 12px;
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 /* Подзаголовок внутри карточки настроек: у «Интерфейса» внутри три смысловые
@@ -501,13 +511,13 @@ watch(options, fillFromOptions)
   margin: 0 0 8px;
   font-size: 14px;
   font-weight: normal;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .options-divider {
   height: 1px;
   margin: 16px 0 12px;
-  background: #2f2f2f;
+  background: var(--bg-hover);
 }
 
 .menu-list {
@@ -521,7 +531,7 @@ watch(options, fillFromOptions)
 }
 
 .menu-row-wrap {
-  border-top: 1px solid #2c2c2c;
+  border-top: 1px solid var(--border);
 }
 
 .menu-list > .menu-row-wrap:first-child,
@@ -545,7 +555,7 @@ watch(options, fillFromOptions)
 /* Спрятанный пункт остаётся в списке и гаснет: иначе его нечем будет
    вернуть, кроме как сбросом всех настроек. */
 .menu-row--off .menu-row__label {
-  color: #777;
+  color: var(--text-dim);
   text-decoration: line-through;
 }
 
@@ -558,7 +568,7 @@ watch(options, fillFromOptions)
 
 .menu-row__label {
   font-size: 14px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .menu-row__move {
@@ -571,16 +581,16 @@ watch(options, fillFromOptions)
   height: 26px;
   font-size: 14px;
   line-height: 1;
-  color: #bbb;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .menu-move:hover:not(:disabled) {
-  color: #fff;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 .menu-move:disabled {
@@ -600,16 +610,16 @@ watch(options, fillFromOptions)
   gap: 8px;
   padding: 7px 14px;
   font-size: 14px;
-  color: #bbb;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
 }
 
 .mode-choice--on {
-  color: #c4f0f4;
-  background: #1b3d40;
-  border-color: #2e5b5f;
+  color: var(--info-ink);
+  background: var(--info-bg);
+  border-color: var(--info-bg);
 }
 </style>

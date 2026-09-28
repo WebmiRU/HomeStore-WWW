@@ -120,16 +120,16 @@ onBeforeUnmount(() => {
   padding: 6px 16px;
   font-size: 14px;
   font-family: inherit;
-  background: #3a5a2a;
-  color: #cfc;
-  border: 1px solid #4a7a3a;
+  background: var(--success);
+  color: var(--accent-ink);
+  border: 1px solid var(--success);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .mass-btn:hover {
-  background: #4a7a3a;
+  background: color-mix(in srgb, var(--success) 78%, var(--bg));
 }
 
 .mass-dropdown {
@@ -141,10 +141,10 @@ onBeforeUnmount(() => {
   max-width: calc(100vw - 40px);
   max-height: 280px;
   overflow-y: auto;
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-sunken) 50%, transparent);
   z-index: 100;
   padding: 4px 0;
 }
@@ -153,19 +153,19 @@ onBeforeUnmount(() => {
 .mass-empty {
   padding: 10px 14px;
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .mass-item {
   padding: 8px 14px;
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .mass-item:hover {
-  background: #2a2a2a;
+  background: var(--bg-elevated);
 }
 
 .mass-item.disabled {

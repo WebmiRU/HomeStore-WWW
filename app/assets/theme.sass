@@ -34,12 +34,35 @@
   --text-muted:      #888
   --text-dim:        #777
   --text-faint:      #666
-  --danger:          #f88
-  --danger-bg:       #3a1a1a
+
+  // Состояния. У каждого своя подложка, свой цвет рамки и свой текст: на
+  // тёмном фоне подложка тёмная, а текст на ней светлый, и наоборот.
+  --success:         #3fb950
+  --success-bg:      #1b3525
+  --success-ink:     #d8f5dc
+  --success-hover:   #7fdb8b
   --warn:            #d29922
-  --warn-bg:         #5a4a3a
+  --warn-bg:         #3a2e1a
+  --warn-ink:        #f7e6c2
+  --warn-hover:      #ffc76e
+  --danger:          #f88
+  --danger-bg:       #2a1a1a
+  --danger-ink:      #f2b8b8
+  --danger-hover:    #ffb4b4
   --info:            #4d94f7
-  --info-bg:         #3a4a6a
+  --info-bg:         #1b2b45
+  --info-ink:        #d7e6ff
+  --info-hover:      #6cb6ff
+  // Сиреневый — «не ошибка, но обрати внимание»: безымянная этикетка, код,
+  // который ни к чему не привязан. Отдельный цвет, а не красный.
+  --note:            #5a4480
+  --note-bg:         #241a33
+  --note-ink:        #cdb8f0
+  --note-muted:      #9a8ab8
+  --note-link:       #c9a8f0
+  --note-link-hover: #e0ccf8
+  --note-code:       #8a7aa8
+
   --shadow:          rgba(0, 0, 0, .5)
   --scrim:           rgba(0, 0, 0, .72)
 
@@ -57,15 +80,39 @@
   --border-strong:   #c9c3b8
   --text:            #23262b
   --text-secondary:  #41464d
-  --text-muted:      #6d727a
-  --text-dim:        #8b9098
-  --text-faint:      #a7acb3
-  --danger:          #b3261e
-  --danger-bg:       #fbe9e7
+  // Приглушённые ступени на светлом фоне темнее, чем кажется нужным: на
+  // тёплом фоне страницы светло-серый даёт 4.2:1 и не проходит WCAG AA для
+  // обычного текста. Здесь минимум 4.7 на любой светлой поверхности, а
+  // --text-faint оставлен подсказкам и выключенным кнопкам, где контраст по
+  // стандарту не требуется.
+  --text-muted:      #5b6169
+  --text-dim:        #626870
+  --text-faint:      #868b93
+
+  --success:         #2a7d3f
+  --success-bg:      #e6f4e9
+  --success-ink:     #1d5c2c
+  --success-hover:   #1f6a36
   --warn:            #8a5a00
   --warn-bg:         #fdf3e0
+  --warn-ink:        #6b4500
+  --warn-hover:      #6b4500
+  --danger:          #b3261e
+  --danger-bg:       #fbe9e7
+  --danger-ink:      #8c1d18
+  --danger-hover:    #8c1d18
   --info:            #1a5fb4
   --info-bg:         #e7f0fb
+  --info-ink:        #17457f
+  --info-hover:      #14487f
+  --note:            #6b46a8
+  --note-bg:         #f1ecfb
+  --note-ink:        #4a3180
+  --note-muted:      #6b5b8a
+  --note-link:       #5b3a99
+  --note-link-hover: #452c78
+  --note-code:       #7a6f92
+
   --shadow:          rgba(35, 38, 43, .12)
   --scrim:           rgba(35, 38, 43, .62)
 
@@ -107,3 +154,25 @@
   --accent-hover-bg: color-mix(in srgb, var(--accent-base) 26%, var(--bg-elevated))
   --accent-ink:      color-mix(in srgb, var(--accent-base) 70%, var(--text))
   --accent-contrast: #fff
+
+// Палитра серий графиков. Canvas не берёт токены сам, поэтому цвета живут
+// здесь, а график читает их через getComputedStyle: иначе линии остались бы
+// тёмными на светлом фоне. Шесть цветов — столько нужно журналу действий,
+// дальше палитра повторяется.
+[data-theme='dark']
+  --chart-1: #7eb26d
+  --chart-2: #6ed0e0
+  --chart-3: #eab839
+  --chart-4: #ba43a9
+  --chart-5: #ef843c
+  --chart-6: #e24d42
+  --chart-line: #7aa8a4
+
+[data-theme='light']
+  --chart-1: #2f6b3a
+  --chart-2: #1f6f80
+  --chart-3: #8a5a00
+  --chart-4: #7a2a6a
+  --chart-5: #a8500f
+  --chart-6: #b3261e
+  --chart-line: #1f6f80

@@ -236,7 +236,7 @@ function onKeydown(e: KeyboardEvent) {
   display: block;
   margin: 6px 0 0;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 /*
@@ -265,11 +265,11 @@ function onKeydown(e: KeyboardEvent) {
  * вторая линия. Левая, наоборот, нужна — это внешний край группы.
  */
 .input-group__btn--move {
-  color: #9a9a9a;
-  background: #2e2e2e;
-  border-color: #444;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
   border-right: none;
-  border-left: 1px solid #444;
+  border-left: 1px solid var(--border-strong);
   /* Треугольник, а не стрелка ↑↓: в шрифте приложения стрелка рисуется
      волосом — 10px глиф в кнопке 38px, и она почти не видна. Размером это
      не лечится, помогает только заливка. */
@@ -277,8 +277,8 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .input-group__btn--move:hover:not(:disabled) {
-  color: #ddd;
-  background: #3a3a3a;
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 /*
@@ -308,10 +308,10 @@ function onKeydown(e: KeyboardEvent) {
  * и на значения свойств, где сканирования нет.
  */
 .codes-editor__row:focus-within .input-group__control {
-  border-color: #4a9a52;
+  border-color: var(--accent);
 }
 
 .codes-editor__row:focus-within .input-group__control::placeholder {
-  color: #6a8a70;
+  color: var(--success);
 }
 </style>

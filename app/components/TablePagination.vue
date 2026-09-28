@@ -50,15 +50,15 @@ defineEmits<{ go: [page: number] }>()
 .page-btn {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .page-btn:disabled {
@@ -68,6 +68,6 @@ defineEmits<{ go: [page: number] }>()
 
 .page-info {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 </style>

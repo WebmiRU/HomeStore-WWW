@@ -73,7 +73,7 @@ async function submit() {
 .page-title {
   margin: 0 0 20px;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .login-form {
@@ -89,7 +89,7 @@ async function submit() {
 .field-label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -98,16 +98,16 @@ async function submit() {
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
 }
 
 .field-input:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .form-actions {
@@ -120,15 +120,15 @@ async function submit() {
   padding: 8px 24px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a4a7a;
-  color: #cfe;
-  border: 1px solid #3a6a9a;
+  background: var(--info);
+  color: var(--info-ink);
+  border: 1px solid var(--info);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-login:hover:not(:disabled) {
-  background: #3a6a9a;
+  background: color-mix(in srgb, var(--info) 26%, var(--bg-elevated));
 }
 
 .btn-login:disabled {
@@ -139,17 +139,17 @@ async function submit() {
 .btn-cancel {
   padding: 8px 16px;
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   text-decoration: none;
-  border: 1px dashed #555;
+  border: 1px dashed var(--border-strong);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
 }
 
 .btn-cancel:hover {
-  color: #ddd;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
   border-style: solid;
 }
 

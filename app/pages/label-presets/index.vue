@@ -168,34 +168,34 @@ watch(() => route.query.page, (newPage) => {
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .btn-add {
   padding: 6px 16px;
   font-size: 14px;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   text-decoration: none;
   cursor: pointer;
 }
 
 .btn-add:hover {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .loading,
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -208,23 +208,23 @@ watch(() => route.query.page, (newPage) => {
 .presets-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
 .presets-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .presets-table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .presets-table tr:hover td {
-  background: #252525;
+  background: var(--bg-elevated);
 }
 
 .actions {
@@ -232,7 +232,7 @@ watch(() => route.query.page, (newPage) => {
 }
 
 .action-link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
@@ -248,19 +248,19 @@ watch(() => route.query.page, (newPage) => {
 }
 
 .action-link:hover {
-  color: #aaf;
+  color: var(--info);
 }
 
 .action-del {
-  color: #a66;
+  color: var(--danger);
 }
 
 .action-del:hover {
-  color: #f88;
+  color: var(--danger);
 }
 
 .action-lock {
-  color: #6a6a8a;
+  color: var(--info);
   cursor: default;
   display: inline-flex;
   vertical-align: middle;
@@ -278,9 +278,9 @@ watch(() => route.query.page, (newPage) => {
   margin-left: 8px;
   padding: 1px 7px;
   font-size: 11px;
-  color: #cbb8e8;
-  background: #241a33;
-  border: 1px solid #5a4480;
+  color: var(--note-ink);
+  background: var(--note-bg);
+  border: 1px solid var(--note);
   border-radius: 3px;
   vertical-align: middle;
   cursor: help;
@@ -297,15 +297,15 @@ watch(() => route.query.page, (newPage) => {
 .page-btn {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .page-btn:disabled {
@@ -315,7 +315,7 @@ watch(() => route.query.page, (newPage) => {
 
 .page-info {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 @media (max-width: 768px) {
@@ -339,10 +339,10 @@ watch(() => route.query.page, (newPage) => {
     position: relative;
     margin-bottom: 14px;
     padding: 44px 14px 14px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .presets-table td {
@@ -350,7 +350,7 @@ watch(() => route.query.page, (newPage) => {
     box-sizing: border-box;
     padding: 6px 0;
     border-bottom: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
   }
@@ -381,7 +381,7 @@ watch(() => route.query.page, (newPage) => {
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;

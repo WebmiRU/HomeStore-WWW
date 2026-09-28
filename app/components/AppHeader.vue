@@ -245,7 +245,7 @@ onUnmounted(() => {
 }
 
 a.header-avatar:hover {
-  box-shadow: 0 0 0 2px #2a2a3a, 0 0 0 4px #3a3a5a;
+  box-shadow: 0 0 0 2px var(--info-bg), 0 0 0 4px var(--info-bg);
 }
 
 .header-search {
@@ -261,30 +261,30 @@ a.header-avatar:hover {
   min-width: 0;
   padding: 10px 14px;
   font-size: 16px;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   outline: none;
 }
 
 .header-search__input:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .header-search__btn {
   flex-shrink: 0;
   padding: 10px 22px;
   font-size: 16px;
-  background: #333;
-  color: #ddd;
-  border: 1px solid #555;
+  background: var(--bg-hover);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   cursor: pointer;
 }
 
 .header-search__btn:hover {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .header-logout {
@@ -292,15 +292,15 @@ a.header-avatar:hover {
   padding: 10px 18px;
   font-size: 14px;
   font-family: inherit;
-  background: #3a1f1f;
-  color: #f8a8a8;
-  border: 1px solid #7a3a3a;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
   border-radius: 6px;
   cursor: pointer;
 }
 
 .header-logout:hover:not(:disabled) {
-  background: #4d2a2a;
+  background: color-mix(in srgb, var(--danger) 26%, var(--bg-elevated));
 }
 
 .header-logout:disabled {
@@ -372,7 +372,7 @@ a.header-avatar:hover {
 .entity-link {
   font-size: 14px;
   font-family: inherit;
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 4px;
@@ -380,15 +380,15 @@ a.header-avatar:hover {
 }
 
 .entity-link:hover {
-  background: #2a2a2a;
-  color: #aaf;
-  border-color: #444;
+  background: color-mix(in srgb, var(--bg-elevated) 80%, var(--text));
+  color: var(--info);
+  border-color: var(--border-strong);
 }
 
 .router-link-active.entity-link {
-  color: #aaf;
-  background: #2a2a3a;
-  border-color: #3a3a5a;
+  color: var(--info);
+  background: var(--info-bg);
+  border-color: var(--info-bg);
 }
 
 /* Родитель группы не ссылка, но должен выглядеть ровно так же — иначе
@@ -403,9 +403,9 @@ a.header-avatar:hover {
 
 .entity-group__toggle.router-link-active,
 .entity-group--active > .entity-group__toggle {
-  color: #aaf;
-  background: #2a2a3a;
-  border-color: #3a3a5a;
+  color: var(--info);
+  background: var(--info-bg);
+  border-color: var(--info-bg);
 }
 
 .entity-group__caret {
@@ -431,29 +431,29 @@ a.header-avatar:hover {
   padding: 4px;
   display: flex;
   flex-direction: column;
-  background: #24242c;
-  border: 1px solid #444;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--bg-sunken) 45%, transparent);
 }
 
 .entity-group__item {
   padding: 7px 10px;
   font-size: 14px;
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   border-radius: 4px;
   white-space: nowrap;
 }
 
 .entity-group__item:hover {
-  background: #2f2f3a;
-  color: #aaf;
+  background: color-mix(in srgb, var(--bg-elevated) 80%, var(--text));
+  color: var(--info);
 }
 
 .router-link-active.entity-group__item {
-  background: #2a2a3a;
-  color: #aaf;
+  background: var(--info-bg);
+  color: var(--info);
 }
 
 @media (max-width: 768px) {

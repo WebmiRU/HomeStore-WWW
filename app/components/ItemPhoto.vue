@@ -202,9 +202,9 @@ function onError() {
   height: 84px;
   flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #222;
+  background: var(--bg-elevated);
 }
 
 .item-photo {
@@ -228,7 +228,7 @@ function onError() {
 }
 
 .item-photo-wrap--openable:hover {
-  border-color: #4a7a4a;
+  border-color: var(--accent-strong);
 }
 
 .item-photo-spinner {
@@ -238,8 +238,8 @@ function onError() {
   width: var(--photo-spinner, 22px);
   height: var(--photo-spinner, 22px);
   margin: calc(var(--photo-spinner, 22px) / -2) 0 0 calc(var(--photo-spinner, 22px) / -2);
-  border: 2px solid #444;
-  border-top-color: #9fd8a6;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--success-hover);
   border-radius: 50%;
   animation: item-photo-spin 0.7s linear infinite;
 }

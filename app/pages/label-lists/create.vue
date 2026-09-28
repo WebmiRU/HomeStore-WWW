@@ -88,7 +88,7 @@ onMounted(loadPresets)
 .page-title {
   margin: 0 0 20px;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .create-tabs {
@@ -100,7 +100,7 @@ onMounted(loadPresets)
 }
 
 .fieldset {
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -108,7 +108,7 @@ onMounted(loadPresets)
 
 .legend {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   padding: 0 6px;
 }
 
@@ -120,7 +120,7 @@ onMounted(loadPresets)
 .field-label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -142,14 +142,14 @@ onMounted(loadPresets)
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #3a7a3a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
 .field-hint {
   flex: 1 1 100%;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
   line-height: 1.5;
 }
 
@@ -158,9 +158,9 @@ onMounted(loadPresets)
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
@@ -168,7 +168,7 @@ onMounted(loadPresets)
 
 .field-input:focus,
 .field-select:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .field-select {
@@ -176,9 +176,9 @@ onMounted(loadPresets)
   padding: 8px 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
@@ -194,15 +194,15 @@ onMounted(loadPresets)
   padding: 8px 24px;
   font-size: 14px;
   font-family: inherit;
-  background: #2a5a2a;
-  color: #cfc;
-  border: 1px solid #3a7a3a;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #3a7a3a;
+  background: var(--accent);
 }
 
 .btn-save:disabled {
@@ -213,17 +213,17 @@ onMounted(loadPresets)
 .btn-cancel {
   padding: 8px 16px;
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
   text-decoration: none;
-  border: 1px dashed #555;
+  border: 1px dashed var(--border-strong);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
 }
 
 .btn-cancel:hover {
-  color: #ddd;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
   border-style: solid;
 }
 

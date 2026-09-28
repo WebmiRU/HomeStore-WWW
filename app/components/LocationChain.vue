@@ -37,11 +37,11 @@ function crumbLink(crumb: ChainCrumb): string {
   align-items: center;
   gap: 4px 2px;
   font-size: 12px;
-  color: #777;
+  color: var(--text-dim);
 }
 
 .crumb__link {
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
   transition: color 0.15s ease, border-bottom-color 0.15s ease;
@@ -49,17 +49,17 @@ function crumbLink(crumb: ChainCrumb): string {
 }
 
 .crumb__link:hover {
-  color: #aaf;
-  border-bottom-color: #3a3a5a;
+  color: var(--info);
+  border-bottom-color: var(--info-bg);
 }
 
 .crumb__plain {
-  color: #777;
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
 .crumb__sep {
-  color: #555;
+  color: var(--text-dim);
   margin: 0 4px;
 }
 </style>

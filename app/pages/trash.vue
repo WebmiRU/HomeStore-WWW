@@ -276,13 +276,13 @@ watch(
 .page-title {
   margin: 0 0 4px;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .page-hint {
   margin: 0;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .trash-tabs {
@@ -302,13 +302,13 @@ watch(
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #aaa;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .trash-count {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .trash-actions {
@@ -327,23 +327,23 @@ watch(
 }
 
 .btn-restore {
-  color: #9fd8a6;
-  background: #1f3a24;
-  border: 1px solid #3a7a3a;
+  color: var(--success-hover);
+  background: var(--success-bg);
+  border: 1px solid var(--accent);
 }
 
 .btn-restore:hover:not(:disabled) {
-  background: #2a4a2f;
+  background: color-mix(in srgb, var(--success) 24%, var(--bg-elevated));
 }
 
 .btn-purge {
-  color: #f0a8a8;
-  background: #3a1f1f;
-  border: 1px solid #7a3a3a;
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
 }
 
 .btn-purge:hover:not(:disabled) {
-  background: #4d2a2a;
+  background: color-mix(in srgb, var(--danger) 24%, var(--bg-elevated));
 }
 
 .btn-restore:disabled,
@@ -356,12 +356,12 @@ watch(
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
@@ -374,19 +374,19 @@ watch(
 .trash-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
 .trash-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .trash-table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .cb-col {
@@ -405,15 +405,15 @@ watch(
 .page-btn {
   padding: 6px 14px;
   font-size: 13px;
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #444;
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
 }
 
 .page-btn:disabled {
@@ -423,7 +423,7 @@ watch(
 
 .page-info {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 @media (max-width: 768px) {
@@ -447,8 +447,8 @@ watch(
     position: relative;
     margin-bottom: 12px;
     padding: 34px 14px 12px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
   }
 
@@ -470,7 +470,7 @@ watch(
     content: attr(data-label);
     display: block;
     margin-bottom: 2px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;

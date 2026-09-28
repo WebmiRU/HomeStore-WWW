@@ -97,6 +97,23 @@ export function useTheme() {
   }
 
   /**
+   * Применяет оформление без сохранения — для предпросмотра в настройках.
+   *
+   * Страница настроек хочет видеть результат сразу, а сохранять всё одной
+   * кнопкой, как язык и порядок меню. Cookie обновляется и здесь: без неё
+   * предпросмотр пережил бы только текущий экран и рассыпался бы при
+   * перерисовке. Настоящим источником остаётся настройка в аккаунте, и
+   * незакрытая страница её не изменит.
+   */
+  function preview(patch: { theme?: Theme; accent?: Accent }): void {
+    if (patch.theme !== undefined && isTheme(patch.theme)) mode.value = patch.theme
+    if (patch.accent !== undefined && isAccent(patch.accent)) accent.value = patch.accent
+
+    storedTheme.value = mode.value
+    storedAccent.value = accent.value
+  }
+
+  /**
    * Применяет оформление и запоминает его в настройках.
    *
    * В настройках — потому что человек работает с одного аккаунта с разных
@@ -105,20 +122,16 @@ export function useTheme() {
    * незачем.
    */
   async function persist(patch: { theme?: Theme; accent?: Accent }): Promise<void> {
-    mode.value = patch.theme ?? mode.value
-    accent.value = patch.accent ?? accent.value
+    preview(patch)
     touched = true
-
-    storedTheme.value = mode.value
-    storedAccent.value = accent.value
 
     try {
       await save(patch)
     } catch {
       // Cookie уже обновлена, и на этом устройстве всё работает. Уведомление
-      // об ошибке сохраненияhere не показываем: оформление применилось, человек
-      // увидел результат, а рассинхронизацию с сервером увидит на следующей
-      // загрузке и переживёт её без последствий.
+      // об ошибке сохранения здесь не показываем: оформление применилось,
+      // человек увидел результат, а рассинхронизацию с сервером увидит на
+      // следующей загрузке.
     }
   }
 
@@ -139,5 +152,5 @@ export function useTheme() {
     setTheme(resolved.value === 'light' ? 'dark' : 'light')
   }
 
-  return { mode, resolved, accent, setTheme, setAccent, toggle, watchSystem }
+  return { mode, resolved, accent, preview, setTheme, setAccent, toggle, watchSystem }
 }

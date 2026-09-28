@@ -378,14 +378,14 @@ watch(trigger, () => {
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .loading,
 .error,
 .empty {
   padding: 20px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .loading {
@@ -399,20 +399,20 @@ watch(trigger, () => {
 
 .loading-text {
   font-size: 15px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 /* Ширина колонки с картинкой — в template.sass, колонка нужна не только здесь. */
 
 .error {
-  color: #f88;
-  background: #3a1a1a;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: 4px;
 }
 
 .empty {
-  background: #222;
-  border: 1px solid #333;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 6px;
   text-align: center;
   font-size: 15px;
@@ -427,7 +427,7 @@ watch(trigger, () => {
 .results-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
@@ -440,18 +440,18 @@ watch(trigger, () => {
 }
 
 .results-table th {
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .results-table td {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .results-table .result-group:hover td {
-  background: #252525;
+  background: var(--bg-elevated);
 }
 
 .cb-col {
@@ -461,7 +461,7 @@ watch(trigger, () => {
 }
 
 .cb-col input[type="checkbox"] {
-  accent-color: #3a7a3a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -474,34 +474,34 @@ watch(trigger, () => {
 }
 
 .type-item {
-  background: #2a3a2a;
-  color: #8c8;
-  border: 1px solid #3a5a3a;
+  background: var(--success-bg);
+  color: var(--success-ink);
+  border: 1px solid var(--accent);
 }
 
 .type-store {
-  background: #2a2a3a;
-  color: #88c;
-  border: 1px solid #3a3a5a;
+  background: var(--info-bg);
+  color: var(--info);
+  border: 1px solid var(--info-bg);
 }
 
 .result-title {
   font-size: 15px;
-  color: #ddd;
+  color: var(--text);
 }
 
 .result-sub {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .result-chain-row td {
   padding: 4px 12px 10px;
-  background: #1a1a1a;
+  background: var(--bg);
   border-top: 0;
-  border-bottom: 1px solid #2b2b2b;
-  color: #777;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
 }
 
 .result-chain-row td::before {
@@ -532,9 +532,9 @@ watch(trigger, () => {
   width: 40px;
   height: 40px;
   border-radius: 6px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   background: transparent;
-  color: #88a;
+  color: var(--info);
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -557,31 +557,31 @@ watch(trigger, () => {
 
 .action-link:hover,
 .action-btn:hover:not(:disabled) {
-  background: #2a2a2a;
-  border-color: #444;
-  color: #aaf;
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--info);
 }
 
 .action-btn--replenish {
-  border-color: #3a5a3a;
-  color: #48c25a;
+  border-color: var(--accent);
+  color: var(--success);
 }
 
 .action-btn--replenish:hover:not(:disabled) {
-  border-color: #3fb950;
-  color: #7fdb8b;
-  background: #1b3525;
+  border-color: var(--success);
+  color: var(--success-hover);
+  background: var(--success-bg);
 }
 
 .action-btn--writeoff {
-  border-color: #5a4a3a;
-  color: #d9a53a;
+  border-color: var(--warn-bg);
+  color: var(--warn);
 }
 
 .action-btn--writeoff:hover:not(:disabled) {
-  border-color: #d29922;
-  color: #eec271;
-  background: #3a2e1a;
+  border-color: var(--warn);
+  color: var(--warn-ink);
+  background: var(--warn-bg);
 }
 
 .action-btn:disabled {
@@ -590,7 +590,7 @@ watch(trigger, () => {
 }
 
 .action-view {
-  color: #88a;
+  color: var(--info);
 }
 
 .action-grid :deep(.toggler-btn) {
@@ -601,7 +601,7 @@ watch(trigger, () => {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
 }
 
 .action-grid :deep(.toggler-icon) {
@@ -630,10 +630,10 @@ watch(trigger, () => {
     position: relative;
     margin-bottom: 14px;
     padding: 44px 14px 14px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .results-table td {
@@ -641,7 +641,7 @@ watch(trigger, () => {
     box-sizing: border-box;
     padding: 6px 0;
     border-bottom: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
   }
@@ -701,7 +701,7 @@ watch(trigger, () => {
     content: attr(data-label);
     display: block;
     margin-bottom: 3px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 11px;
     letter-spacing: 0.6px;
     text-transform: uppercase;
@@ -720,8 +720,8 @@ watch(trigger, () => {
   .results-table tr.result-chain-row {
     margin-bottom: 14px;
     padding: 8px 14px 12px;
-    background: #1a1a1a;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 0 0 10px 10px;
     box-shadow: none;
   }

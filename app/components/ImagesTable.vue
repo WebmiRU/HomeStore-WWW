@@ -401,15 +401,15 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   padding: 8px 16px;
   font-size: 13px;
   font-family: inherit;
-  color: #9fd8a6;
-  background: #1f3a24;
-  border: 1px solid #3a7a3a;
+  color: var(--success-hover);
+  background: var(--success-bg);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-upload:hover:not(:disabled) {
-  background: #2a4d2e;
+  background: color-mix(in srgb, var(--success) 24%, var(--bg-elevated));
 }
 
 .btn-upload:disabled {
@@ -427,7 +427,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 
 .images-toolbar__title {
   font-size: 14px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .images-table-wrap {
@@ -443,15 +443,15 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 .images-table th,
 .images-table td {
   padding: 6px 10px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--border);
   text-align: left;
   vertical-align: middle;
 }
 
 .images-table th {
   font-size: 12px;
-  color: #888;
-  background: #202020;
+  color: var(--text-muted);
+  background: var(--bg);
   font-weight: normal;
 }
 
@@ -462,7 +462,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 
 .col-id {
   width: 60px;
-  color: #888;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -485,9 +485,9 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   width: 80px;
   height: 60px;
   overflow: hidden;
-  border: 1px solid #444;
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
-  background: #222;
+  background: var(--bg-elevated);
 }
 
 .col-thumb img {
@@ -509,8 +509,8 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   width: 18px;
   height: 18px;
   margin: -9px 0 0 -9px;
-  border: 2px solid #444;
-  border-top-color: #9fd8a6;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--success-hover);
   border-radius: 50%;
   animation: thumb-spin 0.7s linear infinite;
 }
@@ -529,7 +529,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 
 .drag-handle {
   cursor: grab;
-  color: #888;
+  color: var(--text-muted);
   font-size: 16px;
   padding: 2px 6px;
   user-select: none;
@@ -543,17 +543,17 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   padding: 2px 8px;
   font-size: 13px;
   font-family: inherit;
-  color: #aaa;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
   line-height: 1.2;
 }
 
 .btn-order:hover:not(:disabled) {
-  color: #ddd;
-  background: #333;
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 .btn-order:disabled {
@@ -567,16 +567,16 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   padding: 6px 8px;
   font-size: 13px;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   outline: none;
   box-sizing: border-box;
 }
 
 .alt-input:focus {
-  border-color: #666;
+  border-color: var(--border-strong);
 }
 
 .images-table__row--dragging {
@@ -587,16 +587,16 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   padding: 4px 10px;
   font-size: 12px;
   font-family: inherit;
-  color: #f8a8a8;
-  background: #3a1f1f;
-  border: 1px solid #7a3a3a;
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .btn-remove:hover:not(:disabled) {
-  background: #4d2a2a;
+  background: color-mix(in srgb, var(--danger) 24%, var(--bg-elevated));
 }
 
 .btn-remove:disabled {
@@ -630,10 +630,10 @@ async function onAltBlur(event: Event, img: ImageResponse) {
     align-items: center;
     margin-bottom: 14px;
     padding: 12px;
-    background: #1e1e1e;
-    border: 1px solid #2b2b2b;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
   }
 
   .images-table td {
@@ -641,7 +641,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
     display: block;
     padding: 0;
     border: 0;
-    color: #ddd;
+    color: var(--text);
     font-size: 15px;
     white-space: normal;
     text-align: left;
@@ -656,7 +656,7 @@ async function onAltBlur(event: Event, img: ImageResponse) {
     grid-area: id;
     justify-self: center;
     align-self: center;
-    color: #888;
+    color: var(--text-muted);
     text-align: center;
   }
 

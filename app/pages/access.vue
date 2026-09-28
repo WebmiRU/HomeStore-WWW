@@ -26,13 +26,13 @@ const { t } = useI18n()
 .page-title {
   margin: 0;
   font-size: 18px;
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .page-hint {
   margin: 0 0 18px;
   font-size: 13px;
-  color: #777;
+  color: var(--text-dim);
   max-width: 760px;
   line-height: 1.5;
 }
