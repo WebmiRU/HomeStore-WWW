@@ -11,7 +11,7 @@
       <form @submit.prevent="save" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
           <div class="avatar-block">
-            <UserAvatar :user="previewUser" :size="120" thumb-key="150x150_cover" />
+            <UserAvatar :user="previewUser" :size="120" />
 
             <div class="avatar-actions">
               <input

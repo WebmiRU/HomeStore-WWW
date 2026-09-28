@@ -1,28 +1,60 @@
-import { readonly, ref } from 'vue'
+import type { OperationMode } from '~/repository/modules/option'
 
-export type OperationMode = 'search' | 'replenish' | 'writeoff'
-
-const STORAGE_KEY = 'home-store-operation-mode'
-
-// Модульный синглтон: состояние общее для всех компонентов приложения.
-// sessionStorage доступен только на клиенте, поэтому инициализация через
-// import.meta.client не ломает SSR.
-const mode = ref<OperationMode>('search')
-
-if (import.meta.client) {
-  const saved = sessionStorage.getItem(STORAGE_KEY)
-  if (saved === 'replenish' || saved === 'writeoff' || saved === 'search') {
-    mode.value = saved
-  }
-}
-
+/**
+ * Режим работы: обычный поиск, пополнение или списание.
+ *
+ * Раньше жил в sessionStorage и переживал одну вкладку браузера, а на
+ * другом устройстве начинался заново. Теперь это настройка пользователя, и
+ * она переезжает вместе с ним — если человек не выключил «запоминать».
+ *
+ * Отдельное состояние, а не чтение настроек напрямую, нужно по двум
+ * причинам. Первая: настройки приезжают после монтирования, а режим
+ * переключают сразу — пока человек ждёт ответа, он уже может нажать другое,
+ * и ответ не должен затирать его выбор. Вторая: страница держит режим в
+ * своей переменной на время показа, и переключение не должно трогать её
+ * задним числом.
+ */
 export function useOperationMode() {
-  function persist(next: OperationMode) {
+  const { options, save } = useOptions()
+
+  /** Помнить режим или каждый раз начинать с умолчания. */
+  const remember = computed(() => options.value.remember_operation_mode)
+
+  const mode = ref<OperationMode>(
+    remember.value ? options.value.operation_mode : 'search',
+  )
+
+  /** Переключал ли человек режим до того, как пришли настройки. */
+  let touched = false
+
+  // Настройки приехали позже первого отрисовки: если человек ещё ничего не
+  // трогал, режим встаёт сохранённый. Если трогал — остаётся его выбор, и
+  // ответ его не перебьёт.
+  watch(
+    () => options.value.operation_mode,
+    (next) => {
+      if (!touched && remember.value) mode.value = next
+    },
+  )
+
+  async function persist(next: OperationMode): Promise<void> {
+    touched = true
     mode.value = next
-    if (import.meta.client) {
-      sessionStorage.setItem(STORAGE_KEY, next)
+
+    // Запоминать выключено — режим живёт только на текущей странице, и
+    // незачем слать его на сервер: он всё равно не должен пережить
+    // перезагрузку.
+    if (!remember.value) return
+
+    // Сохранение не проходит молча: режим держится в настройках, и об этом
+    // надо знать — иначе человек будет считать, что режим запомнился, а он
+    // начнёт с чистого листа на другой вкладке.
+    try {
+      await save({ operation_mode: next })
+    } catch {
+      touched = false
     }
   }
 
-  return { mode: readonly(mode), persist }
+  return { mode: readonly(mode), persist, remember }
 }

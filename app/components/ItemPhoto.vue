@@ -50,9 +50,16 @@ const props = defineProps<{
   lightbox?: boolean
 }>()
 
-const { thumbUrl } = useThumbnail()
+const { thumbUrl, thumbKeyFor } = useThumbnail()
 
-const THUMB_KEY = '100x100_cover'
+/**
+ * Без явного размера фото занимает 84px, а на узком экране 56px — берём по
+ * первому: 200×200 на ретине хватает и там, и там, а 100×100 на 84 было бы
+ * мылом.
+ */
+const DEFAULT_SIZE = 84
+
+const thumbKey = computed(() => thumbKeyFor(props.size ?? DEFAULT_SIZE))
 
 /**
  * Сколько ждать картинку, прежде чем перестать ждать.
@@ -99,7 +106,7 @@ const first = computed<ImageResponse | null>(() => (props.images ?? [])[0] ?? nu
 const candidates = computed<string[]>(() => {
   const img = first.value
   if (!img) return []
-  return [...new Set([thumbUrl(img.sha256, THUMB_KEY) ?? img.url, img.url])]
+  return [...new Set([thumbUrl(img.sha256, thumbKey.value) ?? img.url, img.url])]
 })
 
 const src = computed<string | null>(() => candidates.value[attempt.value] ?? null)

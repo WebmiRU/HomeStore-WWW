@@ -120,7 +120,7 @@ const deletedWarehouse = computed(() =>
 const tabs = [
   { key: 'main', label: 'Основные параметры' },
   { key: 'contents', label: 'Содержимое' },
-  { key: 'images', label: 'Картинки' },
+  { key: 'images', label: 'Изображения' },
   { key: 'stats', label: 'Статистика' },
 ]
 

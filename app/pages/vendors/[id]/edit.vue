@@ -15,7 +15,6 @@
               :logo-sha="logoSha"
               :title="form.title || 'Производитель'"
               :size="120"
-              thumb-key="150x150_contain"
             />
 
             <div class="logo-actions">

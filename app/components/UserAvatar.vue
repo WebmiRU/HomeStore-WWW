@@ -41,10 +41,17 @@ const props = withDefaults(
     /** Открывать ли аватар по клику в просмотре крупным кадром. */
     lightbox?: boolean
   }>(),
-  { size: 56, thumbKey: '100x100_cover' }
+  { size: 56 }
 )
 
-const { thumbUrl } = useThumbnail()
+const { thumbUrl, thumbKeyFor } = useThumbnail()
+
+/**
+ * Ключ по размеру, а не константа: аватар показывается и 40px в списке
+ * людей, и 120px в карточке, и одна миниатюра на оба случая либо мылит, либо
+ * тащит лишнее.
+ */
+const thumbKey = computed(() => props.thumbKey ?? thumbKeyFor(props.size))
 
 const failed = ref(false)
 const viewerOpen = ref(false)
@@ -80,7 +87,7 @@ watch(
 
 const src = computed(() => {
   if (!failed.value) {
-    const thumb = thumbUrl(props.user?.avatar_sha, props.thumbKey)
+    const thumb = thumbUrl(props.user?.avatar_sha, thumbKey.value)
     if (thumb) return thumb
   }
   return props.user?.avatar_url ?? ''

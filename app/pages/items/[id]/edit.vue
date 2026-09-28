@@ -174,7 +174,7 @@ const canEdit = computed(() => itemEntity.value?.rights?.includes('edit') ?? fal
 const tabs = [
   { key: 'main', label: 'Основные параметры' },
   { key: 'properties', label: 'Свойства' },
-  { key: 'images', label: 'Картинки' },
+  { key: 'images', label: 'Изображения' },
   { key: 'balance', label: 'Остатки' },
   { key: 'movements', label: 'Движения' },
   { key: 'stats', label: 'Статистика' },

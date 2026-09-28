@@ -36,7 +36,7 @@
     </div>
 
     <nav class="entity-nav">
-      <template v-for="entry in navTree" :key="entry.label">
+      <template v-for="entry in visibleTree" :key="entry.key">
         <NuxtLink v-if="!isGroup(entry)" :to="entry.to" class="entity-link">
           {{ entry.label }}
         </NuxtLink>
@@ -45,23 +45,23 @@
           v-else
           class="entity-group"
           :class="{
-            'entity-group--open': openGroup === entry.label,
+            'entity-group--open': openGroup === entry.key,
             'entity-group--active': isGroupActive(entry),
           }"
         >
           <button
             type="button"
             class="entity-link entity-group__toggle"
-            :aria-expanded="openGroup === entry.label"
+            :aria-expanded="openGroup === entry.key"
             aria-haspopup="true"
-            @click="toggleGroup(entry.label)"
+            @click="toggleGroup(entry.key)"
           >
             {{ entry.label }}
             <span class="entity-group__caret" aria-hidden="true">▾</span>
           </button>
 
-          <div v-if="openGroup === entry.label" class="entity-group__menu">
-            <NuxtLink v-for="item in entry.items" :key="item.to" :to="item.to" class="entity-group__item">
+          <div v-if="openGroup === entry.key" class="entity-group__menu">
+            <NuxtLink v-for="item in entry.items" :key="item.key" :to="item.to" class="entity-group__item">
               {{ item.label }}
             </NuxtLink>
           </div>
@@ -73,67 +73,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-
-type NavItem = { label: string; to: string }
-type NavGroup = { label: string; items: NavItem[] }
-type NavEntry = NavItem | NavGroup
+import { isNavGroup, type NavEntry, type NavGroup } from '~/utils/navigation'
 
 /**
- * Меню описано данными, а не разметкой: пункты наращиваются пачками, и
- * вложенность не должна требовать копирования вёрстки. Раскрытая группа одна
- * за раз, иначе в шапке превращается в кашу.
+ * Меню приходит из utils/navigation: там и порядок по умолчанию, и ключи
+ * пунктов. Здесь оно уже то, что видит пользователь, — без спрятанных
+ * пунктов и в его порядке.
  */
-const navTree: NavEntry[] = [
-  { label: 'Главная', to: '/' },
-  { label: 'Предметы', to: '/items' },
-  { label: 'Хранилища', to: '/stores' },
-  { label: 'Склады', to: '/warehouses' },
-  { label: 'Категории', to: '/categories' },
-  { label: 'Производители', to: '/vendors' },
-  {
-    label: 'Свойства',
-    items: [
-      { label: 'Свойства', to: '/properties' },
-      { label: 'Группы свойств', to: '/property-groups' },
-      { label: 'Ед. изм.', to: '/units' },
-      // Справочник — такой же источник значений, как единица измерения: тип
-      // свойства ссылается на оба. Держать их порознь в шапке незачем.
-      { label: 'Справочники', to: '/dictionaries' },
-    ],
-  },
-  { label: 'Движения', to: '/stock-operations' },
-  {
-    label: 'Маркировка',
-    items: [
-      { label: 'Этикетки', to: '/label-lists' },
-      { label: 'Шаблоны', to: '/label-presets' },
-    ],
-  },
-  {
-    // Люди и их права — два раздела об одном, поэтому в шапке они одним пунктом.
-    // «Команда» короче «Пользователи и доступ» и звучит в том же просторе,
-    // что остальные пункты.
-    label: 'Команда',
-    items: [
-      { label: 'Пользователи', to: '/users' },
-      { label: 'Доступ', to: '/access' },
-    ],
-  },
-  { label: 'Журнал', to: '/journal' },
-  { label: 'Корзина', to: '/trash' },
-  {
-    // Коды — одна сущность с двумя разными неприятностями: одни и те же
-    // значения у разных предметов (надо найти и починить) и осиротевшие
-    // (надо вычистить). Отдельными пунктами в меню это два места про одно,
-    // поэтому в шапке они одним разделом.
-    label: 'Коды',
-    items: [
-      { label: 'Коллизии', to: '/code-conflicts' },
-      { label: 'Очистка', to: '/orphan-codes' },
-    ],
-  },
-]
-
 const emit = defineEmits<{
   search: [query: string]
 }>()
@@ -143,21 +89,22 @@ const router = useRouter()
 const route = useRoute()
 const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
+const { visibleTree, load: loadOptions, reset: resetOptions } = useOptions()
 
 const searchQuery = ref('')
 const loggingOut = ref(false)
 const openGroup = ref<string | null>(null)
 
 function isGroup(entry: NavEntry): entry is NavGroup {
-  return 'items' in entry
+  return isNavGroup(entry)
 }
 
 function isGroupActive(group: NavGroup): boolean {
   return group.items.some((item) => route.path === item.to || route.path.startsWith(`${item.to}/`))
 }
 
-function toggleGroup(label: string) {
-  openGroup.value = openGroup.value === label ? null : label
+function toggleGroup(key: string) {
+  openGroup.value = openGroup.value === key ? null : key
 }
 
 function closeGroup() {
@@ -217,6 +164,7 @@ async function logout() {
     localStorage.removeItem('home-store-user-id')
     setCurrentUserId(null)
     clearProfile()
+    resetOptions()
     $notify.add('Вы вышли из системы', { type: 'info', timer: 5 })
     router.push('/login')
     loggingOut.value = false
@@ -225,6 +173,7 @@ async function logout() {
 
 onMounted(() => {
   loadProfile()
+  loadOptions()
   document.addEventListener('pointerdown', onDocumentPointerDown)
   document.addEventListener('keydown', onDocumentKeydown)
 })
@@ -373,8 +322,12 @@ a.header-avatar:hover {
 }
 
 .entity-group__caret {
-  font-size: 10px;
-  opacity: 0.7;
+  /* Стрелка раньше была 10px при opacity 0.7 — на тёмном фоне её было видно
+     только при поиске глазами, и пункт с вложенными разделами ничем не
+     выдавал себя. Теперь она читается сразу, как в обычном выпадающем меню. */
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.9;
   transition: transform 0.15s ease;
 }
 

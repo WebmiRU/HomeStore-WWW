@@ -1,0 +1,504 @@
+<template>
+  <div class="options-page">
+    <div class="page-header">
+      <h3 class="page-title">Настройки</h3>
+      <div class="page-header-actions">
+        <button type="button" class="btn-plain" :disabled="saving" @click="fillDefaults">
+          Вернуть как было
+        </button>
+        <button type="button" class="btn-confirm" :disabled="saving || !dirty" @click="saveAll">
+          {{ saving ? 'Сохраняю...' : 'Сохранить' }}
+        </button>
+      </div>
+    </div>
+
+    <TabBar :tabs="tabs" class="options-tabs" />
+
+    <p class="options-hint">
+      Настройки только ваши: их видите вы и больше никто.
+    </p>
+
+    <!--
+      Вкладки, а не одна длинная страница: у настроек три независимых сюжета,
+      и в одной куче список меню отодвигал всё остальное за пределы экрана.
+      Ключ вкладки живёт в адресе — на вкладку можно вернуться кнопкой «назад».
+    -->
+    <section v-if="activeTab === 'menu'" class="options-card">
+      <h4 class="options-card__title">Меню</h4>
+      <p class="options-card__hint">
+        Галочка — показывать пункт, стрелки — порядок. Пункты внутри групп
+        переставляются отдельно: у каждой группы свой список и своя
+        расстановка. Спрятанный пункт остаётся доступен по прямой ссылке: это
+        не запрет, а настройка отображения.
+      </p>
+
+      <ul class="menu-list">
+        <li v-for="entry in topEntries" :key="entry.key" class="menu-row-wrap">
+          <div class="menu-row" :class="{ 'menu-row--off': !shown.has(entry.key) }">
+            <label class="menu-row__check">
+              <input
+                type="checkbox"
+                :checked="shown.has(entry.key)"
+                :aria-label="`Показывать «${entry.label}»`"
+                @change="toggleShown(entry.key)"
+              />
+              <span class="menu-row__label">{{ entry.label }}</span>
+            </label>
+
+            <span class="menu-row__move">
+              <button
+                type="button"
+                class="menu-move"
+                :disabled="isFirst(topKeys, entry.key)"
+                :aria-label="`Выше: ${entry.label}`"
+                @click="move(entry.key, -1, topKeys)"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                class="menu-move"
+                :disabled="isLast(topKeys, entry.key)"
+                :aria-label="`Ниже: ${entry.label}`"
+                @click="move(entry.key, 1, topKeys)"
+              >
+                ↓
+              </button>
+            </span>
+          </div>
+
+          <!--
+            Вложенные пункты показываются всегда: разворачивать их было нечем
+            — список и без того состоит из пятнадцати строк, и половина из них
+            была бы под обрешёнными группами.
+          -->
+          <ul v-if="isNavGroup(entry)" class="menu-list menu-list--nested">
+            <li v-for="item in groupEntries(entry)" :key="item.key" class="menu-row-wrap">
+              <div class="menu-row" :class="{ 'menu-row--off': !shown.has(item.key) }">
+                <label class="menu-row__check">
+                  <input
+                    type="checkbox"
+                    :checked="shown.has(item.key)"
+                    :aria-label="`Показывать «${item.label}»`"
+                    @change="toggleShown(item.key)"
+                  />
+                  <span class="menu-row__label">{{ item.label }}</span>
+                </label>
+
+                <span class="menu-row__move">
+                  <button
+                    type="button"
+                    class="menu-move"
+                    :disabled="isFirst(groupKeys(entry), item.key)"
+                    :aria-label="`Выше: ${item.label}`"
+                    @click="move(item.key, -1, groupKeys(entry))"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="menu-move"
+                    :disabled="isLast(groupKeys(entry), item.key)"
+                    :aria-label="`Ниже: ${item.label}`"
+                    @click="move(item.key, 1, groupKeys(entry))"
+                  >
+                    ↓
+                  </button>
+                </span>
+              </div>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section v-else-if="activeTab === 'mode'" class="options-card">
+      <h4 class="options-card__title">Режим работы</h4>
+      <p class="options-card__hint">
+        С чего начинается главная страница и что делает следующее сканирование.
+      </p>
+
+      <div class="mode-row">
+        <label
+          v-for="mode in modes"
+          :key="mode.value"
+          class="mode-choice"
+          :class="{ 'mode-choice--on': operationMode === mode.value }"
+        >
+          <input
+            type="radio"
+            name="operation-mode"
+            :value="mode.value"
+            :checked="operationMode === mode.value"
+            @change="operationMode = mode.value"
+          />
+          <span>{{ mode.label }}</span>
+        </label>
+      </div>
+
+      <div class="options-divider" />
+
+      <label class="menu-row menu-row--plain">
+        <span class="menu-row__check">
+          <input
+            type="checkbox"
+            :checked="rememberOperationMode"
+            @change="rememberOperationMode = !rememberOperationMode"
+          />
+          <span class="menu-row__label">Запоминать выбранный режим</span>
+        </span>
+      </label>
+      <p class="options-card__hint">
+        Включено — после перезагрузки страницы и на другом устройстве главная
+        откроется в том же режиме. Выключено — каждый раз с поиска, а
+        переключение работает только до перезагрузки.
+      </p>
+    </section>
+
+    <section v-else class="options-card">
+      <h4 class="options-card__title">Интерфейс</h4>
+
+      <label class="menu-row menu-row--plain">
+        <span class="menu-row__check">
+          <input
+            type="checkbox"
+            :checked="showCodeBlock"
+            @change="showCodeBlock = !showCodeBlock"
+          />
+          <span class="menu-row__label">Показывать блок «Код» внизу страниц</span>
+        </span>
+      </label>
+      <p class="options-card__hint">
+        Поле для ручного ввода кода. Сканер при этом продолжит работать: он
+        читает клавиатуру на любой странице.
+      </p>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { isNavGroup, navTree, sortNavKeys, type NavGroup, type NavItem } from '~/utils/navigation'
+import type { OperationMode } from '~/repository/modules/option'
+import { formatApiError } from '~/composables/formatApiError'
+
+const route = useRoute()
+const { $notify } = useNuxtApp()
+const { options, load, save } = useOptions()
+
+const tabs = [
+  { key: 'menu', label: 'Меню' },
+  { key: 'mode', label: 'Режим работы' },
+  { key: 'interface', label: 'Интерфейс' },
+]
+
+const activeTab = computed(() => {
+  const q = route.query.tab
+  return typeof q === 'string' && tabs.some((tab) => tab.key === q) ? q : tabs[0]!.key
+})
+
+const modes: { value: OperationMode; label: string }[] = [
+  { value: 'search', label: 'Поиск' },
+  { value: 'replenish', label: 'Пополнить' },
+  { value: 'writeoff', label: 'Списать' },
+]
+
+/**
+ * Форма живёт отдельно от настроек: править их и сохранять можно не сразу, а
+ * настройки приезжают с сервера и не должны перерисовываться под руками.
+ */
+const order = ref<string[]>([])
+const hidden = ref<Set<string>>(new Set())
+const operationMode = ref<OperationMode>('search')
+const showCodeBlock = ref(true)
+const rememberOperationMode = ref(true)
+const saving = ref(false)
+
+/**
+ * Верхний уровень целиком, группы включительно: группа в списке настроек —
+ * такой же пункт меню, её можно и спрятать, и переставить. Отдельный список
+ * «только ссылок» тут означал бы, что группами нельзя управлять вовсе.
+ */
+const topKeys = computed(() => navTree.map((entry) => entry.key))
+
+const shown = computed(() => new Set(navKeys().filter((key) => !hidden.value.has(key))))
+
+const topEntries = computed(() =>
+  sortNavKeys(topKeys.value, order.value).map((key) => navTree.find((entry) => entry.key === key)!),
+)
+
+/** Все ключи меню в текущем порядке формы: верхний уровень и вложенные. */
+function navKeys(): string[] {
+  return topEntries.value.map((entry) => entry.key).concat(
+    navTree.filter(isNavGroup).flatMap((group) => groupEntries(group).map((item) => item.key)),
+  )
+}
+
+function groupKeys(group: NavGroup): string[] {
+  return group.items.map((item) => item.key)
+}
+
+function groupEntries(group: NavGroup): NavItem[] {
+  return sortNavKeys(groupKeys(group), order.value)
+    .map((key) => group.items.find((item) => item.key === key))
+    .filter((item): item is NavItem => item !== undefined)
+}
+
+const isFirst = (keys: string[], key: string): boolean => keys.indexOf(key) <= 0
+const isLast = (keys: string[], key: string): boolean => keys.indexOf(key) === keys.length - 1
+
+/**
+ * Поднимает или опускает пункт на одну строку.
+ *
+ * Меняются местами позиции ключей в общем плоском списке: уровни в нём
+ * перемешаны, и важно лишь, кто раньше кого внутри своего уровня.
+ */
+function move(key: string, direction: -1 | 1, keys: string[]): void {
+  const neighbour = keys[keys.indexOf(key) + direction]
+  if (neighbour === undefined) return
+
+  const from = order.value.indexOf(key)
+  const to = order.value.indexOf(neighbour)
+  if (from === -1 || to === -1) return
+
+  const next = [...order.value]
+  next[from] = neighbour
+  next[to] = key
+  order.value = next
+}
+
+function toggleShown(key: string): void {
+  const next = new Set(hidden.value)
+
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+
+  hidden.value = next
+}
+
+/** Переносит настройки из ответа сервера в форму. */
+function fillFromOptions(): void {
+  order.value = sortNavKeys(navKeys(), options.value.menu_order)
+  hidden.value = new Set(options.value.menu_hidden)
+  operationMode.value = options.value.operation_mode
+  showCodeBlock.value = options.value.show_code_block
+  rememberOperationMode.value = options.value.remember_operation_mode
+}
+
+/** К умолчаниям: пустой порядок и пустой список скрытых — это «как в приложении». */
+function fillDefaults(): void {
+  order.value = navKeys()
+  hidden.value = new Set()
+  operationMode.value = 'search'
+  showCodeBlock.value = true
+  rememberOperationMode.value = true
+}
+
+const dirty = computed(
+  () =>
+    order.value.join() !== options.value.menu_order.join() ||
+    [...hidden.value].sort().join() !== [...options.value.menu_hidden].sort().join() ||
+    operationMode.value !== options.value.operation_mode ||
+    showCodeBlock.value !== options.value.show_code_block ||
+    rememberOperationMode.value !== options.value.remember_operation_mode,
+)
+
+async function saveAll(): Promise<void> {
+  saving.value = true
+
+  try {
+    // Порядок сохраняем целиком, вместе со скрытыми: пустой список означал бы
+    // «как в приложении», а спрятанные пункты в нём остались бы видимыми.
+    await save({
+      menu_order: order.value,
+      menu_hidden: [...hidden.value],
+      operation_mode: operationMode.value,
+      show_code_block: showCodeBlock.value,
+      remember_operation_mode: rememberOperationMode.value,
+    })
+
+    $notify.add('Настройки сохранены', { type: 'success', timer: 4 })
+  } catch (err: unknown) {
+    $notify.add(formatApiError(err, 'Не удалось сохранить настройки'), { type: 'error', timer: 10 })
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(async () => {
+  await load()
+  fillFromOptions()
+})
+
+// Настройки могли прийти после первого отрисовки — тогда форму надо заполнить.
+watch(options, fillFromOptions)
+</script>
+
+<style scoped>
+.options-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 860px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  color: #ccc;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.options-tabs {
+  margin-bottom: 0;
+}
+
+.options-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #888;
+}
+
+.options-card {
+  padding: 16px;
+  background: #232323;
+  border: 1px solid #2f2f2f;
+  border-radius: 6px;
+}
+
+.options-card__title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: #ddd;
+}
+
+.options-card__hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #888;
+}
+
+.options-divider {
+  height: 1px;
+  margin: 16px 0 12px;
+  background: #2f2f2f;
+}
+
+.menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-list--nested {
+  margin: 0 0 0 26px;
+}
+
+.menu-row-wrap {
+  border-top: 1px solid #2c2c2c;
+}
+
+.menu-list > .menu-row-wrap:first-child,
+.menu-list--nested > .menu-row-wrap:first-child {
+  border-top: none;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.menu-row--plain {
+  justify-content: flex-start;
+  padding: 0 0 4px;
+}
+
+/* Спрятанный пункт остаётся в списке и гаснет: иначе его нечем будет
+   вернуть, кроме как сбросом всех настроек. */
+.menu-row--off .menu-row__label {
+  color: #777;
+  text-decoration: line-through;
+}
+
+.menu-row__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.menu-row__label {
+  font-size: 14px;
+  color: #ccc;
+}
+
+.menu-row__move {
+  display: flex;
+  gap: 4px;
+}
+
+.menu-move {
+  width: 28px;
+  height: 26px;
+  font-size: 14px;
+  line-height: 1;
+  color: #bbb;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.menu-move:hover:not(:disabled) {
+  color: #fff;
+  background: #333;
+}
+
+.menu-move:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mode-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  font-size: 14px;
+  color: #bbb;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mode-choice--on {
+  color: #c4f0f4;
+  background: #1b3d40;
+  border-color: #2e5b5f;
+}
+</style>

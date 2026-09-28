@@ -323,9 +323,14 @@ onMounted(() => {
   hydrated.value = true
 })
 
-// Режим берём сразу из сессии: модуль useOperationMode на клиенте читает
-// sessionStorage при импорте, поэтому savedMode.value корректен уже в setup.
+// Режим приходит из настроек, и настройки загружаются после монтирования:
+// сначала показываем умолчание, а сохранённый режим встаёт сам, как только
+// ответ придёт. Поэтому следим за источником, а не копируем его один раз.
 const activeMode = ref<Mode>(savedMode.value)
+
+watch(savedMode, (next) => {
+  activeMode.value = next
+})
 
 const found = ref<FoundResult | null>(null)
 const notFoundCode = ref('')
@@ -403,8 +408,8 @@ function setMode(mode: Mode) {
   const prev = activeMode.value
   if (prev === mode) return
 
-  // Запоминаем выбранный режим в сессии: при следующем сканировании
-  // (с любой страницы) автоматически включится он же.
+  // Запоминаем выбранный режим в настройках: при следующем сканировании
+  // (с любой страницы и на любом устройстве) автоматически включится он же.
   persist(mode)
 
   notFoundCode.value = ''

@@ -20,7 +20,12 @@
 
     <NuxtPage />
 
-    <footer class="page-footer">
+    <!--
+      Блок сканера внизу прячется настройкой. Скрытие только здесь: сканер
+      продолжит работать, он же слушает клавиатуру на любой странице, — просто
+      поле для ручного ввода кода исчезает.
+    -->
+    <footer v-if="showCodeBlock" class="page-footer">
       <div class="uuid-search">
         <span class="uuid-label">КОД:</span>
         <input
@@ -37,13 +42,19 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import { keyToLatin } from '~/utils/scanKey'
 
 const { $api, $notify } = useNuxtApp()
 const { items, remove: removeNotify } = $notify
 const router = useRouter()
+const { options, load: loadOptions } = useOptions()
+
+// Прячется по настройке, а настройки приезжают после монтирования: до ответа
+// блок виден, как и раньше, и исчезает сам. Прыгать им на сервере нельзя —
+// настройки читаются с токеном, который живёт в localStorage.
+const showCodeBlock = computed(() => options.value.show_code_block)
 
 const uuidQuery = ref('')
 const { next: triggerSearch } = useSearchTrigger()
@@ -95,6 +106,9 @@ function submitScan(code: string) {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
+  // Настройки нужны в двух местах приложения: в шапке (меню) и здесь (блок
+  // «Код»). Грузим из корня один раз — оба берут одно и то же состояние.
+  loadOptions()
 })
 
 onBeforeUnmount(() => {

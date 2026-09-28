@@ -46,12 +46,14 @@ const props = withDefaults(
   {
     // contain, а не cover: логотип обычно широкий, и обрезка съедала бы
     // его по краям вместе с частью названия.
-    thumbKey: '100x100_contain',
     size: 40,
   },
 )
 
-const { thumbUrl } = useThumbnail()
+const { thumbUrl, thumbKeyFor } = useThumbnail()
+
+/** Ключ по размеру, но всегда с вписыванием: логотип обрезать нельзя. */
+const thumbKey = computed(() => props.thumbKey ?? thumbKeyFor(props.size, 'contain'))
 
 /**
  * Сколько ждать миниатюру, прежде чем перестать ждать.
@@ -86,7 +88,7 @@ const lightboxImages = computed(() =>
 const src = computed<string | null>(() => {
   if (failed.value) return null
 
-  return thumbUrl(props.logoSha, props.thumbKey)
+  return thumbUrl(props.logoSha, thumbKey.value)
 })
 
 /**
