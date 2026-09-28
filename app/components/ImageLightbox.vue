@@ -24,7 +24,7 @@
           @load="onLoad"
           @error="onError"
         />
-        <p v-else class="lightbox__error">{{ t('images.load_failed') }}</p>
+        <p v-else class="lightbox__error">{{ emptyMessage }}</p>
       </div>
 
       <button
@@ -69,7 +69,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ close: [] }>()
 
-const { thumbUrlFor, thumbVariants } = useThumbnail()
+const { thumbVariants } = useThumbnail()
 
 /**
  * Предел кадра в css-пикселях: ровно тот, что задан в стилях (min(800px,
@@ -99,34 +99,47 @@ const multiple = computed(() => props.images.length > 1)
 const current = computed<LightboxImage | null>(() => props.images[index.value] ?? null)
 
 /**
- * Превью — миниатюра, а не оригинал. Крупная картинка в модалке и в таблице
- * это разный вес: оригинал у фотографии товара весит сотни килобайт, и тянуть
- * его ради кадра, который и так ужимается до 800px, незачем.
- *
- * Оригинал — только запасной вариант: если миниатюры нет или она не
- * получилась, показывать нечего, и пустое окно хуже картинки мыльного пузыря.
- */
-const candidates = computed<string[]>(() => {
-  const image = current.value
-  if (image === null) return []
-
-  const urls = [thumbUrlFor(image, MAX_DISPLAY, 'contain', image.url), image.url ?? '']
-
-  return [...new Set(urls)].filter((url) => url !== '')
-})
-
-/**
  * Варианты, размер и обещание ширины — одним куском.
  *
  * Снимок 473×162 не станет полноэкранным: в sizes обещание ограничено тем,
  * что реально есть, иначе браузер растянет оригинал до 800 и получится мыло.
+ * Логотип 736×736 — тем более: под него в лестнице нет ни одной ступени, и
+ * единственный вариант для него — сам оригинал.
  */
 const variants = computed(() =>
   thumbVariants(current.value, MAX_DISPLAY, 'contain', current.value?.url ?? null, 'min(800px, calc(100vw - 60px))'),
 )
 
+/**
+ * Что пробуем по порядку: сперва то, что выбрал thumbVariants, потом —
+ * оригинал целиком.
+ *
+ * Второй адрес на случай, если первая картинка не получилась: в модалке это
+ * дорого, но картинка лучше, чем заглушка. Список берётся из того же
+ * расчёта, что и srcset, — иначе.src мог оказаться пустым при непустом
+ * srcset, и окно показывало бы «не удалось загрузить» вместо картинки,
+ * которой оно даже не пыталось запросить.
+ */
+const candidates = computed<string[]>(() => {
+  const image = current.value
+  if (image === null) return []
+
+  return [...new Set([variants.value.src ?? '', image.url ?? ''])].filter((url) => url !== '')
+})
+
 const srcset = computed<string>(() => variants.value.srcset)
 const sizes = computed<string>(() => variants.value.sizes)
+
+/**
+ * Две разные беды — две разные надписи.
+ *
+ * «Показать нечего» (нет ни миниатюры, ни оригинала) и «не пришло» (адрес
+ * был, файл не ответил) — разные случаи, и раньше оба выглядели как сбой
+ * загрузки, хотя во втором случае запроса не было вовсе.
+ */
+const emptyMessage = computed(() =>
+  candidates.value.length === 0 ? t('images.nothing_to_show') : t('images.load_failed'),
+)
 
 const attempt = ref(0)
 const src = computed<string | null>(() => (failed.value ? null : (candidates.value[attempt.value] ?? null)))

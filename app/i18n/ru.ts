@@ -782,6 +782,7 @@ export const ru = {
     order_up: 'Выше',
     order_down: 'Ниже',
     load_failed: 'Не удалось загрузить изображение',
+    nothing_to_show: 'Изображения нет',
     previous: 'Предыдущее изображение',
     next: 'Следующее изображение',
     open: 'Открыть фото: {alt}',

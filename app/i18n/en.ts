@@ -776,6 +776,7 @@ export const en: Record<TranslationKey, string> = {
     order_up: 'Up',
     order_down: 'Down',
     load_failed: 'Could not load the image',
+    nothing_to_show: 'There is no image',
     previous: 'Previous image',
     next: 'Next image',
     open: 'Open photo: {alt}',

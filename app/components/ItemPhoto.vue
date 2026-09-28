@@ -53,7 +53,7 @@ const props = defineProps<{
   lightbox?: boolean
 }>()
 
-const { thumbUrlFor, thumbVariants } = useThumbnail()
+const { thumbVariants } = useThumbnail()
 
 /**
  * Без явного размера фото занимает 84px — столько оно и рисуется.
@@ -104,31 +104,33 @@ function openViewer() {
 const first = computed<ImageResponse | null>(() => (props.images ?? [])[0] ?? null)
 
 /**
- * Что пробуем по порядку: сперва миниатюра, потом — оригинал целиком.
- *
- * Второй адрес на случай, если миниатюра не получилась: в таблице это
- * дорого, но картинка лучше, чем заглушка.
- */
-const candidates = computed<string[]>(() => {
-  const img = first.value
-  if (!img) return []
-  return [...new Set([thumbUrlFor(img, cssSize.value, 'cover', img.url) ?? '', img.url ?? ''])].filter(
-    (url) => url !== '',
-  )
-})
-
-/**
  * Три варианта по ширине, которую браузер сам сопоставит со своим экраном.
  * Сколько именно пикселей достанется картинке — его дело, а не наше: список
  * предметов на обычном мониторе берёт 38×38, на ретине — 76×76.
- */
-/**
+ *
  * Размер, srcset и src считаются одним куском: обещание в sizes не должно
  * превышать того, что есть в файлах, иначе браузер растянет картинку.
  */
 const variants = computed(() =>
   thumbVariants(first.value, cssSize.value, 'cover', first.value?.url ?? null),
 )
+
+/**
+ * Что пробуем по порядку: сперва то, что выбрал расчёт выше, потом —
+ * оригинал целиком.
+ *
+ * Второй адрес на случай, если первая картинка не получилась: в таблице это
+ * дорого, но картинка лучше, чем заглушка. Список берётся из того же
+ * расчёта, что и srcset, — иначе src мог остаться пустым при непустом
+ * srcset: снимок 473×162 не даёт ни одной ступени лестницы под 38px с
+ * увеличением, и адрес мог бы пропасть целиком.
+ */
+const candidates = computed<string[]>(() => {
+  const img = first.value
+  if (img === null) return []
+
+  return [...new Set([variants.value.src ?? '', img.url ?? ''])].filter((url) => url !== '')
+})
 
 const src = computed<string | null>(() => candidates.value[attempt.value] ?? null)
 

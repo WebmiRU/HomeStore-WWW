@@ -18,7 +18,7 @@
       :src="variants.src"
       :srcset="variants.srcset"
       :sizes="variants.sizes"
-      :alt="title || t('list_common.logo')""
+      :alt="title || t('list_common.logo')"
       :class="{ 'm-logo__img--loading': loading }"
       class="m-logo__img"
       @load="onLoad"
@@ -90,9 +90,14 @@ const viewerOpen = ref(false)
 
 /** Просмотр: у логотипа он один, счётчика и стрелок в окне не будет. */
 const lightboxImages = computed(() =>
-  props.logoSha
+  // Логотип без миниатюры, но с адресом тоже показываем: уменьшить его в
+  // рамке списка нечем, а открыть имеет смысл.
+  props.logoSha || props.logoUrl
     ? [
         {
+          // Оригинал обязателен: логотип обычно меньше кадра просмотра, и
+          // тогда единственный вариант, который можно показать, — он сам.
+          url: props.logoUrl ?? null,
           sha256: props.logoSha,
           width: props.logoWidth,
           height: props.logoHeight,

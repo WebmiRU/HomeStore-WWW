@@ -36,7 +36,7 @@
               <input
                 type="checkbox"
                 :checked="shown.has(entry.key)"
-                :aria-label="t('options_page.show_item', { label: t(entry.labelKey) })""
+                :aria-label="t('options_page.show_item', { label: t(entry.labelKey) })"
                 @change="toggleShown(entry.key)"
               />
               <span class="menu-row__label">{{ t(entry.labelKey) }}</span>
@@ -47,7 +47,7 @@
                 type="button"
                 class="menu-move"
                 :disabled="isFirst(topOrder, entry.key)"
-                :aria-label="t('options_page.up', { label: t(entry.labelKey) })""
+                :aria-label="t('options_page.up', { label: t(entry.labelKey) })"
                 @click="move(entry.key, -1, topOrder)"
               >
                 ↑
@@ -56,7 +56,7 @@
                 type="button"
                 class="menu-move"
                 :disabled="isLast(topOrder, entry.key)"
-                :aria-label="t('options_page.down', { label: t(entry.labelKey) })""
+                :aria-label="t('options_page.down', { label: t(entry.labelKey) })"
                 @click="move(entry.key, 1, topOrder)"
               >
                 ↓
@@ -76,7 +76,7 @@
                   <input
                     type="checkbox"
                     :checked="shown.has(item.key)"
-                    :aria-label="t('options_page.show_item', { label: t(item.labelKey) })""
+                    :aria-label="t('options_page.show_item', { label: t(item.labelKey) })"
                     @change="toggleShown(item.key)"
                   />
                   <span class="menu-row__label">{{ t(item.labelKey) }}</span>
@@ -87,7 +87,7 @@
                     type="button"
                     class="menu-move"
                     :disabled="isFirst(groupOrder(entry), item.key)"
-                    :aria-label="t('options_page.up', { label: t(item.labelKey) })""
+                    :aria-label="t('options_page.up', { label: t(item.labelKey) })"
                     @click="move(item.key, -1, groupOrder(entry))"
                   >
                     ↑
@@ -96,7 +96,7 @@
                     type="button"
                     class="menu-move"
                     :disabled="isLast(groupOrder(entry), item.key)"
-                    :aria-label="t('options_page.down', { label: t(item.labelKey) })""
+                    :aria-label="t('options_page.down', { label: t(item.labelKey) })"
                     @click="move(item.key, 1, groupOrder(entry))"
                   >
                     ↓
