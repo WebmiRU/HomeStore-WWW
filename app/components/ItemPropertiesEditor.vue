@@ -69,7 +69,7 @@
               :disabled="readonly"
               @change="onDictionaryChange(property.id, index, $event)"
             >
-              <option value="">t('placeholders.not_chosen')</option>
+              <option value="">{{ t('placeholders.not_chosen') }}</option>
               <option v-for="option in dictionaryOptions(property)" :key="option.id" :value="option.id">
                 {{ option.title }}
               </option>
@@ -82,7 +82,7 @@
               :disabled="readonly"
               @change="onTextChange(property.id, index, $event)"
             >
-              <option value="">t('placeholders.not_filled')</option>
+              <option value="">{{ t('placeholders.not_filled') }}</option>
               <option value="да">{{ t('item_properties.yes_value') }}</option>
               <option value="нет">{{ t('item_properties.no_value') }}</option>
             </select>

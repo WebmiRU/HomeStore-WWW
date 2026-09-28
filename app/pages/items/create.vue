@@ -22,7 +22,7 @@
         <label class="field">
           <span class="field-label">{{ t('form.vendor') }}</span>
           <select v-model="form.vendor_id" class="field-select">
-            <option :value="null">t('placeholders.none')</option>
+            <option :value="null">{{ t('placeholders.none') }}</option>
             <option v-for="option in vendorOptions" :key="option.id" :value="option.id">
               {{ option.title }}
             </option>
@@ -33,7 +33,7 @@
         <label class="field">
           <span class="field-label">{{ t('form.store') }}</span>
           <select v-model.number="form.store_id" class="field-select">
-            <option :value="null">t('placeholders.none')</option>
+            <option :value="null">{{ t('placeholders.none') }}</option>
             <optgroup v-for="group in storeGroups" :key="group.label" :label="group.label">
               <option
                 v-for="opt in group.options"
@@ -48,7 +48,7 @@
         <label class="field">
           <span class="field-label">{{ t('form.category') }}</span>
           <select v-model="form.category_id" class="field-select" @change="onCategoryChange">
-            <option :value="null">t('placeholders.none')</option>
+            <option :value="null">{{ t('placeholders.none') }}</option>
             <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
               {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
             </option>

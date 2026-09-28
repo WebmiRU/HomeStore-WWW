@@ -21,7 +21,7 @@
       <label class="field">
         <span class="field-label">{{ t('form.warehouse') }}</span>
         <select v-model.number="form.warehouse_id" class="field-select">
-          <option :value="null">t('placeholders.none')</option>
+          <option :value="null">{{ t('placeholders.none') }}</option>
           <option v-for="opt in warehouseOptions" :key="opt.id" :value="opt.id" :disabled="!opt.can_create">
             {{ opt.title }}<template v-if="!opt.can_create"> — {{ t('form.readonly_word') }}</template>
           </option>
@@ -31,7 +31,7 @@
       <label class="field">
         <span class="field-label">{{ t('form.parent') }}</span>
         <select v-model.number="form.parent_id" class="field-select">
-          <option :value="null">t('placeholders.none')</option>
+          <option :value="null">{{ t('placeholders.none') }}</option>
           <option
             v-for="opt in parentOptions"
             :key="opt.id"

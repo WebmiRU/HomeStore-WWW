@@ -14,7 +14,7 @@
         <label class="field">
           <span class="field-label">{{ t('label_lists.template_label') }}</span>
           <select v-model="form.label_preset_id" class="field-select" required>
-            <option :value="0" disabled>t('placeholders.pick_template')</option>
+            <option :value="0" disabled>{{ t('placeholders.pick_template') }}</option>
             <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.title }}</option>
           </select>
         </label>

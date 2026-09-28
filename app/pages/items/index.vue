@@ -16,7 +16,7 @@
       <label class="filter">
         <span class="filter-label">{{ t('items.category') }}</span>
         <select :value="categoryFilter" class="filter-select" @change="onCategoryChange">
-          <option :value="null">t('placeholders.all')</option>
+          <option :value="null">{{ t('placeholders.all') }}</option>
           <option v-for="option in categoryOptions" :key="option.id" :value="option.id">
             {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
           </option>

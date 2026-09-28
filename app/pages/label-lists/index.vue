@@ -37,7 +37,7 @@
             <td :data-label="t('label_lists.template')">
               <!-- Шаблон удаляется мягко, а список его переживает: название
                    остаётся видимым с пометкой, назначить можно другой. -->
-              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted"> t('placeholders.deleted')</template></span>
+              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted">{{ t('placeholders.deleted') }}</template></span>
               <span v-else class="muted">{{ t('label_lists.no_template') }}</span>
             </td>
             <td :data-label="t('common.created')">{{ formatDate(list.created_at) }}</td>

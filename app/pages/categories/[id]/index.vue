@@ -18,7 +18,7 @@
           <label class="field">
             <span class="field-label">{{ t('categories.parent') }}</span>
             <select v-model="form.parent_id" class="field-select">
-              <option :value="null">t('placeholders.root')</option>
+              <option :value="null">{{ t('placeholders.root') }}</option>
               <option v-for="option in parentOptions" :key="option.id" :value="option.id">
                 {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
               </option>

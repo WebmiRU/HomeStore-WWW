@@ -23,7 +23,7 @@
           <label class="field">
             <span class="field-label">{{ t('form.vendor') }}</span>
             <select v-model="form.vendor_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">t('placeholders.none')</option>
+              <option :value="null">{{ t('placeholders.none') }}</option>
               <option v-if="deletedVendor" :value="deletedVendor.id" disabled>
                 {{ deletedVendor.label }}
               </option>
@@ -37,7 +37,7 @@
           <label class="field">
             <span class="field-label">{{ t('form.store') }}</span>
             <select v-model.number="form.store_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">t('placeholders.none')</option>
+              <option :value="null">{{ t('placeholders.none') }}</option>
               <option v-if="deletedStore" :value="deletedStore.id" disabled>
                 {{ deletedStore.label }}
               </option>
@@ -55,7 +55,7 @@
           <label class="field">
             <span class="field-label">{{ t('form.category') }}</span>
             <select v-model="form.category_id" class="field-select" :disabled="!canEdit" @change="onCategoryChange">
-              <option :value="null">t('placeholders.none')</option>
+              <option :value="null">{{ t('placeholders.none') }}</option>
               <option v-if="deletedCategory" :value="deletedCategory.id" disabled>
                 {{ deletedCategory.label }}
               </option>

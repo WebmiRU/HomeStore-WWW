@@ -48,7 +48,7 @@
 
       <!-- Удалённое хранилище остаётся в дереве: предметы в нём живые, а
            это единственное место, где видно, где они лежат. -->
-      <span v-if="node.deleted" class="cnode__deleted">t('placeholders.deleted')</span>
+      <span v-if="node.deleted" class="cnode__deleted">{{ t('placeholders.deleted') }}</span>
 
       <span v-if="counts" class="cnode__counts">{{ counts }}</span>
     </div>

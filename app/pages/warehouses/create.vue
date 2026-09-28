@@ -13,7 +13,7 @@
       <label class="field">
         <span class="field-label">{{ t('access_rights.user') }}</span>
         <select v-model.number="form.user_id" class="field-select" required>
-          <option :value="null" disabled>t('placeholders.pick')</option>
+          <option :value="null" disabled>{{ t('placeholders.pick') }}</option>
           <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
         </select>
       </label>

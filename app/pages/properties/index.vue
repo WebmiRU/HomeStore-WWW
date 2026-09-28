@@ -28,15 +28,15 @@
             <td :data-label="t('common.title')">{{ p.title }}</td>
             <td :data-label="t('properties.type')">{{ p.type_label }}</td>
             <td :data-label="t('properties.group')">
-              <span v-if="p.group">{{ p.group.title }}<template v-if="p.group.deleted"> t('placeholders.deleted')</template></span>
+              <span v-if="p.group">{{ p.group.title }}<template v-if="p.group.deleted">{{ t('placeholders.deleted') }}</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('properties.unit_short')">
-              <span v-if="p.unit">{{ p.unit.title_short }}<template v-if="p.unit.deleted"> t('placeholders.deleted')</template></span>
+              <span v-if="p.unit">{{ p.unit.title_short }}<template v-if="p.unit.deleted">{{ t('placeholders.deleted') }}</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('properties.dictionary_short')">
-              <span v-if="p.dictionary">{{ p.dictionary.title }}<template v-if="p.dictionary.deleted"> t('placeholders.deleted')</template></span>
+              <span v-if="p.dictionary">{{ p.dictionary.title }}<template v-if="p.dictionary.deleted">{{ t('placeholders.deleted') }}</template></span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('properties.values_count')">{{ p.values_count ?? 0 }}</td>

@@ -11,7 +11,7 @@
       <label class="field">
         <span class="field-label">{{ t('properties.group') }}</span>
         <select v-model="form.group_id" class="field-select">
-          <option :value="null">t('placeholders.no_group')</option>
+          <option :value="null">{{ t('placeholders.no_group') }}</option>
           <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.title }}</option>
         </select>
         <span class="field-hint">{{ t('properties.group_hint_short') }}</span>
@@ -38,7 +38,7 @@
       <label v-if="acceptsUnit" class="field">
         <span class="field-label">{{ t('properties.unit') }}</span>
         <select v-model="form.unit_id" class="field-select">
-          <option :value="null">t('placeholders.no_unit')</option>
+          <option :value="null">{{ t('placeholders.no_unit') }}</option>
           <option v-for="unit in units" :key="unit.id" :value="unit.id">
             {{ unit.title_short }} — {{ unit.title_full }}
           </option>
@@ -48,7 +48,7 @@
       <label v-if="needsDictionary" class="field">
         <span class="field-label">{{ t('properties.dictionary') }}</span>
         <select v-model="form.dictionary_id" class="field-select">
-          <option :value="null">t('placeholders.pick_dictionary')</option>
+          <option :value="null">{{ t('placeholders.pick_dictionary') }}</option>
           <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
             {{ dictionary.title }} ({{ dictionary.values_count }} t('properties.values_short') })
           </option>

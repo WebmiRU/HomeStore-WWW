@@ -23,7 +23,7 @@
           <label class="field">
             <span class="field-label">{{ t('form.warehouse') }}</span>
             <select v-model.number="form.warehouse_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">t('placeholders.none')</option>
+              <option :value="null">{{ t('placeholders.none') }}</option>
               <option v-if="deletedWarehouse" :value="deletedWarehouse.id" disabled>
                 {{ deletedWarehouse.label }}
               </option>
@@ -36,7 +36,7 @@
           <label class="field">
             <span class="field-label">{{ t('form.parent') }}</span>
             <select v-model.number="form.parent_id" class="field-select" :disabled="!canEdit">
-              <option :value="null">t('placeholders.none')</option>
+              <option :value="null">{{ t('placeholders.none') }}</option>
               <option
                 v-for="opt in parentOptions"
                 :key="opt.id"

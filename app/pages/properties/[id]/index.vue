@@ -13,7 +13,7 @@
           <label class="field">
             <span class="field-label">{{ t('properties.group') }}</span>
             <select v-model="form.group_id" class="field-select">
-              <option :value="null">t('placeholders.no_group')</option>
+              <option :value="null">{{ t('placeholders.no_group') }}</option>
               <option v-if="deletedGroup" :value="deletedGroup.id" disabled>
                 {{ deletedGroup.label }}
               </option>
@@ -44,7 +44,7 @@
           <label v-if="acceptsUnit" class="field">
             <span class="field-label">{{ t('properties.unit') }}</span>
             <select v-model="form.unit_id" class="field-select">
-              <option :value="null">t('placeholders.no_unit')</option>
+              <option :value="null">{{ t('placeholders.no_unit') }}</option>
               <option v-if="deletedUnit" :value="deletedUnit.id" disabled>
                 {{ deletedUnit.label }}
               </option>
@@ -57,7 +57,7 @@
           <label v-if="needsDictionary" class="field">
             <span class="field-label">{{ t('properties.dictionary') }}</span>
             <select v-model="form.dictionary_id" class="field-select">
-              <option :value="null">t('placeholders.pick_dictionary')</option>
+              <option :value="null">{{ t('placeholders.pick_dictionary') }}</option>
               <option v-if="deletedDictionary" :value="deletedDictionary.id" disabled>
                 {{ deletedDictionary.label }}
               </option>
