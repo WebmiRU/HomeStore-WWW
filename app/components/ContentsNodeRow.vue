@@ -8,10 +8,8 @@
     class="cnode"
     :class="{
       'cnode--last': isLast,
-      'cnode--first': isFirst || isRoot,
       'cnode--root': isRoot,
       'cnode--leaf': isLeaf,
-      'cnode--closed': isClosed,
       'cnode--branched': node.children.length > 0,
     }"
   >
@@ -78,7 +76,6 @@
         v-for="(child, index) in node.children"
         :key="child.id"
         :node="child"
-        :is-first="index === 0"
         :is-last="index === node.children.length - 1"
         :expanded="expanded"
         :shown-items="shownItems"
@@ -97,8 +94,6 @@ const props = defineProps<{
   node: ContentsNode
   /** Последний ли узел среди братьев: влияет на линии дерева. */
   isLast?: boolean
-  /** Первый ли узел среди братьев: сверху линию уровня продолжать нечему. */
-  isFirst?: boolean
   /** Корень дерева (само хранилище или склад): над ним никого нет. */
   isRoot?: boolean
   expanded: Set<number>
@@ -116,12 +111,6 @@ const isStore = computed(() => props.node.kind === 'store')
 
 /** Лист: потомков нет, а значит нет и вертикали, которая их соединяла бы. */
 const isLeaf = computed(() => props.node.children.length === 0)
-
-/**
- * Свёрнутый узел с потомками: вертикаль ему тоже не нужна — соединять не
- * чего, пока дети не показаны.
- */
-const isClosed = computed(() => props.node.children.length > 0 && !isOpen.value)
 
 /** Полный список, если его подгрузили, иначе — превью из двадцати. */
 const visibleItems = computed(() => props.shownItems[props.node.id] ?? props.node.items)
@@ -212,13 +201,11 @@ const counts = computed(() => {
    Отрезок живёт на строке, а не на блоке, ещё и потому, что строка может
    оказаться выше или ниже ожидаемого — с блоком пришлось бы угадывать. */
 .cnode--last::before,
-.cnode--closed::before,
 .cnode--root::before {
   display: none;
 }
 
-.cnode--last > .cnode__head::after,
-.cnode--closed > .cnode__head::after {
+.cnode--last > .cnode__head::after {
   content: '';
   position: absolute;
   /* Отступ --step обязателен: псевдоэлемент на голове отсчитывается от её
@@ -232,9 +219,14 @@ const counts = computed(() => {
   background: #3a3a3a;
 }
 
-/* У первого в группе (и у корня) сверху обрывать нечего: линия уровня над ним
-   не идёт, и короткий отрезок над квадратиком уезжал в пустоту. */
-.cnode--first > .cnode__head::after {
+/* Обрывается она только у корня: над ним линии уровня нет вообще, и короткий
+   отрезок над квадратиком уезжал в пустоту.
+
+   У остальных обрывать нельзя, даже первому в группе: линия уровня к нему
+   приходит из строки родителя, и без верхней половины своей строки единственный
+   ребёнок («Хранилище 1» у «Ящика 1») оставался без связи — от родителя до его
+   квадратика не доходило 18 пикселей. */
+.cnode--root > .cnode__head::after {
   display: none;
 }
 
@@ -426,12 +418,6 @@ const counts = computed(() => {
 
 .cnode--branched .cnode__items::before {
   bottom: calc(-1 * var(--aftergap));
-}
-
-/* Свёрнутый узел формально ветку имеет, но дети не показаны, и вертикаль
-   предметов не должна уходить под последний предмет в пустоту. */
-.cnode--closed .cnode__items::before {
-  bottom: calc(var(--itemh) / 2);
 }
 
 .cnode__itemrow {
