@@ -279,7 +279,7 @@ watch(() => route.query.page, (newPage) => {
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
@@ -295,7 +295,7 @@ watch(() => route.query.page, (newPage) => {
 }
 
 .action-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-download {

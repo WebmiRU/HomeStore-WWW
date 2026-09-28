@@ -41,7 +41,7 @@ function crumbLink(crumb: ChainCrumb): string {
 }
 
 .crumb__link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
   transition: color 0.15s ease, border-bottom-color 0.15s ease;
@@ -49,8 +49,8 @@ function crumbLink(crumb: ChainCrumb): string {
 }
 
 .crumb__link:hover {
-  color: var(--info);
-  border-bottom-color: var(--info-bg);
+  color: var(--link-hover);
+  border-bottom-color: var(--accent);
 }
 
 .crumb__plain {

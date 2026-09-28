@@ -207,7 +207,7 @@ onMounted(() => load(1))
 }
 
 .item-link {
-  color: var(--info-hover);
+  color: var(--link);
   text-decoration: none;
 }
 

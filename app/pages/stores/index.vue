@@ -395,7 +395,7 @@ watch(() => route.query.page, syncPage)
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
@@ -411,7 +411,7 @@ watch(() => route.query.page, syncPage)
 }
 
 .action-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-del {
@@ -423,7 +423,7 @@ watch(() => route.query.page, syncPage)
 }
 
 .action-view {
-  color: var(--info);
+  color: var(--link);
 }
 
 .action-del--forbidden {

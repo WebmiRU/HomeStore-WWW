@@ -361,7 +361,7 @@ onMounted(load)
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   display: inline-flex;
   align-items: center;

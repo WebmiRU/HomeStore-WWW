@@ -346,7 +346,7 @@ const counts = computed(() => {
 
 .cnode__title {
   font-size: 15px;
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -354,7 +354,7 @@ const counts = computed(() => {
 }
 
 .cnode__title:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
@@ -459,7 +459,7 @@ const counts = computed(() => {
 }
 
 .cnode__item:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 

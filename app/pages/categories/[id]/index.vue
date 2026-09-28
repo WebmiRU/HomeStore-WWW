@@ -374,13 +374,13 @@ onMounted(load)
 }
 
 .children__link {
-  color: var(--info);
+  color: var(--link);
   font-size: 14px;
   text-decoration: none;
 }
 
 .children__link:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
@@ -435,12 +435,12 @@ onMounted(load)
 }
 
 .row-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
 }
 
 .row-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 

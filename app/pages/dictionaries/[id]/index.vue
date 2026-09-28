@@ -390,7 +390,7 @@ onMounted(load)
   border: none;
   padding: 0;
   margin-right: 8px;
-  color: var(--info);
+  color: var(--link);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -404,7 +404,7 @@ onMounted(load)
 }
 
 .action-link:hover:not(:disabled) {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-link:disabled {

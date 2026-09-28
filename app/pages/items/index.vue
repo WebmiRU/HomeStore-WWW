@@ -382,23 +382,23 @@ watch(
 }
 
 .filter-reset {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   margin-left: 4px;
 }
 
 .filter-reset:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
 .row-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
 }
 
 .row-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
@@ -478,7 +478,7 @@ watch(
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   margin-right: 8px;
   font-size: 13px;
@@ -494,7 +494,7 @@ watch(
 }
 
 .action-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-del {
@@ -506,7 +506,7 @@ watch(
 }
 
 .action-view {
-  color: var(--info);
+  color: var(--link);
 }
 
 .action-del--forbidden {

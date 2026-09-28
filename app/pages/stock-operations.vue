@@ -750,7 +750,7 @@ watch(
 }
 
 .mv-row__link {
-  color: var(--info-ink);
+  color: var(--link);
   text-decoration: none;
 }
 

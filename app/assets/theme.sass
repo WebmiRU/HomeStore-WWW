@@ -66,8 +66,13 @@
   --shadow:          rgba(0, 0, 0, .5)
   --scrim:           rgba(0, 0, 0, .72)
 
-  // «Сильнее» акцента на тёмном фоне — светлее: на тёмном тёмное не видно.
-  --accent-strong:   color-mix(in srgb, var(--accent-base) 82%, #fff)
+  // Акцент на тёмном фоне сочный, а подпись на нём — тёмная. Наоборот не
+  // выйдет: белый текст на сочной зелени даёт меньше четырёх к одному, а
+  // приглушённый зелёный на тёмном фоне именно что «садится» — ради этого
+  // всё и затевалось.
+  --accent-contrast: #0e1f14
+  --accent-strong:   color-mix(in srgb, var(--accent-base) 15%, #fff)
+  --accent-tint:     color-mix(in srgb, var(--accent-base) 16%, var(--bg-elevated))
 
 [data-theme='light']
   color-scheme: light
@@ -118,29 +123,31 @@
 
   // На светлом фоне «сильнее» — темнее, как у обычного текста.
   --accent-strong:   color-mix(in srgb, var(--accent-base) 82%, #000)
+  --accent-tint:     color-mix(in srgb, var(--accent-base) 14%, var(--bg-elevated))
 
-// Акценты. Значение подобрано под контраст: на тёмном фоне светлее, на
-// светлом темнее, чтобы и подпись на кнопке, и сам текст на подложке читались.
+// Акценты. Значение подобрано под контраст: на тёмном фоне сочнее и с тёмной
+// подписью, на светлом — глуше и с белой. Разница в том, что на тёмном фоне
+// сочный цвет темнеет по контрасту, а на светлом — засвечивается.
 [data-accent='green']
-  --accent-base: #3a7a3a
+  --accent-base: #2fae4a
 
 [data-theme='light'][data-accent='green']
-  --accent-base: #2f6b3a
+  --accent-base: #2c7a3f
 
 [data-accent='purple']
-  --accent-base: #7a4a9e
+  --accent-base: #b070dd
 
 [data-theme='light'][data-accent='purple']
   --accent-base: #6b3f96
 
 [data-accent='blue']
-  --accent-base: #3a6a9e
+  --accent-base: #4f95e0
 
 [data-theme='light'][data-accent='blue']
   --accent-base: #2f5f96
 
 [data-accent='amber']
-  --accent-base: #9a6a2f
+  --accent-base: #cb8a1c
 
 [data-theme='light'][data-accent='amber']
   --accent-base: #8a5f2a
@@ -150,10 +157,17 @@
 // теме подложка остаётся тёмной, на светлой — светлой.
 [data-accent]
   --accent:          var(--accent-base)
-  --accent-bg:       color-mix(in srgb, var(--accent-base) 15%, var(--bg-elevated))
+  --accent-bg:       var(--accent-tint)
   --accent-hover-bg: color-mix(in srgb, var(--accent-base) 26%, var(--bg-elevated))
   --accent-ink:      color-mix(in srgb, var(--accent-base) 70%, var(--text))
   --accent-contrast: #fff
+
+  // Ссылка идёт за акцентом, а не остаётся синей: выбрал цвет кнопок —
+  // меняются и ссылки. Подмешиваем текстовый цвет, а не белый: на тёмной
+  // теме это светлее, на светлой темнее, то есть «сильнее» в обоих случаях,
+  // и оттенок акцента сохраняется в обоих.
+  --link:            color-mix(in srgb, var(--accent-base) 75%, var(--text))
+  --link-hover:      color-mix(in srgb, var(--accent-base) 55%, var(--text))
 
 // Палитра серий графиков. Canvas не берёт токены сам, поэтому цвета живут
 // здесь, а график читает их через getComputedStyle: иначе линии остались бы

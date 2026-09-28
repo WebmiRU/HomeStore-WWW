@@ -94,7 +94,11 @@
             <span class="entity-group__caret" aria-hidden="true">▾</span>
           </button>
 
-          <div v-if="openGroup === entry.key" class="entity-group__menu">
+          <div
+            v-if="openGroup === entry.key"
+            class="entity-group__menu"
+            :class="{ 'entity-group__menu--right': menuAlignRight }"
+          >
             <NuxtLink v-for="item in entry.items" :key="item.key" :to="item.to" class="entity-group__item">
               {{ t(item.labelKey) }}
             </NuxtLink>
@@ -106,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { isNavGroup, type NavEntry, type NavGroup } from '~/utils/navigation'
 
 /**
@@ -144,6 +148,56 @@ function isGroupActive(group: NavGroup): boolean {
 
 function toggleGroup(key: string) {
   openGroup.value = openGroup.value === key ? null : key
+
+  if (openGroup.value !== null) void alignMenu()
+}
+
+/**
+ * Выпадающее меню не должно уезжать за правый край окна.
+ *
+ * Пункт «Коды» стоит в меню последним, и раскрытое меню уходило за край на
+ * экране 1280 — человек терял часть пунктов, а закрыть его можно было только
+ * кликом мимо. Решается измерением, а не правилом «последний пункт»: порядок
+ * меню меняется пользователем, и правило перестало бы работать, как только
+ * «Коды» окажется не последним.
+ *
+ * Запасной предел по ширине стоит в стилях: если измерение не успело (первый
+ * кадр после открытия), меню всё равно не вылезет за окно, а просто
+ * сжимается/прокручивается.
+ */
+const menuAlignRight = ref(false)
+
+/** Запас справа: столько от края окна до края меню считается допустимым. */
+const EDGE = 12
+
+async function alignMenu(): Promise<void> {
+  await nextTick()
+
+  measureMenu()
+
+  // Строка навигации переверстывается в тот же кадр: окно могло сузиться,
+  // и кнопка «Коды» переехала на другую строку уже после замера. Повтор на
+  // следующем кадре ловит именно этот случай.
+  requestAnimationFrame(measureMenu)
+}
+
+function measureMenu(): void {
+  // Элемент берётся из документа, а не из шаблонной ссылки: ссылка внутри
+  // v-for собирается в массив, а не в элемент, и измерение молча падало бы.
+  const node = document.querySelector<HTMLElement>('.entity-group__menu')
+  if (node === null) return
+
+  // Ширина берётся у самого меню, а положение — у кнопки группы: кнопка к
+  // этому моменту уже на месте, а меню в своём левом углу ещё может лежать
+  // там, куда его поставили в прошлый раз.
+  const anchor = node.parentElement?.getBoundingClientRect()
+  if (anchor === undefined) return
+
+  menuAlignRight.value = anchor.right + node.offsetWidth > window.innerWidth - EDGE
+}
+
+function onWindowResize(): void {
+  if (openGroup.value !== null) void alignMenu()
 }
 
 function closeGroup() {
@@ -215,11 +269,15 @@ onMounted(() => {
   loadOptions()
   document.addEventListener('pointerdown', onDocumentPointerDown)
   document.addEventListener('keydown', onDocumentKeydown)
+  // Раскрытое меню перемеряется и при изменении окна: окно могли сузить, пока
+  // меню открыто, и край уехал бы снова.
+  window.addEventListener('resize', onWindowResize)
 })
 
 onUnmounted(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown)
   document.removeEventListener('keydown', onDocumentKeydown)
+  window.removeEventListener('resize', onWindowResize)
 })
 </script>
 
@@ -245,7 +303,7 @@ onUnmounted(() => {
 }
 
 a.header-avatar:hover {
-  box-shadow: 0 0 0 2px var(--info-bg), 0 0 0 4px var(--info-bg);
+  box-shadow: 0 0 0 2px var(--accent-bg), 0 0 0 4px var(--accent-bg);
 }
 
 .header-search {
@@ -372,7 +430,7 @@ a.header-avatar:hover {
 .entity-link {
   font-size: 14px;
   font-family: inherit;
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 4px;
@@ -381,14 +439,14 @@ a.header-avatar:hover {
 
 .entity-link:hover {
   background: color-mix(in srgb, var(--bg-elevated) 80%, var(--text));
-  color: var(--info);
+  color: var(--link-hover);
   border-color: var(--border-strong);
 }
 
 .router-link-active.entity-link {
-  color: var(--info);
-  background: var(--info-bg);
-  border-color: var(--info-bg);
+  color: var(--link);
+  background: var(--accent-bg);
+  border-color: var(--accent-bg);
 }
 
 /* Родитель группы не ссылка, но должен выглядеть ровно так же — иначе
@@ -403,9 +461,9 @@ a.header-avatar:hover {
 
 .entity-group__toggle.router-link-active,
 .entity-group--active > .entity-group__toggle {
-  color: var(--info);
-  background: var(--info-bg);
-  border-color: var(--info-bg);
+  color: var(--link);
+  background: var(--accent-bg);
+  border-color: var(--accent-bg);
 }
 
 .entity-group__caret {
@@ -428,6 +486,10 @@ a.header-avatar:hover {
   left: 0;
   z-index: 20;
   min-width: 180px;
+  /* Страховка от выхода за окно, если измерение не успело: меню не шире
+     окна и прокручивается само, а не обрезается краем экрана. */
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -437,10 +499,17 @@ a.header-avatar:hover {
   box-shadow: 0 6px 18px color-mix(in srgb, var(--bg-sunken) 45%, transparent);
 }
 
+/* Ближе к правому краю окна меню раскрывается влево: иначе последний
+   пункт меню уводит раскрытый список за границу экрана. */
+.entity-group__menu--right {
+  left: auto;
+  right: 0;
+}
+
 .entity-group__item {
   padding: 7px 10px;
   font-size: 14px;
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   border-radius: 4px;
   white-space: nowrap;
@@ -448,12 +517,12 @@ a.header-avatar:hover {
 
 .entity-group__item:hover {
   background: color-mix(in srgb, var(--bg-elevated) 80%, var(--text));
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .router-link-active.entity-group__item {
-  background: var(--info-bg);
-  color: var(--info);
+  background: var(--accent-bg);
+  color: var(--link);
 }
 
 @media (max-width: 768px) {

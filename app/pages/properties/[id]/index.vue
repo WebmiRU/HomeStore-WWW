@@ -328,12 +328,12 @@ onMounted(load)
 }
 
 .row-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
 }
 
 .row-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 

@@ -75,7 +75,7 @@ function isActive(key: string): boolean {
    посреди блока, а не под ним, поэтому здесь активная помечается заливкой. */
 .tabbar--wrap .tabbar__item--active {
   border-bottom-color: transparent;
-  background: var(--info-bg);
+  background: var(--accent-bg);
   border-radius: 4px;
 }
 
@@ -96,8 +96,8 @@ function isActive(key: string): boolean {
 }
 
 .tabbar__item--active {
-  color: var(--info);
-  border-bottom-color: var(--info-ink);
+  color: var(--link);
+  border-bottom-color: var(--accent);
 }
 
 @media (max-width: 768px) {

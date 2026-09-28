@@ -480,7 +480,7 @@ onMounted(load)
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   font-size: 13px;
   display: inline-flex;
@@ -495,7 +495,7 @@ onMounted(load)
 }
 
 .action-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-del {

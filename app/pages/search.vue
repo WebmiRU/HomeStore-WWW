@@ -534,7 +534,7 @@ watch(trigger, () => {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: transparent;
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -559,7 +559,7 @@ watch(trigger, () => {
 .action-btn:hover:not(:disabled) {
   background: var(--bg-elevated);
   border-color: var(--border-strong);
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-btn--replenish {
@@ -590,7 +590,7 @@ watch(trigger, () => {
 }
 
 .action-view {
-  color: var(--info);
+  color: var(--link);
 }
 
 .action-grid :deep(.toggler-btn) {

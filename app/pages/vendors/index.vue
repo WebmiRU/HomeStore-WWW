@@ -230,7 +230,7 @@ watch(
 }
 
 .action-link {
-  color: var(--info);
+  color: var(--link);
   text-decoration: none;
   margin-right: 8px;
   display: inline-flex;
@@ -245,7 +245,7 @@ watch(
 }
 
 .action-link:hover {
-  color: var(--info);
+  color: var(--link-hover);
 }
 
 .action-del {

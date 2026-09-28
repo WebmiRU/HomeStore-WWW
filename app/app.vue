@@ -229,7 +229,7 @@ body {
 }
 
 .notification__link:hover {
-  color: var(--info-hover);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
