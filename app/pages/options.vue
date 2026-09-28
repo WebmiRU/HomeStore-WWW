@@ -49,18 +49,18 @@
               <button
                 type="button"
                 class="menu-move"
-                :disabled="isFirst(topKeys, entry.key)"
+                :disabled="isFirst(topOrder, entry.key)"
                 :aria-label="`Выше: ${entry.label}`"
-                @click="move(entry.key, -1, topKeys)"
+                @click="move(entry.key, -1, topOrder)"
               >
                 ↑
               </button>
               <button
                 type="button"
                 class="menu-move"
-                :disabled="isLast(topKeys, entry.key)"
+                :disabled="isLast(topOrder, entry.key)"
                 :aria-label="`Ниже: ${entry.label}`"
-                @click="move(entry.key, 1, topKeys)"
+                @click="move(entry.key, 1, topOrder)"
               >
                 ↓
               </button>
@@ -89,18 +89,18 @@
                   <button
                     type="button"
                     class="menu-move"
-                    :disabled="isFirst(groupKeys(entry), item.key)"
+                    :disabled="isFirst(groupOrder(entry), item.key)"
                     :aria-label="`Выше: ${item.label}`"
-                    @click="move(item.key, -1, groupKeys(entry))"
+                    @click="move(item.key, -1, groupOrder(entry))"
                   >
                     ↑
                   </button>
                   <button
                     type="button"
                     class="menu-move"
-                    :disabled="isLast(groupKeys(entry), item.key)"
+                    :disabled="isLast(groupOrder(entry), item.key)"
                     :aria-label="`Ниже: ${item.label}`"
-                    @click="move(item.key, 1, groupKeys(entry))"
+                    @click="move(item.key, 1, groupOrder(entry))"
                   >
                     ↓
                   </button>
@@ -227,15 +227,35 @@ const topEntries = computed(() =>
   sortNavKeys(topKeys.value, order.value).map((key) => navTree.find((entry) => entry.key === key)!),
 )
 
-/** Все ключи меню в текущем порядке формы: верхний уровень и вложенные. */
+/**
+ * Все ключи меню в порядке по умолчанию: верхний уровень, затем вложенные.
+ *
+ * Именно по умолчанию, а не по текущей расстановке формы: этим списком
+ * пользуется и сравнение «что изменилось», иначе форма сравнивалась бы сама с
+ * собой и «Сохранить» у человека без настроек было бы активно сразу.
+ */
 function navKeys(): string[] {
-  return topEntries.value.map((entry) => entry.key).concat(
-    navTree.filter(isNavGroup).flatMap((group) => groupEntries(group).map((item) => item.key)),
+  return topKeys.value.concat(
+    navTree.filter(isNavGroup).flatMap((group) => groupKeys(group)),
   )
 }
 
+/**
+ * Ключи уровня в том виде, как их видит человек, — по текущей расстановке.
+ *
+ * Раньше сюда подставлялся порядок по умолчанию, и после перестановки
+ * получалось расхождение: список показывался новый, а «крайние» строки
+ * вычислялись по старому, и у нижнего пункта оставалась включённая стрелка
+ * вниз.
+ */
+const topOrder = computed(() => topEntries.value.map((entry) => entry.key))
+
 function groupKeys(group: NavGroup): string[] {
   return group.items.map((item) => item.key)
+}
+
+function groupOrder(group: NavGroup): string[] {
+  return groupEntries(group).map((item) => item.key)
 }
 
 function groupEntries(group: NavGroup): NavItem[] {
@@ -297,9 +317,15 @@ function fillDefaults(): void {
   rememberOperationMode.value = true
 }
 
+/** Ключи в том виде, в каком их видит человек с учётом сохранённого порядка. */
+const storedOrder = computed(() => [
+  ...sortNavKeys(topKeys.value, options.value.menu_order),
+  ...navTree.filter(isNavGroup).flatMap((group) => sortNavKeys(groupKeys(group), options.value.menu_order)),
+])
+
 const dirty = computed(
   () =>
-    order.value.join() !== options.value.menu_order.join() ||
+    order.value.join() !== storedOrder.value.join() ||
     [...hidden.value].sort().join() !== [...options.value.menu_hidden].sort().join() ||
     operationMode.value !== options.value.operation_mode ||
     showCodeBlock.value !== options.value.show_code_block ||
