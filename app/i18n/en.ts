@@ -830,6 +830,19 @@ export const en: Record<TranslationKey, string> = {
     show_code_block: 'Show the code block at the bottom of pages',
     show_code_block_hint:
       'A field for typing a code by hand. The scanner keeps working either way: it reads the keyboard on any page.',
+    theme_title: 'Theme',
+    theme_hint:
+      'A theme is more than colours: each one has its own look for buttons, tables and fields. The theme is yours and follows you to another device. “As in the system” follows the system setting: change it there and it changes here.',
+    theme_dark: 'Dark by default',
+    theme_light: 'Light by default',
+    theme_system: 'As in the system',
+    accent_title: 'Accent',
+    accent_hint:
+      'The colour of buttons, links and state labels. The theme stays as it is: only the accent colour changes.',
+    accent_green: 'Green',
+    accent_purple: 'Purple',
+    accent_blue: 'Blue',
+    accent_amber: 'Amber',
     language_title: 'Language',
     language_hint: 'The language of the interface and messages. It follows you to other devices.',
     language_ru: 'Русский',
@@ -891,6 +904,16 @@ export const en: Record<TranslationKey, string> = {
     open: 'Open the logo',
     open_title: 'Open the logo: {title}',
     alt_with_title: 'Logo: {title}',
+  },
+
+  // Переключатель темы в шапке. Подпись на кнопке — то, что получится после
+  // нажатия, а не то, что сейчас: так кнопка не врёт, пока в ней не
+  // разобрались.
+  theme: {
+    to_light: 'Switch to the light theme',
+    to_dark: 'Switch to the dark theme',
+    is_light: 'Light theme now',
+    is_dark: 'Dark theme now',
   },
 
   movements: {

@@ -33,6 +33,40 @@
       >
         {{ loggingOut ? t('common.logging_out') : t('common.logout') }}
       </button>
+
+      <!--
+        Переключатель темы в шапке: настройка есть и в «Настройках», но
+        перекрасить интерфейс нужно здесь и сейчас, не заходя туда. Подпись
+        на кнопке — то, что получится после нажатия, а не то, что сейчас:
+        иначе кнопка врёт, пока в ней не разобрались.
+
+        Иконка нарисована тут, а не взята из файла: солнце и луна — две
+        окружности и несколько лучей, и ради них держать в проекте картинку
+        неразумно. Ток currentColor красит её под тему сама.
+      -->
+      <button
+        type="button"
+        class="header-theme"
+        :title="resolved === 'light' ? t('theme.to_dark') : t('theme.to_light')"
+        :aria-label="resolved === 'light' ? t('theme.to_dark') : t('theme.to_light')"
+        @click="toggle"
+      >
+        <svg
+          class="header-theme__icon"
+          :class="resolved === 'light' ? 'header-theme__icon--sun' : 'header-theme__icon--moon'"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <template v-if="resolved === 'light'">
+            <circle cx="12" cy="12" r="4.2" />
+            <path
+              d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.4 5.4l1.8 1.8M16.8 16.8l1.8 1.8M18.6 5.4l-1.8 1.8M7.2 16.8l-1.8 1.8"
+              stroke-linecap="round"
+            />
+          </template>
+          <path v-else d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a8.6 8.6 0 1 0 11 11Z" />
+        </svg>
+      </button>
     </div>
 
     <nav class="entity-nav">
@@ -90,6 +124,10 @@ const route = useRoute()
 const { currentUserId, setCurrentUserId } = useCurrentUser()
 const { profile, load: loadProfile, clear: clearProfile } = useUserProfile()
 const { visibleTree, load: loadOptions, reset: resetOptions } = useOptions()
+// Тема и акцент живут в useState, поэтому шапка читает их и обновляет сама:
+// перекраска должна происходить на всей странице сразу, а не только там, где
+// настройка выбрана.
+const { resolved, toggle } = useTheme()
 const { t } = useI18n()
 
 const searchQuery = ref('')
@@ -268,6 +306,54 @@ a.header-avatar:hover {
 .header-logout:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Кнопка темы. Рисуется иконкой, а не картинкой: ток currentColor красит её
+   под тему сама, и вид у неё тот же, что у соседних кнопок. */
+.header-theme {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.header-theme:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--bg-elevated);
+}
+
+.header-theme__icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+/* Луна сплошная: обводить её контуром — значит нарисовать луну с дыркой, а
+   это уже другой знак. */
+.header-theme__icon--moon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.header-theme__icon--sun {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.header-theme__icon--sun circle {
+  fill: none;
 }
 
 .entity-nav {

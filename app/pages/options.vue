@@ -153,6 +153,14 @@
     <section v-else-if="activeTab === 'interface'" class="options-card">
       <h4 class="options-card__title">{{ t('options_page.interface_title') }}</h4>
 
+      <h5 class="options-card__subtitle">{{ t('options_page.theme_title') }}</h5>
+      <ThemePicker v-model="themeChoice" :accent="accentChoice" />
+      <p class="options-card__hint">{{ t('options_page.theme_hint') }}</p>
+
+      <h5 class="options-card__subtitle">{{ t('options_page.accent_title') }}</h5>
+      <AccentPicker v-model="accentChoice" :theme="themePreview" />
+      <p class="options-card__hint">{{ t('options_page.accent_hint') }}</p>
+
       <label class="menu-row menu-row--plain">
         <span class="menu-row__check">
           <input
@@ -361,6 +369,28 @@ function fillDefaults(): void {
   localeChoice.value = 'ru'
 }
 
+/**
+ * Оформление применяется и сохраняется сразу, без кнопки «Сохранить».
+ *
+ * Тему и акцент выбирают, чтобы посмотреть на результат: ждать, пока форма
+ * отправится в сервер и вернётся, незачем, а потом ещё и перерисовывать всё
+ * заново. Остальные настройки формы ведут себя как раньше — их сохраняет кнопка.
+ */
+const { mode, resolved, accent, setTheme, setAccent } = useTheme()
+
+const themeChoice = computed({
+  get: () => mode.value,
+  set: (value) => setTheme(value),
+})
+
+const accentChoice = computed({
+  get: () => accent.value,
+  set: (value) => setAccent(value),
+})
+
+/** Для превью акцентов: «как в системе» — это уже разрешённая тема. */
+const themePreview = computed(() => resolved.value)
+
 /** Ключи в том виде, в каком их видит человек с учётом сохранённого порядка. */
 const storedOrder = computed(() => [
   ...sortNavKeys(topKeys.value, options.value.menu_order),
@@ -463,6 +493,15 @@ watch(options, fillFromOptions)
   margin: 0 0 12px;
   font-size: 12px;
   color: #888;
+}
+
+/* Подзаголовок внутри карточки настроек: у «Интерфейса» внутри три смысловые
+   части — оформление и блок «Код» — и без него они сливаются в один список. */
+.options-card__subtitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: normal;
+  color: #ccc;
 }
 
 .options-divider {

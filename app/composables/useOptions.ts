@@ -15,6 +15,8 @@ const defaultOptions = (): OptionResponse => ({
   locale: 'ru',
   show_code_block: true,
   remember_operation_mode: true,
+  theme: 'dark',
+  accent: 'green',
 })
 
 export function useOptions() {

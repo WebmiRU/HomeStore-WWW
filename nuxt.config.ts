@@ -3,7 +3,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  css: ['~/assets/template.sass'],
+  // Токены темы идут первыми: остальные стили берут цвета из переменных, и
+  // порядок подключения здесь не декоративный.
+  css: ['~/assets/theme.sass', '~/assets/template.sass'],
 
   modules: ['@nuxtjs/google-fonts'],
 
