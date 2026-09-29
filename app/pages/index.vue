@@ -172,18 +172,24 @@
         :title-to="`/items/${entry.item_id}`"
       >
           <template #foot>
-            <div v-if="!entry.done && isPartialEntry(entry)" class="item-card__stock">
-              <!--
-                Два числа рядом: сколько осталось по складу и, в скобках,
-                сколько в той штуке, которая расходуется сейчас. Без второго
-                нельзя понять, докуда пойдёт следующий шаг.
-              -->
-              <span v-for="part in entry.parts" :key="part.property_id" class="scan-row__left">
-                {{ part.title }}: {{ entry.partStock[part.property_id] ?? 0 }}
-                ({{ part.remaining ?? 0 }})
+            <!--
+              У расходуемого предмета остаток не дублируется: он уже стоит
+              рядом с каждым полем, где человек в него и вписывает. В футере
+              показывается то, чего у полей нет, — сколько расхода ушло.
+            -->
+            <div v-if="entry.done && isPartialEntry(entry)" class="item-card__stock">
+              <span v-for="part in entry.parts" :key="part.property_id" class="scan-row__spent">
+                {{ part.title }}:
+                {{ activeMode === 'replenish' ? '+' : '−' }}{{ part.amount }}
               </span>
             </div>
-            <div v-else-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
+            <!--
+              «В наличии N» у расходуемого предмета не показывается: человек
+              видит остаток по каждому свойству рядом с полем, а число штук
+              рядом с ним сбивало бы с толку — оно не то, что расходуется, и
+              меняется само, когда опустеет штука.
+            -->
+            <div v-else-if="!entry.done && !isPartialEntry(entry) && entry.payload.quantity != null" class="item-card__stock">
               {{ t('main.in_stock', { count: entry.payload.quantity }) }}
             </div>
             <div v-else-if="entry.done" class="item-card__stock">
@@ -194,9 +200,18 @@
               >
                 {{ entry.doneMode === 'replenish' ? t('main.done_replenish') : t('main.done_writeoff') }}
               </span>
-              <span class="scan-row__residue">
+              <!--
+                У расходуемого предмера дельта штук часто нулевая: списали
+                300 мл из бутылки — количество то же. Печатать «−0» значило бы
+                показывать изменение, которого не было, и человек решил бы, что
+                списание не сработало. Поэтому показывается расход по свойствам.
+              -->
+              <span v-if="!isPartialEntry(entry)" class="scan-row__residue">
                 {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
                 ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
+              </span>
+              <span v-else class="scan-row__residue">
+                {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
               </span>
             </div>
             <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
@@ -240,8 +255,16 @@
                       step="any"
                       class="scan-row__part-input"
                     >
+
+                    <!--
+                      Два числа: сколько осталось по складу и в скобках сколько
+                      в той штуке, которая расходуется сейчас. Второе нужно,
+                      чтобы видеть, докуда пойдёт следующий шаг: у мешка в одной
+                      штуке может лежать половина объёма и четверть веса.
+                    -->
                     <span class="scan-row__part-stock">
-                      {{ t('main.partial_left') }}: {{ entry.partStock[part.property_id] ?? 0 }}
+                      <span class="scan-row__part-total">{{ t('main.partial_left') }}: {{ entry.partStock[part.property_id] ?? 0 }}</span>
+                      <span class="scan-row__part-unit">({{ t('main.partial_in_unit') }}: {{ part.remaining }})</span>
                     </span>
                   </label>
                 </div>
@@ -508,9 +531,14 @@ function entryProblem(entry: ScanEntry): string | null {
         return t('main.partial_amount_hint')
       }
 
-      // Пополнение не ограничено остатком: принести можно и больше, чем было.
-      if (activeMode.value === 'writeoff' && part.amount - (entry.partStock[part.property_id] ?? 0) > 0.001) {
-        return t('main.partial_stock_line', { title: part.title, total: entry.partStock[part.property_id] ?? 0 })
+      // Сравнение с остатком: сколько показано под полем, столько и можно
+      // списать. Расхождения между ними больше нет — и остаток, и число штук
+      // считаются от запаса, — но проверка остаётся, чтобы лишнее в поле
+      // отсекалось до отправки, а не после.
+      const available = entry.partAvailable[part.property_id] ?? 0
+
+      if (activeMode.value === 'writeoff' && part.amount - available > 0.001) {
+        return t('main.partial_stock_line', { title: part.title, total: available })
       }
     }
     return null
@@ -845,10 +873,18 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
           amount: property.step,
           step: property.step,
           norm: property.norm,
+          remaining: property.remaining,
+          available: property.available ?? property.total,
         })),
     partStock: partial === null
       ? {}
       : Object.fromEntries(partial.map((property) => [property.property_id, property.total])),
+    partAvailable: partial === null
+      ? {}
+      : Object.fromEntries(partial.map((property) => [
+          property.property_id,
+          property.available ?? property.total,
+        ])),
   })
   void setScanChain(key, payload)
   if (matchList.length > 1) void loadMatchChains(matchList)

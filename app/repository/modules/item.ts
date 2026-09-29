@@ -73,6 +73,8 @@ export type ItemPartialPropertyResponse = {
   remaining: number
   /** Сколько осталось всего, со всеми целыми штуками. */
   total: number
+  /** Сколько можно списать прямо сейчас: не больше общего остатка. */
+  available: number
 }
 
 export type ItemData = Partial<ItemPayload> & {

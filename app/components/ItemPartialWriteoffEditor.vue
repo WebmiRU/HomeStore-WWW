@@ -1,22 +1,19 @@
 <template>
   <div class="partial-editor">
-    <p class="field-hint partial-editor__hint">
-      {{ t('items.partial_hint') }}
-    </p>
-
     <!--
-      Настройка выключена, если нет ни одного отмеченного свойства. Показывать
-      пустой список с одним включённым крыжиком значило бы заставлять человека
-      искать, где тут вообще галочки, а у предмета без числовых свойств
-      показывать нечего и нечего выбирать.
+      Настройка показывается, только когда есть что расходовать. У предмета без
+      заполненных числовых свойств показывать нечего: расходнуть «да/нет» или
+      значение из справочника нельзя, и такая строка была бы обещанием, которое
+      списание не выполнит.
     -->
     <template v-if="rows.length">
       <div
         v-for="(row, index) in rows"
         :key="row.property_id"
         class="partial-editor__row"
+        :class="{ 'partial-editor__row--on': row.enabled }"
       >
-        <label class="field field--check partial-editor__check">
+        <label class="partial-editor__check">
           <input
             type="checkbox"
             class="field-check"
@@ -24,11 +21,14 @@
             :disabled="readonly"
             @change="toggleProperty(index, $event)"
           >
-          <span>{{ row.title }}</span>
+          <span class="partial-editor__name">{{ row.title }}</span>
+          <span v-if="!row.enabled" class="partial-editor__idle">
+            {{ t('items.partial_not_used') }}
+          </span>
         </label>
 
-        <template v-if="row.enabled">
-          <label class="field partial-editor__field">
+        <div v-if="row.enabled" class="partial-editor__body">
+          <label class="field partial-editor__step">
             <span class="field-label">{{ t('items.partial_step') }}</span>
             <input
               v-model.number="row.step"
@@ -40,7 +40,7 @@
             >
           </label>
 
-          <label class="field field--check partial-editor__reason">
+          <label class="partial-editor__reason">
             <input
               type="checkbox"
               class="field-check"
@@ -49,23 +49,24 @@
               @change="toggleReason(index, $event)"
             >
             <span>{{ t('items.partial_full_reason') }}</span>
-            <span class="field-hint">
-              {{ t('items.partial_full_reason_hint') }}
-            </span>
           </label>
-        </template>
+        </div>
       </div>
 
-      <p class="field-hint partial-editor__hint">
-        {{ t('items.partial_step_hint') }}
+      <!--
+        Подсказки одна над другой, а не в строку: по форме они длинные, и
+        в строку не влезали — а влезая, ломали друг другу выравнивание. Плюс
+        каждая про своё, и в одну фразу их не собрать.
+      -->
+      <p class="partial-editor__hint">
+        {{ t('items.partial_full_reason_hint') }}
       </p>
-
-      <p v-if="!readonly && hasReason" class="field-hint partial-editor__hint">
+      <p v-if="!readonly && hasReason" class="partial-editor__hint">
         {{ t('items.partial_exclusive_hint') }}
       </p>
     </template>
 
-    <p v-else class="field-hint partial-editor__empty">
+    <p v-else class="partial-editor__hint">
       {{ t('items.partial_no_properties') }}
     </p>
   </div>
@@ -148,11 +149,17 @@ const numericProperties = computed<PartialCandidate[]>(() => props.properties.fi
 const rows = ref<EditorRow[]>([])
 
 /**
- * Пересобирает строки из значений и настроек.
+ * Пересобирает строки из списка свойств.
  *
- * Список свойств меняется вслед за правкой значений: свойство могли заполнить
+ * Список свойств меняется вслед за правки значений: свойство могли заполнить
  * только что, и до этого расходовать его было нечего. Пересборка целиком
  * означает, что в строках не остаётся свойств, которых у предмета больше нет.
+ *
+ * Следит только за списком свойств, а не за настройками: пересборка на
+ * настройках заменяла бы строки новыми объектами на каждое движение, и
+ * правка шага теряла бы фокус из поля на середине ввода. Настройки приходят
+ * снаружи при загрузке и после сохранения, и в обоих случаях список
+ * свойств меняется вместе с ними.
  */
 function rebuild(): void {
   const settings = new Map(
@@ -174,11 +181,7 @@ function rebuild(): void {
   })
 }
 
-watch(
-  () => [props.properties, props.modelValue] as const,
-  rebuild,
-  { immediate: true, deep: true },
-)
+watch(numericProperties, rebuild, { immediate: true })
 
 /**
  * Отмеченные свойства в том виде, в каком их принимает сервер.
@@ -195,9 +198,22 @@ const payload = computed<ItemPartialPropertyInput[]>(() => rows.value
     sort: position,
   })))
 
+/**
+ * Отправка настроек вверх — только когда они действительно поменялись.
+ *
+ * Без сверки с тем, что уже пришло в props, возникает петля: строки порождают
+ * payload, payload уходит наверх, props приходят обратно, строки пересобираются
+ * новыми объектами — и payload меняется снова, хотя смысл тот же. В консоли
+ * это выглядит как «Maximum recursive updates exceeded», а по факту страница
+ * просто перерисовывает список до бесконечности.
+ */
 watch(
   payload,
-  (value) => emit('update:modelValue', value),
+  (value) => {
+    if (JSON.stringify(value) !== JSON.stringify(props.modelValue)) {
+      emit('update:modelValue', value)
+    }
+  },
   { immediate: true, deep: true },
 )
 
@@ -215,51 +231,106 @@ function toggleReason(index: number, event: Event): void {
 
 <style scoped>
 /*
- * Свои правила для .field-hint и .field-label: в приложении они описаны в
+ * Свои правила для .field-label и .field-input: в приложении они описаны в
  * scoped-блоках страниц и до разметки дочернего компонента не достают, а
- * браузерные умолчания (16px, чёрный цвет) на тёмном фоне превращают
- * подсказку в основной текст.
+ * браузерные умолчания превращают поле в серую полосу без рамки. Переписаны
+ * под этот компонент, как это уже сделано в ItemCodesEditor и
+ * ItemPropertiesEditor.
  */
 .partial-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
 }
 
-.partial-editor__hint,
-.partial-editor__empty {
-  display: block;
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--text-dim);
-}
-
-.partial-editor__empty {
-  color: var(--text-dim);
-}
-
+/*
+ * Строка — это карточка одного свойства: рамка отделяет его от соседних, а
+ * включённое состояние выделяется рамкой акцентного цвета. Без этого отмеченное
+ * свойство отличалось бы от неотмеченного только галочкой, а на узком экране
+ * их легко перепутать.
+ */
 .partial-editor__row {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
-.partial-editor__row:last-child {
-  border-bottom: none;
+.partial-editor__row--on {
+  border-color: var(--accent);
 }
 
 .partial-editor__check {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
   font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
 }
 
-.partial-editor__field {
-  margin: 6px 0 0 24px;
-  max-width: 240px;
+.partial-editor__name {
+  font-weight: 600;
+}
+
+/* Неотмеченное свойство названо, но выглядит приглушённо: расхода по нему нет. */
+.partial-editor__idle {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.partial-editor__body {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-left: 24px;
+}
+
+.partial-editor__step {
+  width: 180px;
+  margin: 0;
+}
+
+.partial-editor__step .field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/*
+ * Поле шага — то же, что и все остальные поля формы: тот же фон, та же рамка,
+ * тот же шрифт. Отдельного вида у него быть не должно — иначе рядом с
+ * обычными полями карточки оно читается как неактивное.
+ */
+.partial-editor__step .field-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
 }
 
 .partial-editor__reason {
-  margin: 6px 0 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
   font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.partial-editor__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
 }
 </style>
