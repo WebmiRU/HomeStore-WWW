@@ -156,16 +156,37 @@
                 <span v-if="row.released_code" class="mv-row__code-released">
                   {{ t('movements.code_released', { code: row.released_code }) }}
                 </span>
+                <!--
+                  Расход по свойству — под названием предмета. Без подписи
+                  строка выглядела бы как обычное списание, у которого штуки
+                  не изменились, и человек не понял бы, куда делось содержимое.
+                -->
+                <span v-if="row.is_partial" class="mv-row__partial">
+                  {{ row.property_title }}:
+                  {{ t('movements.partial_of', { amount: row.amount, total: row.property_before ?? row.amount }) }}
+                </span>
               </td>
               <td class="mv-row__qty">
-                <span class="mv-row__delta">{{ signOf(op.direction) }}{{ row.quantity }}</span>
+                <span v-if="row.is_partial" class="mv-row__delta">{{ signOf(op.direction) }}{{ row.amount }}</span>
+                <span v-else class="mv-row__delta">{{ signOf(op.direction) }}{{ row.quantity }}</span>
               </td>
               <td class="mv-row__balance">
-                <span v-if="row.before != null">{{ row.before }} → {{ row.after }}</span>
+                <!--
+                  У строки расхода показываем остаток по свойству, а не по
+                  штукам: штуки могли и не измениться, а человек интересует,
+                  сколько именно расхода ушло.
+                -->
+                <span v-if="row.is_partial && row.property_before != null">
+                  {{ t('movements.partial_of', { amount: row.property_after ?? 0, total: row.property_before }) }}
+                </span>
+                <span v-else-if="row.before != null">{{ row.before }} → {{ row.after }}</span>
                 <span v-else>—</span>
               </td>
               <td class="mv-row__returned">
-                <span v-if="row.is_returned" class="mv-row__return-note">
+                <span v-if="row.is_partial && row.is_returned" class="mv-row__return-note">
+                  {{ t('movements.partial_of', { amount: row.reversed_amount, total: row.amount }) }}
+                </span>
+                <span v-else-if="row.is_returned" class="mv-row__return-note">
                   {{ t('movements.returned_of', { returned: row.reversed_quantity, total: row.quantity }) }}
                 </span>
               </td>
@@ -230,13 +251,25 @@
               <td class="modal__row-title">{{ row.item_title }}</td>
               <td class="modal__row-qty">
                 <label :for="`rev-${row.id}`" class="modal__row-label">
-                  {{ t('movements.remaining_of', { remaining: row.remaining, total: row.quantity }) }}
+                  <!--
+                    У строки расхода возвращается доля свойства, и она дробная:
+                    вернуть 100 мл из списанных 300 законно. Поэтому подпись и
+                    границы поля у неё свои.
+                  -->
+                  <template v-if="row.is_partial">
+                    {{ row.property_title }} —
+                    {{ t('movements.partial_of', { amount: row.remaining, total: row.amount }) }}
+                  </template>
+                  <template v-else>
+                    {{ t('movements.remaining_of', { remaining: row.remaining, total: row.quantity }) }}
+                  </template>
                 </label>
                 <input
                   :id="`rev-${row.id}`"
                   v-model.number="selection[row.id].quantity"
                   type="number"
-                  min="1"
+                  :min="row.is_partial ? 0 : 1"
+                  :step="row.is_partial ? 'any' : 1"
                   :max="row.remaining"
                   class="modal__row-input"
                   :disabled="!selection[row.id].on"
@@ -479,9 +512,13 @@ async function confirmReverse() {
   const op = reversing.value
   if (!op) return
 
+  // У строки частичного расхода возвращается amount, а не количество штук:
+  // количество у неё равно нулю, и отправлять его было бы «вернуть ноль».
   const rows = reversibleRows.value
     .filter((row) => selection[row.id]?.on)
-    .map((row) => ({ row_id: row.id, quantity: Number(selection[row.id].quantity) }))
+    .map((row) => (row.is_partial
+      ? { row_id: row.id, quantity: 1, amount: Number(selection[row.id].quantity) }
+      : { row_id: row.id, quantity: Number(selection[row.id].quantity) }))
 
   if (rows.length === 0) return
 
@@ -774,6 +811,18 @@ watch(
 /* Код, высвобождённый списанием по коду: заметка к строке, а не отдельное
    действие, поэтому выглядит как примечание, а не как кнопка. */
 .mv-row__code-released {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/*
+ * Подпись расхода по свойству — с блоком, как у кода: она относится к тому же
+ * предмету, а не к следующей строке, и отдельным блоком её видно сразу, без
+ * чтения колонок. Свой шрифт и приглушённый цвет — подпись, а не само
+ * значение расхода.
+ */
+.mv-row__partial {
   display: block;
   font-size: 12px;
   color: var(--text-muted);

@@ -78,7 +78,7 @@
             class="field-input"
             step="1"
             :placeholder="t('items.quantity_placeholder')"
-            :readonly="releaseCodeOnWriteoff"
+            :readonly="releaseCodeOnWriteoff || partialProperties.length > 0"
           />
           <span v-if="releaseCodeOnWriteoff" class="field-hint">
             {{ t('items.quantity_by_codes_hint') }}
@@ -96,6 +96,17 @@
           :dictionaries="dictionaries"
           :resetKey="propertiesKey"
         />
+
+        <!--
+          Настройка расхода — под значениями свойств: расходуется именно то, что
+          введено выше, и без этих значений настраивать нечего. Создаваемый
+          предмет ещё не сохранён, поэтому список строится из полей ввода, а не
+          из ответа сервера.
+        -->
+        <div v-if="!propertiesLoading" class="field partial-block">
+          <span class="field-label">{{ t('items.partial_title') }}</span>
+          <ItemPartialWriteoffEditor v-model="partialProperties" :properties="partialCandidates" />
+        </div>
       </section>
 
       <div class="form-actions">
@@ -114,7 +125,7 @@ import type { CategoryResponse } from '~/repository/modules/category'
 import type { VendorResponse } from '~/repository/modules/vendor'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
-import type { ItemPropertyInput } from '~/repository/modules/item'
+import type { ItemPropertyInput, ItemPartialPropertyInput } from '~/repository/modules/item'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
 import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
@@ -136,6 +147,7 @@ const copyQuantity = typeof route.query.copy_quantity === 'string' ? route.query
 // после «создать копию» пришлось бы вбивать всё заново.
 const copyCategoryId = typeof route.query.copy_category_id === 'string' ? Number(route.query.copy_category_id) : null
 const copyProperties = parseCopiedProperties(route.query.copy_properties)
+const copyPartialProperties = parseCopiedPartialProperties(route.query.copy_partial_properties)
 const copyCodes = parseCopiedCodes(route.query.copy_codes, route.query.code)
 
 /**
@@ -170,6 +182,19 @@ function parseCopiedCodes(raw: unknown, scanned: unknown): string[] {
     .filter((value): value is string => typeof value === 'string' && value !== '')
 
   return candidates.length > 0 ? [candidates[0]] : ['']
+}
+
+/** Настройки расхода из ссылки «создать копию». */
+function parseCopiedPartialProperties(raw: unknown): ItemPartialPropertyInput[] {
+  if (typeof raw !== 'string' || raw === '') return []
+
+  try {
+    const parsed = JSON.parse(raw)
+
+    return Array.isArray(parsed) ? (parsed as ItemPartialPropertyInput[]) : []
+  } catch {
+    return []
+  }
 }
 
 function parseCopiedProperties(raw: unknown): ItemPropertyInput[] {
@@ -272,11 +297,66 @@ const vendors = ref<VendorResponse[]>([])
 const dictionaries = ref<DictionaryResponse[]>([])
 const allProperties = ref<PropertyResponse[]>([])
 
+/** Свойства, которые редактор расхода может предложить: заполненные и числовые. */
+const partialCandidates = computed(() => {
+  const byId = new Map(allProperties.value.map((property) => [property.id, property]))
+
+  return properties.value.map((entry) => {
+    const property = byId.get(entry.property_id)
+    const value = entry.values
+      .map((item) => item.value)
+      .find((item) => item !== null && item !== undefined && String(item).trim() !== '')
+
+    return {
+      property_id: entry.property_id,
+      title: property?.title ?? String(entry.property_id),
+      type: property?.type ?? 'text',
+      value: value ?? null,
+    }
+  })
+})
+
+/**
+ * Два режима списания взаимоисключающи, и выключает включающий: там единица —
+ * код, здесь — запас свойства, а при обоих включённых количество уменьшалось бы
+ * двумя несовместимыми способами. Молча снимать нельзя — человек должен знать,
+ * что режим сменился.
+ */
+watch(
+  partialProperties,
+  (value) => {
+    if (value.length > 0 && releaseCodeOnWriteoff.value) {
+      releaseCodeOnWriteoff.value = false
+      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
+    }
+  },
+  { deep: true },
+)
+
+watch(
+  releaseCodeOnWriteoff,
+  (value) => {
+    if (value && partialProperties.value.length > 0) {
+      partialProperties.value = []
+      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
+    }
+  },
+)
+
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
 
 const vendorOptions = computed(() => vendorSelectOptions(vendors.value))
 
 const properties = ref<ItemPropertyInput[]>(copyProperties)
+
+/**
+ * Настройки расхода частями: какие свойства и с каким шагом.
+ *
+ * Объявлена рядом со значениями свойств, а не в месте первого упоминания:
+ * редактор расхода работает с теми же полями, и держать их врозь значило бы
+ * потом искать, откуда берётся список кандидатов.
+ */
+const partialProperties = ref<ItemPartialPropertyInput[]>(copyPartialProperties)
 const categoryProperties = ref<PropertyResponse[]>([])
 const propertiesLoading = ref(false)
 /** Редактор перечитывает значения только при смене ключа — так его не затирает собственная выдача. */
@@ -348,6 +428,7 @@ function itemPayload() {
     release_code_on_writeoff: releaseCodeOnWriteoff.value && filledCodes().length > 1,
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
+    partial_properties: partialProperties.value,
   }
 }
 
@@ -388,6 +469,7 @@ async function saveAndCopy() {
         copy_codes: JSON.stringify(filledCodes()),
         copy_quantity: quantityInput.value,
         copy_properties: JSON.stringify(properties.value),
+        copy_partial_properties: JSON.stringify(partialProperties.value),
       },
     })
   } catch (err: any) {
@@ -409,6 +491,16 @@ onMounted(load)
 
 .create-tabs {
   margin: 14px 0 20px;
+}
+
+/*
+ * Отступ блока настроек расхода от значений свойств: это отдельная настройка
+ * предмета, а не ещё одно поле в том же списке.
+ */
+.partial-block {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .loading,

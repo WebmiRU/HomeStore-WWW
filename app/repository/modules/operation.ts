@@ -3,10 +3,21 @@ import type { $Fetch } from 'ofetch'
 
 export type OperationType = 'operation.replenish' | 'operation.writeoff'
 
+/** Расход по одному свойству: сколько списать или пополнить. */
+export type OperationPart = {
+  property_id: number
+  amount: number
+}
+
 export type OperationRow = {
   code: string
   item_id?: number
-  quantity: number
+  /**
+   * Количество штуками. У предмета, который расходуется частями, его нет:
+   * расход идёт в parts, а количество меняется само, когда опустела штука.
+   */
+  quantity?: number
+  parts?: OperationPart[]
 }
 
 export type OperationRequest = {
@@ -23,6 +34,12 @@ export type OperationRowResult = {
   delta: number
   before: number | null
   after: number | null
+  /** Расход по свойству, если строка частичная. */
+  property_id?: number | null
+  property_title?: string | null
+  amount?: number | null
+  property_before?: number | null
+  property_after?: number | null
 }
 
 export type OperationStoreResult = {

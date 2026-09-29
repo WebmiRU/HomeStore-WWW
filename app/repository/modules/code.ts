@@ -22,6 +22,27 @@ export type StorePayload = {
   images?: ImageResponse[]
 }
 
+/**
+ * Расходуемое свойство в ответе поиска по коду.
+ *
+ * Приходит вместе с предметом, потому что строка сканирования строит поля
+ * расхода из них сразу: догружать карточку на каждый скан значило бы ждать
+ * лишний запрос там, где человек и так торопится.
+ */
+export type ItemPartialProperty = {
+  property_id: number
+  property_title?: string | null
+  step: number
+  is_full_reason: boolean
+  sort: number
+  /** Норма на одну штуку. */
+  norm: number
+  /** Сколько осталось внутри текущей штуки. */
+  remaining: number
+  /** Сколько осталось всего, со всеми целыми штуками. */
+  total: number
+}
+
 export type ItemPayload = {
   id: number
   user_id?: number | null
@@ -37,6 +58,14 @@ export type ItemPayload = {
    * высвобождается и может быть наклеен на другую вещь.
    */
   release_code_on_writeoff?: boolean
+  /**
+   * Расход частями по свойствам. Сами свойства и остатки приходят в блоке
+   * partial ответа предмета, здесь только признак, что режим включён: по нему
+   * строка скана сразу предлагает расход по свойствам, а не количество штук.
+   */
+  partial_writeoff?: boolean
+  /** Расходуемые свойства с остатками; пусто у обычного предмета. */
+  partial?: ItemPartialProperty[]
   created_at: string
   updated_at: string
   images?: ImageResponse[]

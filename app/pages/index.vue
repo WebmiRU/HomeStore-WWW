@@ -172,7 +172,18 @@
         :title-to="`/items/${entry.item_id}`"
       >
           <template #foot>
-            <div v-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
+            <div v-if="!entry.done && isPartialEntry(entry)" class="item-card__stock">
+              <!--
+                Два числа рядом: сколько осталось по складу и, в скобках,
+                сколько в той штуке, которая расходуется сейчас. Без второго
+                нельзя понять, докуда пойдёт следующий шаг.
+              -->
+              <span v-for="part in entry.parts" :key="part.property_id" class="scan-row__left">
+                {{ part.title }}: {{ entry.partStock[part.property_id] ?? 0 }}
+                ({{ part.remaining ?? 0 }})
+              </span>
+            </div>
+            <div v-else-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
               {{ t('main.in_stock', { count: entry.payload.quantity }) }}
             </div>
             <div v-else-if="entry.done" class="item-card__stock">
@@ -208,6 +219,33 @@
                 <span v-if="entry.payload.release_code_on_writeoff" class="scan-row__whole">
                   1 {{ t('units.pcs') }}
                 </span>
+
+                <!--
+                  Расходуемый предмет: полей столько, сколько у него
+                  расходуемых свойств, и в каждом — сколько забрать. Значение
+                  по умолчанию взято из шага настройки, но правится здесь,
+                  до отправки: за один скан у мешка уходит и картошка, и рис.
+                -->
+                <div v-else-if="isPartialEntry(entry)" class="scan-row__parts">
+                  <label
+                    v-for="part in entry.parts"
+                    :key="part.property_id"
+                    class="scan-row__part"
+                  >
+                    <span class="scan-row__part-title">{{ part.title }}</span>
+                    <input
+                      v-model.number="part.amount"
+                      type="number"
+                      min="0"
+                      step="any"
+                      class="scan-row__part-input"
+                    >
+                    <span class="scan-row__part-stock">
+                      {{ t('main.partial_left') }}: {{ entry.partStock[part.property_id] ?? 0 }}
+                    </span>
+                  </label>
+                </div>
+
                 <input
                   v-else-if="entry.payload.quantity != null"
                   v-model.number="entry.count"
@@ -269,7 +307,16 @@
           @click="submitList"
         >
           {{ submitting ? t('main.submitting') : activeMode === 'replenish' ? t('options_page.mode_replenish') : t('options_page.mode_writeoff') }}
-          <template v-if="!submitting && pendingEntries"> ({{ pendingEntries }}/{{ pendingTotal }})</template>
+          <!--
+            Сумма штук в скобках показывается, только когда в списке нет
+            расходуемых строк. У них количество не вводится, а остаётся тем, что
+            показал сервер, и сумма получилась бы вроде «3/0» — а ноль штук
+            при трёх позициях это неправда.
+          -->
+          <template v-if="!submitting && pendingEntries && !hasPartialEntries">
+            ({{ pendingEntries }}/{{ pendingTotal }})
+          </template>
+          <template v-else-if="!submitting && pendingEntries"> ({{ pendingEntries }})</template>
         </button>
 
         <button
@@ -296,7 +343,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPayload, StorePayload } from '~/repository/modules/code'
+import type { CodeMatch, CodeSearchBlank, CodeSearchResponse, ItemPartialProperty, ItemPayload, StorePayload } from '~/repository/modules/code'
 import type { OperationRow, OperationType } from '~/repository/modules/operation'
 import type { OperationMode } from '~/composables/useOperationMode'
 import type { ChainCrumb } from '~/composables/useLocationChain'
@@ -316,6 +363,27 @@ interface ScanEntry {
   doneAt: string
   doneDelta: number
   doneMode: Mode | null
+  /**
+   * Расход по свойствам, предлагаемый в строке: сколько списать по каждому.
+   *
+   * Живёт в строке, а не в payload предмета: это то, что человек правит
+   * перед отправкой, а не состояние склада. Значения по умолчанию — шаги из
+   * настроек предмета, и их можно менять хоть в последнюю секунду.
+   */
+  parts: EntryPart[]
+  /** Остатки по свойствам до отправки: нужны, чтобы показать, что списать нельзя. */
+  partStock: Record<number, number>
+}
+
+/** Одно поле расхода в строке скана. */
+interface EntryPart {
+  property_id: number
+  title: string
+  amount: number
+  step: number
+  norm: number
+  /** Остаток внутри текущей штуки: показывается в скобках рядом с общим. */
+  remaining: number
 }
 
 const { $api, $notify } = useNuxtApp()
@@ -383,16 +451,71 @@ function keyOf(entry: ScanEntry): string {
 
 const pendingEntries = computed(() => scanList.value.filter((entry) => !entry.done).length)
 
-// Общее число предметов среди невыполненных строк (сумма количеств).
+/**
+ * Общее число предметов среди невыполненных строк (сумма количеств).
+ *
+ * Строки частичного расхода не в счёт: у них количество штук не то, что
+ * вводилось, а остаётся тем, что показал сервер. Считать их по шагу значило бы
+ * показать в сводке число, которого на складе нет.
+ */
+/** Есть ли в списке расходуемые строки: у них своя арифметика. */
+const hasPartialEntries = computed(() => scanList.value.some((entry) => !entry.done && isPartialEntry(entry)))
+
 const pendingTotal = computed(() =>
   scanList.value
-    .filter((entry) => !entry.done)
+    .filter((entry) => !entry.done && !isPartialEntry(entry))
     .reduce((sum, entry) => sum + entry.count, 0),
 )
+
+/**
+ * Расходуемые свойства предмета или null, если он расходуется штуками.
+ *
+ * Отдельная проверка вместо «по флагу»: флаг мог остаться в предмете от прежней
+ * настройки, а свойства убрали, и тогда строка предлагала бы расход по
+ * свойствам, которых у предмета нет. Расход определяется настройками.
+ */
+function partialOf(payload: ItemPayload): ItemPartialProperty[] | null {
+  const partial = payload.partial
+
+  return partial !== undefined && partial.length > 0 ? partial : null
+}
+
+/** Расходуемый ли предмет: расход идёт по свойствам, а не штуками. */
+function isPartialEntry(entry: ScanEntry): boolean {
+  return entry.parts.length > 0
+}
+
+/** Число с тремя знаками: расход накапливается шагами, и копейки не нужны. */
+function round3(value: number): number {
+  return Math.round(value * 1000) / 1000
+}
+
+/** Сколько расхода по свойству в строке. */
+function partAmount(entry: ScanEntry, propertyId: number): number {
+  return entry.parts.find((part) => part.property_id === propertyId)?.amount ?? 0
+}
 
 // Причина, по которой строку нельзя отправить в операции (или null — можно).
 function entryProblem(entry: ScanEntry): string | null {
   if (entry.done) return null
+
+  // Расходуемый предмет проверяется по свойствам, а не по количеству штук:
+  // количество у него меняет сервер, когда опустела штука, и сравнивать с ним
+  // расход по свойству бессмысленно.
+  if (isPartialEntry(entry)) {
+    for (const part of entry.parts) {
+      if (!Number.isFinite(part.amount) || part.amount <= 0) {
+        return t('main.partial_amount_hint')
+      }
+
+      // Пополнение не ограничено остатком: принести можно и больше, чем было.
+      if (activeMode.value === 'writeoff' && part.amount - (entry.partStock[part.property_id] ?? 0) > 0.001) {
+        return t('main.partial_stock_line', { title: part.title, total: entry.partStock[part.property_id] ?? 0 })
+      }
+    }
+    return null
+  }
+
   if (!Number.isInteger(entry.count) || entry.count < 1) {
     return t('main.quantity_hint')
   }
@@ -681,12 +804,29 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
       return
     }
 
+    // У расходуемого предмета повторный скан означает «ещё шаг по каждому
+    // свойству», а не «ещё одну штуку»: бутылку списали на 200 мл, отсканировали
+    // снова — списали ещё 200. Количество штук у такого предмета меняет сам
+    // сервер, когда опустеет штука, и набирать его вручную нельзя.
+    if (partialOf(payload) !== null) {
+      partialOf(payload)!.forEach((property) => {
+        const part = existing.parts.find((item) => item.property_id === property.property_id)
+
+        if (part) {
+          part.amount = round3(part.amount + property.step)
+        }
+      })
+      return
+    }
+
     // Для предметов без количества — всегда единственный экземпляр, ничего не делаем.
     if (payload.quantity != null) {
       existing.count += 1
     }
     return
   }
+  const partial = partialOf(payload)
+
   scanList.value.push({
     code,
     item_id: payload.id,
@@ -697,6 +837,18 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
     doneAt: '',
     doneDelta: 0,
     doneMode: null,
+    parts: partial === null
+      ? []
+      : partial.map((property) => ({
+          property_id: property.property_id,
+          title: property.property_title ?? String(property.property_id),
+          amount: property.step,
+          step: property.step,
+          norm: property.norm,
+        })),
+    partStock: partial === null
+      ? {}
+      : Object.fromEntries(partial.map((property) => [property.property_id, property.total])),
   })
   void setScanChain(key, payload)
   if (matchList.length > 1) void loadMatchChains(matchList)
@@ -796,7 +948,16 @@ async function submitList() {
   const rows: OperationRow[] = pending.map((entry) => ({
     code: entry.code,
     ...(entry.matches.length > 1 ? { item_id: entry.item_id } : {}),
-    quantity: entry.payload.quantity != null ? entry.count : 1,
+    // У расходуемого предмета расход идёт в parts, а количество не отправляется:
+    // сервер сам решает, сколько штук из этого ушло, по опустевшим свойствам.
+    ...(isPartialEntry(entry)
+      ? {
+          parts: entry.parts.map((part) => ({
+            property_id: part.property_id,
+            amount: part.amount,
+          })),
+        }
+      : { quantity: entry.payload.quantity != null ? entry.count : 1 }),
   }))
 
   if (rows.length === 0) {
@@ -833,7 +994,24 @@ async function submitList() {
 
     for (const entry of pending) {
       const applied = rowsByKey.get(keyOf(entry))
-      if (applied) {
+      const sign = isReplenish ? 1 : -1
+
+      if (isPartialEntry(entry)) {
+        // Количество штук меняет сервер, и в ответе оно уже новое. Остатки по
+        // свойствам сервер не отдаёт, поэтому они считаются здесь: на величину
+        // расхода, с ограничением снизу нулём.
+        if (applied) {
+          entry.payload.quantity = applied.after
+          entry.doneDelta = applied.delta
+        }
+
+        for (const part of entry.parts) {
+          entry.partStock[part.property_id] = Math.max(
+            0,
+            round3((entry.partStock[part.property_id] ?? 0) + sign * part.amount),
+          )
+        }
+      } else if (applied) {
         entry.payload.quantity = applied.after
         entry.doneDelta = applied.delta
       } else {
@@ -849,7 +1027,13 @@ async function submitList() {
       entry.doneMode = modeAtSubmit
     }
 
-    const deltaSum = rows.reduce((sum, row) => sum + row.quantity, 0)
+    // Сумма в уведомлении — одна цифра, а у расходуемых строк величины разные
+    // и несводимые: 300 мл сиропа и 20 кг риса не складываются в «−5». У
+    // таких строк показывается число позиций расхода, а не сумма штук.
+    const hasPartialRows = rows.some((row) => row.parts !== undefined)
+    const deltaSum = hasPartialRows
+      ? 0
+      : rows.reduce((sum, row) => sum + (row.quantity ?? 0), 0)
     // Уведомление выводится текстом, а не HTML, поэтому здесь нужен настоящий
     // знак «минус», а не сущность &minus; — она попадала в текст как есть.
     const sign = isReplenish ? '+' : '−'
@@ -859,7 +1043,9 @@ async function submitList() {
     // стояло «предмет», и при списании одного наименования пачкой сообщение
     // читалось как противоречие: «1 предмет (−10 шт.)».
     $notify.add(
-      t('main.operation_done', { verb, count: tp('words.position', rows.length), amount: `${sign}${deltaSum}` }),
+      hasPartialRows
+        ? t('main.operation_done_partial', { verb, count: tp('words.position', rows.length) })
+        : t('main.operation_done', { verb, count: tp('words.position', rows.length), amount: `${sign}${deltaSum}` }),
       {
         type: 'success',
         timer: 6,

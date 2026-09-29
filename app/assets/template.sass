@@ -203,6 +203,59 @@
   color: var(--text-secondary)
   white-space: nowrap
 
+/*
+ * Поля расхода по свойствам — в блок, а не в одну строку: у мешка их два, и
+ * рядом в одну строку они не поместились бы, а по вертикали не разъехались
+ * бы с названиями предметов в той же строке списка.
+ *
+ * Блок, а не отдельные поля в ряд, и по причине, важнее внешнего вида: у
+ * расходуемого предмета полей столько, сколько у него расходуемых свойств, и
+ * их число заранее неизвестно. Фиксированная ширина строки рассчитана на одно
+ * поле количества, а с двумя полями она бы выпирала за край карточки.
+ */
+.scan-row__parts
+  display: flex
+  flex-direction: column
+  gap: 4px
+  min-width: 150px
+
+.scan-row__part
+  display: flex
+  align-items: center
+  gap: 6px
+  font-size: 13px
+  color: var(--text-secondary)
+
+.scan-row__part-title
+  max-width: 110px
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
+
+.scan-row__part-input
+  width: 72px
+  padding: 4px 6px
+  font-size: 14px
+  text-align: center
+  background: var(--bg)
+  border: 1px solid var(--border-strong)
+  border-radius: 6px
+  color: var(--text)
+
+.scan-row__part-stock
+  font-size: 12px
+  color: var(--text-dim)
+  white-space: nowrap
+
+/*
+ * Остаток по каждому свойству — в футере карточки одной строкой на свойство:
+ * сколько всего и в скобках сколько в текущей штуке. Без разбивки на строки
+ * футер вырос бы тем выше, чем больше свойств у предмета, и отжимал бы
+ * карточку снизу.
+ */
+.scan-row__left + .scan-row__left
+  margin-left: 10px
+
 .scan-row__remove
   flex-shrink: 0
   display: flex
@@ -412,6 +465,12 @@
 
   .scan-row__count
     width: 64px
+
+  .scan-row__parts
+    min-width: 128px
+
+  .scan-row__part-title
+    max-width: 80px
 
 .owner-name
   font-weight: 600

@@ -90,10 +90,13 @@
               class="field-input"
               step="1"
               :placeholder="t('items.quantity_placeholder')"
-              :readonly="!canEdit || releaseCodeOnWriteoff"
+              :readonly="!canEdit || releaseCodeOnWriteoff || partialEnabled"
             />
             <span v-if="releaseCodeOnWriteoff" class="field-hint">
               {{ t('items.quantity_by_codes_hint') }}
+            </span>
+            <span v-else-if="partialEnabled" class="field-hint">
+              {{ t('items.quantity_by_partial_hint') }}
             </span>
           </label>
         </section>
@@ -109,6 +112,20 @@
             :resetKey="propertiesKey"
             :readonly="!canEdit"
           />
+
+          <!--
+            Настройка расхода живёт под значениями свойств, а не рядом с
+            кодами: расходуется именно то, что только что заполнено выше, и
+            без этих значений настраивать нечего.
+          -->
+          <div v-if="!propertiesLoading" class="field partial-block">
+            <span class="field-label">{{ t('items.partial_title') }}</span>
+            <ItemPartialWriteoffEditor
+              v-model="partialProperties"
+              :properties="partialCandidates"
+              :readonly="!canEdit"
+            />
+          </div>
         </section>
 
         <section v-if="activeTab === 'images'" class="tab-section">
@@ -142,6 +159,7 @@
                 copy_codes: JSON.stringify(filledCodes()),
                 copy_quantity: quantityInput,
                 copy_properties: JSON.stringify(properties),
+                copy_partial_properties: JSON.stringify(partialProperties.value),
               },
             }"
             class="btn-copy"
@@ -156,7 +174,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
-import type { ItemResponse, ItemPropertyInput } from '~/repository/modules/item'
+import type { ItemResponse, ItemPropertyInput, ItemPartialPropertyInput } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { CategoryResponse } from '~/repository/modules/category'
@@ -285,6 +303,72 @@ watch(
 
 const properties = ref<ItemPropertyInput[]>([])
 const categoryProperties = ref<PropertyResponse[]>([])
+
+/**
+ * Свойства, которые редактор расхода может предложить: заполненные значения с
+ * их типами и названиями.
+ *
+ * Список полей ввода для этого не годится: он меняется на каждый символ и не
+ * знает типов, а редактору нужно знать, какое свойство числовое и каким оно
+ * заполнено — по этому и предлагается расход.
+ */
+const partialCandidates = computed(() => {
+  const byId = new Map(allProperties.value.map((property) => [property.id, property]))
+
+  return properties.value.map((entry) => {
+    const property = byId.get(entry.property_id)
+    // Числовой тип нужен для отсева: свойство без него в списке расхода было бы
+    // ошибкой, потому что расходнуть «да/нет» или значение из справочника нельзя.
+    const type = property?.type ?? 'text'
+    // Берётся первое непустое значение: у свойства их может быть несколько, а
+    // нормой списания служит то, что человек видит в поле.
+    const value = entry.values
+      .map((item) => item.value)
+      .find((item) => item !== null && item !== undefined && String(item).trim() !== '')
+
+    return {
+      property_id: entry.property_id,
+      title: property?.title ?? String(entry.property_id),
+      type,
+      value: value ?? null,
+    }
+  })
+})
+
+/** Настройки расхода частями: какие свойства и с каким шагом. */
+const partialProperties = ref<ItemPartialPropertyInput[]>([])
+
+/** Включено ли частичное списание — есть хоть одно расходуемое свойство. */
+const partialEnabled = computed(() => partialProperties.value.length > 0)
+
+/**
+ * Два режима списания взаимоисключающи, и выключает включающий.
+ *
+ * Там единица — код, здесь — запас свойства. При обоих включённых количество
+ * уменьшалось бы двумя несовместимыми способами, и прав выяснилось бы только
+ * в журнале. Молча снимать нельзя: человек должен знать, что режим сменился,
+ * поэтому ему показывается объяснение.
+ */
+watch(
+  partialProperties,
+  (value) => {
+    if (value.length > 0 && releaseCodeOnWriteoff.value) {
+      releaseCodeOnWriteoff.value = false
+      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
+    }
+  },
+  { deep: true },
+)
+
+watch(
+  releaseCodeOnWriteoff,
+  (value) => {
+    if (value && partialProperties.value.length > 0) {
+      partialProperties.value = []
+      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
+    }
+  },
+)
 const propertiesLoading = ref(false)
 const propertiesKey = ref('')
 
@@ -388,6 +472,12 @@ async function load() {
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
     images.value = item.images ?? []
     properties.value = toPropertyInputs(item.properties)
+    partialProperties.value = (item.partial ?? []).map((row) => ({
+      property_id: row.property_id,
+      step: row.step,
+      is_full_reason: row.is_full_reason,
+      sort: row.sort,
+    }))
     await loadProperties(form.category_id)
   } catch (err: any) {
     loadError.value = err?.data?.error || err?.message || String(err)
@@ -399,7 +489,11 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const payload: Partial<ItemPayload> & { codes?: string[]; properties?: ItemPropertyInput[] } = {
+    const payload: Partial<ItemPayload> & {
+      codes?: string[]
+      properties?: ItemPropertyInput[]
+      partial_properties?: ItemPartialPropertyInput[]
+    } = {
       title: form.title,
       title_print: form.title_print || null,
       store_id: form.store_id,
@@ -407,6 +501,7 @@ async function save() {
       vendor_id: form.vendor_id,
       codes: filledCodes(),
       properties: properties.value,
+      partial_properties: partialProperties.value,
       release_code_on_writeoff: releaseCodeOnWriteoff.value,
     }
     const qty = String(quantityInput.value).trim()
@@ -432,6 +527,18 @@ async function save() {
 
     const savedQuantity = saved.payload?.quantity
     quantityInput.value = savedQuantity != null ? String(savedQuantity) : ''
+
+    // Настройки расхода сервер мог поправить: включённый режим выключает
+    // второй, и отмеченное свойство могло перестать быть числовым. Форма
+    // обязана показать то, что реально записано, а не то, что отправляла.
+    if (saved.partial) {
+      partialProperties.value = saved.partial.map((row) => ({
+        property_id: row.property_id,
+        step: row.step,
+        is_full_reason: row.is_full_reason,
+        sort: row.sort,
+      }))
+    }
   } catch (err: any) {
     $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {
@@ -452,6 +559,17 @@ onMounted(load)
   margin: 24px 0 8px;
   font-size: 20px;
   color: var(--text-secondary);
+}
+
+/*
+ * Отступ блока настроек расхода от значений свойств: это отдельная настройка
+ * предмета, а не ещё одно поле в списке, и без отступа он читается как часть
+ * того же списка.
+ */
+.partial-block {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .loading,

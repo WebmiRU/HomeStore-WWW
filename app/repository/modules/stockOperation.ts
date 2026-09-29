@@ -22,6 +22,17 @@ export type StockOperationRow = {
    */
   released_code_id: number | null
   released_code: string | null
+  /**
+   * Строка частичного расхода: забрано не N штук, а доля свойства. Quantity у
+   * такой строки может быть нулём — штуки не ушли, ушло содержимое.
+   */
+  is_partial: boolean
+  property_id: number | null
+  property_title: string | null
+  amount: number | null
+  property_before: number | null
+  property_after: number | null
+  reversed_amount: number
 }
 
 export type StockOperation = {

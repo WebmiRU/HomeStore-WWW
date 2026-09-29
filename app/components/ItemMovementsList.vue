@@ -35,13 +35,27 @@
             </td>
             <td class="mvlist__cell-comment">{{ op.comment || '—' }}</td>
             <td class="mvlist__cell-qty">
-              {{ mineOf(op) }}
+              <!--
+                Строка частичного расхода показывается по свойству: штуки у неё
+                не обязаны меняться, а человек смотрит сюда за тем, сколько
+                расхода ушло. Складывать 300 мл сиропа с 20 кг риса в одно
+                число бессмысленно, поэтому строки идут списком.
+              -->
+              <span v-if="partialsOf(op).length" class="mvlist__partials">
+                <span v-for="row in partialsOf(op)" :key="row.id" class="mvlist__partial">
+                  {{ row.property_title }}: {{ op.direction === 'replenish' ? '+' : '−' }}{{ row.amount }}
+                </span>
+              </span>
+              <template v-else>{{ mineOf(op) }}</template>
               <span v-if="op.rows.some((r) => r.is_returned)" class="mvlist__returned">
                 t('item_movements.reversal_of', { id: returnedOf(op) })
               </span>
             </td>
             <td class="mvlist__cell-balance">
-              <span v-if="balanceOf(op)">{{ balanceOf(op) }}</span>
+              <span v-if="partialsOf(op).length" class="mvlist__partial">
+                {{ t('item_movements.by_property') }}: {{ balanceOf(op) }}
+              </span>
+              <span v-else-if="balanceOf(op)">{{ balanceOf(op) }}</span>
               <span v-else>—</span>
             </td>
           </tr>
@@ -88,8 +102,22 @@ function rowsOf(op: StockOperation) {
   return op.rows.filter((row) => row.item_id === props.itemId)
 }
 
+/**
+ * Сумма штук по предмету в операции.
+ *
+ * Строки частичного расхода не в счёт: у них quantity — это число списавшихся
+ * штук, а не сам расход, и складывать их с настоящими штуками значило бы
+ * показать в шапке число, которого на складе никогда не было.
+ */
 function mineOf(op: StockOperation): number {
-  return rowsOf(op).reduce((sum, row) => sum + row.quantity, 0)
+  return rowsOf(op)
+    .filter((row) => !row.is_partial)
+    .reduce((sum, row) => sum + row.quantity, 0)
+}
+
+/** Строки частичного расхода по этому предмету: по ним показывается расход. */
+function partialsOf(op: StockOperation) {
+  return rowsOf(op).filter((row) => row.is_partial)
 }
 
 function returnedOf(op: StockOperation): number {
@@ -111,7 +139,19 @@ const summary = computed(() => ({
 }))
 
 /** «было → стало» по строке предмета в последней (самой новой) операции. */
+/**
+ * «было → стало» по строке предмета в последней (самой новой) операции.
+ *
+ * У частичного расхода показывается остаток по свойству, а не по штукам: ради
+ * расхода этот список и открывают, а «2 → 2» не сказал бы ничего.
+ */
 function balanceOf(op: StockOperation): string {
+  const partial = partialsOf(op).at(-1)
+  if (partial) {
+    if (partial.property_before == null) return ''
+    return `${partial.property_before} → ${partial.property_after ?? 0}`
+  }
+
   const row = rowsOf(op).at(-1)
   if (!row || row.before == null || row.after == null) return ''
   return `${row.before} → ${row.after}`
@@ -231,6 +271,23 @@ onMounted(() => load(1))
 
 .mvlist__tag {
   margin-left: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/*
+ * Расход по свойству — с блоком, приглушённым цветом и своим шрифтом: это
+ * подпись к движению, а не само значение количества, и в общей колонке оно
+ * слилось бы с числами штук.
+ */
+.mvlist__partials {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mvlist__partial {
+  display: block;
   font-size: 12px;
   color: var(--text-dim);
 }

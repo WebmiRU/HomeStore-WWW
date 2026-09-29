@@ -46,11 +46,41 @@ export type ItemPropertyInput = {
   values: Array<{ value?: string | null; dictionary_value_id?: number | null }>
 }
 
+/**
+ * Настройка частичного списания: одно расходуемое свойство предмета.
+ *
+ * Само значение свойства — это норма на одну штуку. Здесь — как эта норма
+ * расходуется: с каким шагом по умолчанию, в каком порядке предлагается в
+ * строке операции и является ли его обнуление поводом списать предмет целиком.
+ */
+export type ItemPartialPropertyInput = {
+  property_id: number
+  step?: number | null
+  is_full_reason?: boolean
+  sort?: number | null
+}
+
+/** Расходуемое свойство в ответе сервера, вместе с остатками. */
+export type ItemPartialPropertyResponse = {
+  property_id: number
+  property_title?: string | null
+  step: number
+  is_full_reason: boolean
+  sort: number
+  /** Норма на одну штуку. */
+  norm: number
+  /** Сколько осталось внутри текущей штуки. */
+  remaining: number
+  /** Сколько осталось всего, со всеми целыми штуками. */
+  total: number
+}
+
 export type ItemData = Partial<ItemPayload> & {
   codes?: string[]
   category_id?: number | null
   vendor_id?: number | null
   properties?: ItemPropertyInput[]
+  partial_properties?: ItemPartialPropertyInput[]
 }
 
 export type ItemResponse = {
@@ -75,6 +105,11 @@ export type ItemResponse = {
   images: ImageResponse[] | null
   /** Есть только у карточки и ответа на сохранение, не у строки списка. */
   properties?: ItemPropertyResponse[]
+  /**
+   * Расходуемые свойства с остатками. Пустой массив — обычный предмет, он
+   * списывается штуками. Есть только у карточки и ответа на сохранение.
+   */
+  partial?: ItemPartialPropertyResponse[]
 }
 
 type PaginatedResponse<T> = {

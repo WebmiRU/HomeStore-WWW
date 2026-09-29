@@ -188,6 +188,21 @@ export const en: Record<TranslationKey, string> = {
     quantity_by_codes_hint: 'The quantity is counted from the codes: one code is one unit. To replenish such an item, stick a new code on it.',
     codes_hint: 'An item can have several codes — one per label. The top one counts as the main: it is printed on the label by default and shown on the card. Put the cursor in the field and the scanner will insert the code right into it instead of taking you to the home page.',
     own_storage_hint: '● — your own storage, ○ — access by rights',
+    partial_title: 'Write off in parts by properties',
+    partial_hint: 'A property becomes a stock rather than a description: “Volume 1000 ml” on a bottle means the bottle holds 1000 ml, and you can write off 200 without drinking it. Mark the numeric properties that get used up; the value of any other numeric property stays a description.',
+    partial_exclusive_hint: 'Only one of the two can work: writing off by code takes the code as its unit, and writing off in parts takes the property stock as its unit. The enabled one turns the other off, otherwise the quantity would drop in two incompatible ways at once.',
+    partial_no_properties: 'There is nothing to write off in parts: the item has no numeric properties. Fill them in on the “Properties” tab first.',
+    partial_step: 'Step',
+    partial_step_hint: 'How much is offered for write-off per scan. This is the default: you can change it before sending the operation.',
+    partial_full_reason: 'Running out means empty',
+    partial_full_reason_hint: 'When every property marked here runs out, the item counts as used up and drops by one unit. Unmarked properties get used up too, but do not affect this.',
+    partial_remaining: 'Left',
+    partial_remaining_hint: 'In total at the warehouse and, in brackets, how much is in the unit being used right now.',
+    partial_norm: 'Per unit',
+    partial_reset: 'Reset the settings',
+    partial_reset_done: 'Settings cleared: the item is written off by units again',
+    partial_toggle_off: 'Write off in parts',
+    quantity_by_partial_hint: 'The quantity of such an item changes on its own: it drops when a unit runs out. To change the number of units by hand, turn off the write-off in parts setting.',
       one: 'Item',
     collision_of: 'code on {count}',
 },
@@ -487,6 +502,10 @@ export const en: Record<TranslationKey, string> = {
     in_stock: 'In stock: {count}',
     optional: '(optional)',
     stock_line: 'In stock {quantity}, {count} entered',
+    partial_amount_hint: 'The amount used up must be greater than zero',
+    partial_stock_line: 'The property “{title}” has {total} left',
+    partial_left: 'Left',
+    operation_done_partial: '{verb}: {count} by properties',
   },
 
   journal: {
@@ -959,6 +978,9 @@ export const en: Record<TranslationKey, string> = {
     reverse_done: '{direction}: reversal of operation no. {id} — {rows} rows',
     reverse_failed: 'Could not run the reversal',
     on_quantity: 'for {count}',
+    partial_amount: 'Used up by property',
+    partial_of: '{amount} of {total}',
+    partial_units: 'units: {before} → {after}',
   },
 
   balance: {
@@ -996,6 +1018,7 @@ export const en: Record<TranslationKey, string> = {
     reversal_of: 'reversal of no. {id}',
     load_failed: 'Could not load the movements',
     empty: 'No write-offs or replenishments for this item yet',
+    by_property: 'by property',
   },
 
   item_card: {
