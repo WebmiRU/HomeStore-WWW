@@ -19,11 +19,17 @@ export type PropertyType = (typeof PROPERTY_TYPES)[number]
  * переводится на его стороне. Здесь — для тех мест, где подпись нужна до
  * ответа сервера (выбор типа в форме).
  */
-/** Ключ подписи типа: у сервера он свой, здесь — общий на оба числовых типа. */
+/*
+ * Ключ подписи типа. У целого и дробного числа ключи свои: когда они были
+ * одним ключом, в селекте типа стояли два одинаковых пункта «Число», и
+ * выбрать было нельзя — различались только подсказки под полем. Словари api
+ * переводят эти подписи так же, поэтому карточка свойства и форма говорят
+ * одно и то же.
+ */
 const TYPE_LABEL_KEYS: Record<PropertyType, string> = {
   string: 'property_types.text',
-  int: 'property_types.number',
-  float: 'property_types.number',
+  int: 'property_types.int',
+  float: 'property_types.float',
   bool: 'property_types.bool',
   dictionary: 'property_types.dictionary',
 }

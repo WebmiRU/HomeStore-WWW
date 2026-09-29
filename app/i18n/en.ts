@@ -378,8 +378,7 @@ export const en: Record<TranslationKey, string> = {
     value_deleted: 'Value deleted',
     value_delete_failed: 'Could not delete the value',
     group_hint_short: 'A group only helps to keep similar properties together',
-    type_locked: 'The type is fixed: items have {count} values for it',
-    type_hint: 'The type decides what the field looks like when items are filled in',
+    type_hint: 'The type decides what the field looks like when items are filled in. Changing it recalculates the values already filled in; if a single value does not fit the new type, the change is cancelled with an explanation.',
     card_load_failed: 'Could not load the property',
     choose_dictionary: 'Choose a dictionary for a property of the “from dictionary” type',
     unit_full_hint: 'Full name: millimetre, kilogram, piece',
@@ -405,7 +404,7 @@ export const en: Record<TranslationKey, string> = {
     value_delete_hint: 'A value cannot be deleted once it is chosen in some item: the server will return an error. Fill those items in with something else first.',
     open_values: '{title}: open the values',
     title_hint: 'How the property will be labelled on the item card',
-    type_hint_create: 'The type decides what the field looks like. You can change it later only while the property has no filled-in values on items.',
+    type_hint_create: 'The type decides what the field looks like. You can change it later along with the values already filled in — they will be recalculated for the new type.',
     dictionary_hint_create: 'The values of the property will be picked from this dictionary — create it beforehand if it does not exist yet',
     unit_unique_hint: 'The short name is unique: you can change it, but you cannot take someone else’s',
     title_unique_hint: 'The title is unique: you can change it, but you cannot take someone else’s',
@@ -416,10 +415,10 @@ export const en: Record<TranslationKey, string> = {
 },
 
   property_types: {
-    number: 'Number',
     text: 'Text',
+    int: 'Whole number',
+    float: 'Fractional number',
     bool: 'Yes/No',
-    date: 'Date',
     dictionary: 'From dictionary',
   },
 

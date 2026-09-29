@@ -29,16 +29,12 @@
 
           <label class="field">
             <span class="field-label">{{ t('properties.type') }}</span>
-            <select v-model="form.type" class="field-select" :disabled="lockedType">
+            <select v-model="form.type" class="field-select">
               <option v-for="type in PROPERTY_TYPES" :key="type" :value="type">
                 {{ propertyTypeLabel(type) }}
               </option>
             </select>
-            <span class="field-hint">
-              {{ lockedType
-                ? t('properties.type_locked', { count: valuesCount })
-                : t('properties.type_hint') }}
-            </span>
+            <span class="field-hint">{{ t('properties.type_hint') }}</span>
           </label>
 
           <label v-if="acceptsUnit" class="field">
@@ -140,9 +136,6 @@ const activeTab = computed(() => (route.query.tab === 'stats' ? 'stats' : 'main'
 
 const acceptsUnit = computed(() => propertyAcceptsUnit(form.type))
 const needsDictionary = computed(() => propertyNeedsDictionary(form.type))
-
-/** Сервер не даст сменить тип, когда значения уже заполнены — не даём и мы. */
-const lockedType = computed(() => valuesCount.value > 0)
 
 const dictionary = computed(
   () => dictionaries.value.find((item) => item.id === form.dictionary_id) ?? null,
