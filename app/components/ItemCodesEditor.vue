@@ -1,6 +1,11 @@
 <template>
   <div class="codes-editor">
-    <div v-for="(code, index) in rows" :key="index" class="input-group codes-editor__row">
+    <div
+      v-for="(code, index) in rows"
+      :key="index"
+      class="input-group codes-editor__row"
+      :class="{ 'codes-editor__row--duplicate': duplicateIndex === index }"
+    >
       <!--
         Кнопки перестановки — слева от поля, а не перетаскивание.
         Перетаскивание на адаптиве не работает: попасть пальцем в
@@ -219,13 +224,88 @@ function update(next: string[]) {
  * Дописывает значение в строку. Следующая пустая строка появляется сама —
  * см. ensureTrailingRow: буфер всегда заканчивается пустой строкой.
  *
- * Правка по индексу строки, а не по полю поиска: одинаковые коды у предмета
- * законны, и по значению нашлась бы не та строка.
+ * Правка по индексу строки, а не по полю поиска: по значению нашлась бы не
+ * та строка.
  */
 function onInput(index: number, e: Event) {
+  const value = (e.target as HTMLInputElement).value
+  const typed = value.trim()
+
+  if (typed !== '') {
+    // Такой код уже есть. Повторно его не добавляем: в списке копий одного
+    // кода нет смысла, сервер всё равно отбросил бы дубль при сохранении, а
+    // человек увидел бы после сохранения, что его код исчез. Вместо этого
+    // мигает строка, где код уже лежит, — так видно, что скан принят и дубль
+    // не создан.
+    const existing = codes.value.findIndex(
+      (code, at) => at !== index && code.trim() === typed,
+    )
+
+    if (existing !== -1) {
+      // Поле возвращается к тому, что было: сканер пишет значение прямо в
+      // элемент, минуя v-model, и без возврата дубль остался бы висеть в поле
+      // как введённый — выглядело бы так, будто код добавился, но при
+      // сохранении исчез бы. Именно это и происходило при частом сканировании.
+      void flashDuplicate(existing, index)
+      return
+    }
+  }
+
   const next = [...codes.value]
-  next[index] = (e.target as HTMLInputElement).value
+  next[index] = value
   update(next)
+}
+
+/** Строка, которая мигает как «здесь уже есть такой код». */
+const duplicateIndex = ref(-1)
+
+/** Сколько мигает строка с дублем, миллисекунды. */
+const DUPLICATE_FLASH_MS = 3000
+
+let duplicateTimer: ReturnType<typeof setTimeout> | null = null
+
+async function flashDuplicate(shown: number, resetIndex: number): Promise<void> {
+  if (duplicateTimer) {
+    clearTimeout(duplicateTimer)
+  }
+
+  duplicateIndex.value = shown
+  duplicateTimer = setTimeout(() => {
+    duplicateIndex.value = -1
+    duplicateTimer = null
+  }, DUPLICATE_FLASH_MS)
+
+  // Поле, куда пришёл повторный скан, возвращается к прежнему содержимому
+  // сразу, не дожидаясь перерисовки: сканер может бить один за другим, и
+  // пока значение мигало бы в поле, следующий скан читался бы поверх него.
+  restoreField(resetIndex)
+
+  await nextTick()
+
+  const input = inputs.value[resetIndex]
+  if (input) {
+    input.focus()
+    const end = input.value.length
+    input.setSelectionRange(end, end)
+  }
+}
+
+/**
+ * Возвращает полю прежнее значение.
+ *
+ * Через событие input, а не присваиванием: поле живёт под v-model, и
+ * присваивание в обход Vue стёрло бы его значение на следующей перерисовке.
+ */
+function restoreField(index: number): void {
+  const input = inputs.value[index]
+
+  if (!input) {
+    return
+  }
+
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  setter?.call(input, codes.value[index] ?? '')
+  input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
 /** Заполненных кодов в списке — их и принимает сервер, пустые строки не в счёт. */

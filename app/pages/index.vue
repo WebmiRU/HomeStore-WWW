@@ -69,17 +69,22 @@
     <!-- Режим «Поиск»: код найден ровно у одного предмета или хранилища -->
     <!--
       Та же карточка (ItemCard), что в строке сканирования и в модалке выбора.
-      Отличие одно: в правой колонке — там, где в операции стоит счётчик, —
-      кнопка «Открыть». Раньше здесь была отдельная вёрстка с шапкой, своей
-      сеткой и полем количества, и карточка выдачи поиска выглядела иначе,
-      хотя показывала тот же предмет.
+      Раньше здесь была отдельная вёрстка с шапкой, своей сеткой и полем
+      количества, и карточка выдачи поиска выглядела иначе, хотя показывала
+      тот же предмет.
     -->
     <div v-if="activeMode === 'search' && found" class="found">
-      <ItemCard :item="found.payload" :code="found.code" :kind="found.type" :chain="foundChain">
-        <template #side>
-          <NuxtLink class="item-card__open" :to="editLink">{{ t('common.open') }}</NuxtLink>
-        </template>
-      </ItemCard>
+      <!--
+        Отдельной кнопки «Открыть» больше нет: название само ведёт в карточку,
+        и две ссылки на одно и то же место рядом только отвлекали.
+      -->
+      <ItemCard
+        :item="found.payload"
+        :code="found.code"
+        :kind="found.type"
+        :chain="foundChain"
+        :title-to="foundLink"
+      />
     </div>
 
     <!-- Несколько предметов с одним кодом: показываем все варианты -->
@@ -93,8 +98,9 @@
         для них две разные карточки значит получить расхождение: выбрал в
         одном месте, сверился в другом — а выглядят они по-разному.
 
-        Вся карточка ссылкой не делается: в списке из нескольких предметов
-        клик мимо кнопки «Открыть» приводит к тому, что открылся не тот.
+        Вся карточка ссылкой не делается: ссылка только на названии, а по
+        остальному месту карточка выбирает предмет — и в списке из нескольких
+        клик мимо ссылки приводит к тому, что выбрался не тот.
       -->
       <ItemCard
         v-for="m in ambiguousMatches"
@@ -103,11 +109,8 @@
         :code="m.code"
         :collision-count="ambiguousMatches.length"
         :chain="matchChains[m.payload.id] ?? []"
-      >
-        <template #side>
-          <NuxtLink class="item-card__open" :to="`/items/${m.payload.id}`">{{ t('common.open') }}</NuxtLink>
-        </template>
-      </ItemCard>
+        :title-to="`/items/${m.payload.id}`"
+      />
     </div>
 
     <!-- Безымянная этикетка: код в базе есть, но не привязан ни к чему.
@@ -166,7 +169,7 @@
         :code="entry.code"
         :collision-count="entry.matches.length"
         :chain="scanChains[keyOf(entry)] ?? []"
-        link-title
+        :title-to="`/items/${entry.item_id}`"
       >
           <template #foot>
             <div v-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
@@ -407,8 +410,15 @@ const listTitle = computed(() =>
   activeMode.value === 'replenish' ? t('main.mode_replenish_noun') : t('main.mode_writeoff_noun'),
 )
 
-const editLink = computed(() => {
-  if (!found.value) return ''
+/**
+ * Адрес карточки для найденного: у предмета и хранилища он разный.
+ *
+ * Раньше здесь была кнопка «Открыть» с тем же адресом; она убрана, потому что
+ * название и так ведёт в карточку, а две ссылки на одно место рядом только
+ * отвлекают.
+ */
+const foundLink = computed(() => {
+  if (!found.value) return null
   return found.value.type === 'item'
     ? `/items/${found.value.payload.id}`
     : `/stores/${found.value.payload.id}`
