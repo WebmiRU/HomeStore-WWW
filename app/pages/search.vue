@@ -473,10 +473,13 @@ watch(trigger, () => {
   font-weight: 600;
 }
 
+/* Рамка плашки — своего цвета, а не акцентная: плашка зелёная, и рамка
+   акцентом читалась как отдельное предупреждение. Так же окрашены метки
+   предметов в карточке. */
 .type-item {
   background: var(--success-bg);
   color: var(--success-ink);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--success);
 }
 
 .type-store {
@@ -562,8 +565,10 @@ watch(trigger, () => {
   color: var(--link-hover);
 }
 
+/* Пополнение помечено зелёным, как и режим «Пополнить» на главной: рамка
+   акцентного цвета выглядела выделением, будто это другое действие. */
 .action-btn--replenish {
-  border-color: var(--accent);
+  border-color: var(--success-bg);
   color: var(--success);
 }
 
