@@ -16,6 +16,12 @@ export type StockOperationRow = {
   before: number | null
   after: number | null
   is_returned: boolean
+  /**
+   * Код, высвобождённый списанием по коду. Он больше не привязан к предмету,
+   * а откат списания возвращает его обратно.
+   */
+  released_code_id: number | null
+  released_code: string | null
 }
 
 export type StockOperation = {

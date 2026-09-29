@@ -153,6 +153,9 @@
                 </NuxtLink>
                 <span v-else class="mv-row__plain">{{ row.item_title }}</span>
                 <span v-if="!row.item_id" class="mv-row__gone">{{ t('movements.item_gone') }}</span>
+                <span v-if="row.released_code" class="mv-row__code-released">
+                  {{ t('movements.code_released', { code: row.released_code }) }}
+                </span>
               </td>
               <td class="mv-row__qty">
                 <span class="mv-row__delta">{{ signOf(op.direction) }}{{ row.quantity }}</span>
@@ -766,6 +769,14 @@ watch(
   font-size: 12px;
   color: var(--text-faint);
   margin-left: 6px;
+}
+
+/* Код, высвобождённый списанием по коду: заметка к строке, а не отдельное
+   действие, поэтому выглядит как примечание, а не как кнопка. */
+.mv-row__code-released {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .mv-row__qty {

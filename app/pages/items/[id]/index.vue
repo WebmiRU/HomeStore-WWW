@@ -68,7 +68,11 @@
 
           <div class="field">
             <span class="field-label">{{ t('items.codes') }}</span>
-            <ItemCodesEditor v-model="codes" :readonly="!canEdit" />
+            <ItemCodesEditor
+              v-model="codes"
+              v-model:release-code-on-writeoff="releaseCodeOnWriteoff"
+              :readonly="!canEdit"
+            />
             <button v-if="codesChanged && canEdit" type="button" class="btn-reset-code" @click="resetCodes">{{ t('common.reset') }}</button>
           </div>
 
@@ -233,6 +237,15 @@ const codes = ref<string[]>([''])
 /** Коды как их отдал сервер: по ним считается «изменились» и работает «Сброс». */
 const originalCodes = ref<string[]>([''])
 
+/**
+ * Пометка «списывать по коду». Отдельное поле, а не часть codes: сервер
+ * хранит её у предмета, и она не имеет отношения к списку кодов — у codes
+ * и общий сброс, и общая копирование.
+ */
+const releaseCodeOnWriteoff = ref(false)
+/** Пометка как её отдал сервер: к ней возвращает «Сброс». */
+const originalReleaseCodeOnWriteoff = ref(false)
+
 const properties = ref<ItemPropertyInput[]>([])
 const categoryProperties = ref<PropertyResponse[]>([])
 const propertiesLoading = ref(false)
@@ -246,7 +259,11 @@ const propertiesKey = ref('')
  * открытия карточки и путала с пустым полем, в которое просто прицеливаются
  * сканером.
  */
-const codesChanged = computed(() => normalizedCodes(codes.value) !== normalizedCodes(originalCodes.value))
+const codesChanged = computed(
+  () =>
+    normalizedCodes(codes.value) !== normalizedCodes(originalCodes.value)
+    || releaseCodeOnWriteoff.value !== originalReleaseCodeOnWriteoff.value,
+)
 
 function normalizedCodes(list: string[]): string {
   // Разделитель нужен, чтобы «ab» + «c» и «a» + «bc» не сравнились как
@@ -261,6 +278,7 @@ function filledCodes(): string[] {
 
 function resetCodes() {
   codes.value = [...originalCodes.value]
+  releaseCodeOnWriteoff.value = originalReleaseCodeOnWriteoff.value
 }
 
 /** Приводит ответ сервера к виду, который принимает редактор. */
@@ -328,6 +346,8 @@ async function load() {
     form.vendor_id = item.payload.vendor_id ?? null
     codes.value = (item.codes ?? []).length > 0 ? [...item.codes!] : ['']
     originalCodes.value = [...codes.value]
+    releaseCodeOnWriteoff.value = item.payload.release_code_on_writeoff ?? false
+    originalReleaseCodeOnWriteoff.value = releaseCodeOnWriteoff.value
     quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
     images.value = item.images ?? []
     properties.value = toPropertyInputs(item.properties)
@@ -350,6 +370,7 @@ async function save() {
       vendor_id: form.vendor_id,
       codes: filledCodes(),
       properties: properties.value,
+      release_code_on_writeoff: releaseCodeOnWriteoff.value,
     }
     const qty = String(quantityInput.value).trim()
     if (qty !== '') {
@@ -469,8 +490,15 @@ onMounted(load)
   box-shadow: 0 0 0 1px var(--warn);
 }
 
+/*
+ * Кнопка стоит после списка кодов вместе с подсказкой о них, и без отступа
+ * прилипала к тексту подсказки: получалось, что «Сброс» относится к словам,
+ * а не к кодам.
+ */
 .btn-reset-code {
   flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 12px;
   padding: 8px 14px;
   font-size: 13px;
   font-family: inherit;

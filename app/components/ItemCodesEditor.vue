@@ -63,6 +63,29 @@
     <p class="field-hint">
       {{ t('items.codes_hint') }}
     </p>
+
+    <!--
+      Крыжик «списывать по коду» живёт под списком кодов, а не в настройках:
+      у большинства предметов несколько кодов означают несколько наклеек
+      одного товара, и списание их не трогает. Пометка нужна ровно тем
+      предметам, у которых код принадлежит конкретной единице, — а это видно
+      только рядом с кодами.
+
+      Показываем при двух и более кодах: при одном высвобождать нечего, и
+      крыжик был бы обещанием, которое нельзя выполнить.
+    -->
+    <label v-if="!readonly && codes.length > 1" class="field field--check">
+      <input
+        type="checkbox"
+        class="field-check"
+        :checked="releaseCodeOnWriteoff"
+        @change="toggleReleaseCode"
+      >
+      <span>{{ t('items.release_code_on_writeoff') }}</span>
+      <span class="field-hint">
+        {{ t('items.release_code_on_writeoff_hint') }}
+      </span>
+    </label>
   </div>
 </template>
 
@@ -85,13 +108,33 @@ const { t } = useI18n()
 const props = withDefaults(defineProps<{
   modelValue: string[]
   readonly?: boolean
+  /** Пометка «списывать по коду» живёт в карточке предмета, а не здесь. */
+  releaseCodeOnWriteoff?: boolean
 }>(), {
   readonly: false,
+  releaseCodeOnWriteoff: false,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [string[]]
+  'update:releaseCodeOnWriteoff': [boolean]
 }>()
+
+/**
+ * Крыжик нельзя оставить включённым, когда кодов осталось меньше двух: при
+ * одном коде высвобождать нечего, и пометка обещала бы то, что списание не
+ * сделает. Галочка сама снимается, а сервер всё равно проверяет это у себя.
+ */
+function toggleReleaseCode(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked
+
+  if (checked && codes.value.length < 2) {
+    ;(event.target as HTMLInputElement).checked = false
+    return
+  }
+
+  emit('update:releaseCodeOnWriteoff', checked)
+}
 
 /**
  * Правка идёт через локальный буфер, а не через props.modelValue.

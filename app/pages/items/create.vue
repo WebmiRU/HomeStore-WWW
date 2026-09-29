@@ -58,7 +58,10 @@
 
         <div class="field">
           <span class="field-label">{{ t('items.codes') }}</span>
-          <ItemCodesEditor v-model="codes" />
+          <ItemCodesEditor
+            v-model="codes"
+            v-model:release-code-on-writeoff="releaseCodeOnWriteoff"
+          />
         </div>
 
         <label class="field">
@@ -206,6 +209,9 @@ const form = reactive({
  */
 const codes = ref<string[]>(copyCodes)
 
+/** Пометка «списывать по коду»: сервер хранит её у предмета, отдельным полем. */
+const releaseCodeOnWriteoff = ref(false)
+
 const quantityInput = ref(copyQuantity)
 
 const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(stores.value))
@@ -286,6 +292,7 @@ function itemPayload() {
     category_id: form.category_id,
     vendor_id: form.vendor_id,
     codes: filledCodes(),
+    release_code_on_writeoff: releaseCodeOnWriteoff.value,
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
   }

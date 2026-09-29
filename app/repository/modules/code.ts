@@ -32,6 +32,11 @@ export type ItemPayload = {
   category_id: number | null
   vendor_id: number | null
   quantity: number | null
+  /**
+   * Пометка «списывать по коду»: при списании код, по которому сканировали,
+   * высвобождается и может быть наклеен на другую вещь.
+   */
+  release_code_on_writeoff?: boolean
   created_at: string
   updated_at: string
   images?: ImageResponse[]
