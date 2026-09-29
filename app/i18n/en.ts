@@ -283,6 +283,7 @@ export const en: Record<TranslationKey, string> = {
 },
 
   vendors: {
+    items_of_vendor: 'Items of the vendor',
     list: 'Manufacturer list',
     add: 'Add',
     edit: 'Editing manufacturer #{id}',

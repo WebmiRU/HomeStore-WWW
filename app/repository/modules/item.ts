@@ -102,12 +102,22 @@ class ItemModule extends FetchFactory<any> {
     super(fetcher)
   }
 
-  /** Список с необязательным фильтром по категории (с её вложенными). */
-  async list(page?: number, categoryId?: number | null): Promise<PaginatedResponse<ItemResponse>> {
+  /**
+   * Список с необязательными фильтрами.
+   *
+   * Фильтр по категории берёт и её вложенные, по производителю — ровно его
+   * предметы: вложенности у производителей нет.
+   */
+  async list(
+    page?: number,
+    categoryId?: number | null,
+    vendorId?: number | null,
+  ): Promise<PaginatedResponse<ItemResponse>> {
     const result = await this.call('GET', this.baseUrl, undefined, {
       params: {
         ...(page ? { page } : {}),
         ...(categoryId ? { category_id: categoryId } : {}),
+        ...(vendorId ? { vendor_id: vendorId } : {}),
       },
     })
     return result as unknown as PaginatedResponse<ItemResponse>

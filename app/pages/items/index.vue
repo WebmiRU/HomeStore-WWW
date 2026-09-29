@@ -13,6 +13,11 @@
     </div>
 
     <div class="filter-bar">
+      <!--
+        Подсказка про вложенные категории стоит под своим селектом, а не в
+        конце панели: у производителя вложенности нет, и рядом с ним такая
+        надпись читалась как относящаяся к нему.
+      -->
       <label class="filter">
         <span class="filter-label">{{ t('items.category') }}</span>
         <select :value="categoryFilter" class="filter-select" @change="onCategoryChange">
@@ -21,11 +26,21 @@
             {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
           </option>
         </select>
+        <span class="filter-hint">{{ t('categories.with_nested') }}</span>
       </label>
 
-      <span class="filter-hint">
-        {{ t('categories.with_nested') }}
-        <a v-if="categoryFilter" href="#" class="filter-reset" @click.prevent="onCategoryChange($event, null)">{{ t('common.reset') }}</a>
+      <label class="filter">
+        <span class="filter-label">{{ t('items.vendor') }}</span>
+        <select :value="vendorFilter" class="filter-select" @change="onVendorChange">
+          <option :value="null">{{ t('placeholders.all') }}</option>
+          <option v-for="option in vendors" :key="option.id" :value="option.id">
+            {{ option.title }}
+          </option>
+        </select>
+      </label>
+
+      <span class="filter-reset-wrap">
+        <a v-if="categoryFilter || vendorFilter" href="#" class="filter-reset" @click.prevent="resetFilters">{{ t('common.reset') }}</a>
       </span>
     </div>
 
@@ -164,6 +179,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import type { ItemResponse } from '~/repository/modules/item'
 import type { CategoryResponse } from '~/repository/modules/category'
+import type { VendorResponse } from '~/repository/modules/vendor'
 import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
@@ -177,6 +193,7 @@ const router = useRouter()
 
 const items = ref<ItemResponse[]>([])
 const categories = ref<CategoryResponse[]>([])
+const vendors = ref<VendorResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
@@ -191,6 +208,13 @@ const categoryFilter = computed<number | null>(() => {
 })
 
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
+
+/** Фильтр по производителю живёт в адресе — как и фильтр по категории. */
+const vendorFilter = computed<number | null>(() => {
+  const value = Number(route.query.vendor_id)
+
+  return Number.isFinite(value) && value > 0 ? value : null
+})
 
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
@@ -249,7 +273,7 @@ async function loadItems(page?: number) {
   loading.value = true
   error.value = null
   try {
-    const result = await $api.item.list(page, categoryFilter.value)
+    const result = await $api.item.list(page, categoryFilter.value, vendorFilter.value)
     items.value = result.data
     meta.value = {
       current_page: result.meta.current_page,
@@ -290,6 +314,18 @@ function onCategoryChange(event: Event, value: number | null = null) {
   router.push({ query })
 }
 
+function onVendorChange(event: Event) {
+  const raw = Number((event.target as HTMLSelectElement).value)
+  const query = { ...route.query, page: undefined, vendor_id: raw > 0 ? raw : undefined }
+
+  router.push({ query })
+}
+
+/** Сброс снимает оба фильтра разом: сбросили категорию — остался производитель. */
+function resetFilters() {
+  router.push({ query: { ...route.query, page: undefined, category_id: undefined, vendor_id: undefined } })
+}
+
 async function deleteItem(id: number) {
   const item = items.value.find(i => i.payload.id === id)
   if (item && !canDelete(item)) return
@@ -308,6 +344,12 @@ onMounted(async () => {
     categories.value = await $api.category.all()
   } catch {
     // Список предметов отфильтровать нечем, но сам он показывается.
+  }
+
+  try {
+    vendors.value = await $api.vendor.all()
+  } catch {
+    // Производители нужны только фильтру: без них список всё равно виден.
   }
   loadItems(Number(route.query.page) || 1)
 })
@@ -342,9 +384,17 @@ watch(
   gap: 8px;
 }
 
+/*
+ * Панель фильтров: метка, селект и подсказка стоят столбиком внутри одного
+ * фильтра, а сами фильтры — в строку.
+ *
+ * Раньше всё лежало в одну линию, и подсказка про вложенные категории
+ * оказывалась между двумя селектами — и читалась как относящаяся ко второму.
+ * Столбик вернул её под свой селект, где ей и место.
+ */
 .filter-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 14px;
@@ -352,8 +402,9 @@ watch(
 
 .filter {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .filter-label {
@@ -362,6 +413,10 @@ watch(
 }
 
 .filter-select {
+  /* Ширина держится у обоих селектов: в столбике иначе он схлопывается до
+     ширины самой длинной подписи, и панель прыгает при выборе. */
+  width: 260px;
+  max-width: 100%;
   padding: 6px 10px;
   font-size: 14px;
   font-family: inherit;

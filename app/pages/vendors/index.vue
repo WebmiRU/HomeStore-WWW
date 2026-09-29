@@ -43,6 +43,19 @@
             <td :data-label="t('list_common.description')" class="cell-description">{{ m.description || '—' }}</td>
             <td :data-label="t('common.created')">{{ formatDate(m.created_at) }}</td>
             <td class="actions">
+              <!--
+                Воронка, как у категорий: пункт ведёт в список предметов этого
+                производителя. Глаз в приложении уже значит «только чтение», и
+                второй значок на то же место сбивал бы с толку.
+              -->
+              <NuxtLink
+                :to="`/items?vendor_id=${m.id}`"
+                class="action-link action-view"
+                :title="t('vendors.items_of_vendor')"
+                :aria-label="t('vendors.items_of_vendor')"
+              >
+                <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
+              </NuxtLink>
               <NuxtLink
                 :to="`/vendors/${m.id}`"
                 class="action-link action-edit"
