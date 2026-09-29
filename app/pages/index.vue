@@ -171,25 +171,15 @@
         :chain="scanChains[keyOf(entry)] ?? []"
         :title-to="`/items/${entry.item_id}`"
       >
+          <!--
+            Слот безусловный, с решением внутри. Пока содержимое слота целиком
+            под v-if/v-else-if, оно может оказаться пустым, и тогда Vue
+            показывает запасной вариант из ItemCard — тот самый «В наличии»,
+            который у расходуемого предмета показывать нельзя. Слот всегда
+            непустой, значит, подмены не происходит.
+          -->
           <template #foot>
-            <!--
-              У расходуемого предмета остаток не дублируется: он уже стоит
-              рядом с каждым полем, где человек в него и вписывает. В футере
-              показывается то, чего у полей нет, — сколько расхода ушло.
-            -->
-            <div v-if="entry.done && isPartialEntry(entry)" class="item-card__stock">
-              <span v-for="part in entry.parts" :key="part.property_id" class="scan-row__spent">
-                {{ part.title }}:
-                {{ activeMode === 'replenish' ? '+' : '−' }}{{ part.amount }}
-              </span>
-            </div>
-            <!--
-              «В наличии N» у расходуемого предмета не показывается: человек
-              видит остаток по каждому свойству рядом с полем, а число штук
-              рядом с ним сбивало бы с толку — оно не то, что расходуется, и
-              меняется само, когда опустеет штука.
-            -->
-            <div v-else-if="!entry.done && !isPartialEntry(entry) && entry.payload.quantity != null" class="item-card__stock">
+            <div v-if="!entry.done && !entry.spendable && entry.payload.quantity != null" class="item-card__stock">
               {{ t('main.in_stock', { count: entry.payload.quantity }) }}
             </div>
             <div v-else-if="entry.done" class="item-card__stock">
@@ -200,25 +190,45 @@
               >
                 {{ entry.doneMode === 'replenish' ? t('main.done_replenish') : t('main.done_writeoff') }}
               </span>
-              <!--
-                У расходуемого предмера дельта штук часто нулевая: списали
-                300 мл из бутылки — количество то же. Печатать «−0» значило бы
-                показывать изменение, которого не было, и человек решил бы, что
-                списание не сработало. Поэтому показывается расход по свойствам.
-              -->
-              <span v-if="!isPartialEntry(entry)" class="scan-row__residue">
+              <span v-if="!entry.spendable" class="scan-row__residue">
                 {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
                 ({{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ entry.doneDelta }})
               </span>
-              <span v-else class="scan-row__residue">
-                {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
-              </span>
+              <template v-else>
+                <span class="scan-row__residue">
+                  {{ t('balance.remainder') }}: {{ entry.payload.quantity }}
+                </span>
+                <span
+                  v-for="part in entry.parts"
+                  :key="part.property_id"
+                  class="scan-row__spent"
+                >
+                  {{ part.title }}: {{ entry.doneMode === 'replenish' ? '+' : '−' }}{{ part.amount }}
+                </span>
+              </template>
             </div>
-            <div v-if="!entry.done && entry.payload.quantity == null" class="scan-row__hint">
-              {{ t('item_card.single_hint') }}
-            </div>
-            <div v-if="!entry.done && entryProblem(entry) !== null" class="scan-row__hint scan-row__hint--error">
-              {{ entryProblem(entry) }}
+            <!--
+              Контейнер, а не <template>: содержимое слота обязано быть непустым
+              всегда. Если все три ветки выше окажутся ложными, слот вернёт пусто,
+              и Vue покажет запасной вариант из ItemCard — «В наличии» у предмета,
+              который расходуется по свойствам и которому это не подходит.
+
+              display: contents у контейнера, поэтому в разметку он ничего не
+              добавляет: ни отступов, ни рамок, ни высоты.
+            -->
+            <div v-else class="scan-row__foot">
+              <div
+                v-if="entry.payload.quantity == null"
+                class="scan-row__hint"
+              >
+                {{ t('item_card.single_hint') }}
+              </div>
+              <div
+                v-if="entryProblem(entry) !== null"
+                class="scan-row__hint scan-row__hint--error"
+              >
+                {{ entryProblem(entry) }}
+              </div>
             </div>
           </template>
 
@@ -241,7 +251,7 @@
                   по умолчанию взято из шага настройки, но правится здесь,
                   до отправки: за один скан у мешка уходит и картошка, и рис.
                 -->
-                <div v-else-if="isPartialEntry(entry)" class="scan-row__parts">
+                <div v-else-if="entry.spendable" class="scan-row__parts">
                   <label
                     v-for="part in entry.parts"
                     :key="part.property_id"
@@ -394,6 +404,16 @@ interface ScanEntry {
    * настроек предмета, и их можно менять хоть в последнюю секунду.
    */
   parts: EntryPart[]
+  /**
+   * Расходуется ли предмет — как поле, а не вызовом функции.
+   *
+   * В шаблоне функция зовётся в двух слотах, и при обновлении они
+   * перерисовываются в разные моменты: там, где она звалась первой, список
+   * частей мог быть ещё не развёрнут — и строка показывала «В наличии» у
+   * предмета, который расходуется по свойствам. Поле вычисляется один раз при
+   * создании записи, поэтому все слоты видят одно и то же.
+   */
+  spendable: boolean
   /** Остатки по свойствам до отправки: нужны, чтобы показать, что списать нельзя. */
   partStock: Record<number, number>
 }
@@ -482,11 +502,11 @@ const pendingEntries = computed(() => scanList.value.filter((entry) => !entry.do
  * показать в сводке число, которого на складе нет.
  */
 /** Есть ли в списке расходуемые строки: у них своя арифметика. */
-const hasPartialEntries = computed(() => scanList.value.some((entry) => !entry.done && isPartialEntry(entry)))
+const hasPartialEntries = computed(() => scanList.value.some((entry) => !entry.done && entry.spendable))
 
 const pendingTotal = computed(() =>
   scanList.value
-    .filter((entry) => !entry.done && !isPartialEntry(entry))
+    .filter((entry) => !entry.done && !entry.spendable)
     .reduce((sum, entry) => sum + entry.count, 0),
 )
 
@@ -501,11 +521,6 @@ function partialOf(payload: ItemPayload): ItemPartialProperty[] | null {
   const partial = payload.partial
 
   return partial !== undefined && partial.length > 0 ? partial : null
-}
-
-/** Расходуемый ли предмет: расход идёт по свойствам, а не штуками. */
-function isPartialEntry(entry: ScanEntry): boolean {
-  return entry.parts.length > 0
 }
 
 /** Число с тремя знаками: расход накапливается шагами, и копейки не нужны. */
@@ -525,7 +540,7 @@ function entryProblem(entry: ScanEntry): string | null {
   // Расходуемый предмет проверяется по свойствам, а не по количеству штук:
   // количество у него меняет сервер, когда опустела штука, и сравнивать с ним
   // расход по свойству бессмысленно.
-  if (isPartialEntry(entry)) {
+  if (entry.spendable) {
     for (const part of entry.parts) {
       if (!Number.isFinite(part.amount) || part.amount <= 0) {
         return t('main.partial_amount_hint')
@@ -865,6 +880,7 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
     doneAt: '',
     doneDelta: 0,
     doneMode: null,
+    spendable: partial !== null,
     parts: partial === null
       ? []
       : partial.map((property) => ({
@@ -986,7 +1002,7 @@ async function submitList() {
     ...(entry.matches.length > 1 ? { item_id: entry.item_id } : {}),
     // У расходуемого предмета расход идёт в parts, а количество не отправляется:
     // сервер сам решает, сколько штук из этого ушло, по опустевшим свойствам.
-    ...(isPartialEntry(entry)
+    ...(entry.spendable
       ? {
           parts: entry.parts.map((part) => ({
             property_id: part.property_id,
@@ -1032,7 +1048,7 @@ async function submitList() {
       const applied = rowsByKey.get(keyOf(entry))
       const sign = isReplenish ? 1 : -1
 
-      if (isPartialEntry(entry)) {
+      if (entry.spendable) {
         // Количество штук меняет сервер, и в ответе оно уже новое. Остатки по
         // свойствам сервер не отдаёт, поэтому они считаются здесь: на величину
         // расхода, с ограничением снизу нулём.
