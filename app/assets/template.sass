@@ -689,12 +689,15 @@
 //
 // Скругление круглое, в отличие от метки о коллизии: то — предупреждение, а
 // это — подпись, и в одном списке их нельзя путать.
+// Рамка — своего цвета, а не акцентная: метка зелёная, и сиреневая рамка
+// спорила с ней, выглядя отдельным предупреждением. Зелёная рамка на зелёной
+// плашке читается так же, как у выбранного режима «Пополнить».
 .item-card__kind
   padding: 2px 8px
   font-size: 11px
   line-height: 1.4
   white-space: nowrap
-  border: 1px solid var(--accent)
+  border: 1px solid var(--success)
   border-radius: 999px
   background: var(--success-bg)
   color: var(--success-ink)

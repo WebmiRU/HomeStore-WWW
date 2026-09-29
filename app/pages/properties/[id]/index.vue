@@ -58,7 +58,7 @@
                 {{ deletedDictionary.label }}
               </option>
               <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
-                {{ dictionary.title }} ({{ dictionary.values_count }} t('properties.values_short') })
+                {{ dictionary.title }} ({{ dictionary.values_count }} {{ t('properties.values_short') }})
               </option>
             </select>
             <span v-if="dictionary" class="field-hint">

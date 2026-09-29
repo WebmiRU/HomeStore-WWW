@@ -82,14 +82,14 @@
               <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
                 {{ item.vendor.title }}
               </NuxtLink>
-              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} t('placeholders.deleted')</span>
+              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} {{ t('placeholders.deleted') }}</span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('items.category')">
               <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
                 {{ item.category.title }}
               </NuxtLink>
-              <span v-else-if="item.category" class="muted">{{ item.category.title }} t('placeholders.deleted')</span>
+              <span v-else-if="item.category" class="muted">{{ item.category.title }} {{ t('placeholders.deleted') }}</span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('items.store')">
@@ -100,7 +100,7 @@
               <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
                 {{ item.store[0].title }}
               </NuxtLink>
-              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} t('placeholders.deleted')</span>
+              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} {{ t('placeholders.deleted') }}</span>
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('items.quantity_short')">{{ item.payload.quantity ?? '—' }}</td>

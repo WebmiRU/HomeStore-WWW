@@ -297,19 +297,23 @@ onMounted(load)
   cursor: default;
 }
 
+// См. .btn-save-copy на странице создания предмета: действие «создать копию»
+// спокойное, яркой остаётся главная кнопка.
 .btn-save-copy {
   padding: 8px 24px;
   font-size: 14px;
   font-family: inherit;
-  background: var(--info);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent);
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-save-copy:hover:not(:disabled) {
-  background: var(--accent);
+  color: var(--text);
+  background: var(--bg-hover);
+  border-color: var(--accent);
 }
 
 .btn-cancel {

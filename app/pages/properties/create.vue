@@ -50,7 +50,7 @@
         <select v-model="form.dictionary_id" class="field-select">
           <option :value="null">{{ t('placeholders.pick_dictionary') }}</option>
           <option v-for="dictionary in dictionaries" :key="dictionary.id" :value="dictionary.id">
-            {{ dictionary.title }} ({{ dictionary.values_count }} t('properties.values_short') })
+            {{ dictionary.title }} ({{ dictionary.values_count }} {{ t('properties.values_short') }})
           </option>
         </select>
         <span class="field-hint">
