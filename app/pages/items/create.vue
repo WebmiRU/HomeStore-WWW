@@ -209,8 +209,19 @@ const form = reactive({
  */
 const codes = ref<string[]>(copyCodes)
 
-/** Пометка «списывать по коду»: сервер хранит её у предмета, отдельным полем. */
-const releaseCodeOnWriteoff = ref(false)
+/**
+ * Пометка «списывать по коду»: сервер хранит её у предмета, отдельным полем.
+ *
+ * У нового предмета она включена по умолчанию. Человек, который завёл
+ * несколько кодов, скорее всего заводит предмет с несколькими единицами под
+ * своими кодами, и включать пометку потом — лишний шаг, который почти всегда
+ * нужен. Снятие галочки уважается: дальше подсказка под крыжиком объясняет,
+ * что значат оба варианта, а включить обратно можно одним кликом.
+ *
+ * Пометку имеет смысл ставить, только когда кодов больше одного: при одном
+ * коде высвобождать нечего, и крыжик не показывается вовсе.
+ */
+const releaseCodeOnWriteoff = ref(true)
 
 const quantityInput = ref(copyQuantity)
 
@@ -292,7 +303,10 @@ function itemPayload() {
     category_id: form.category_id,
     vendor_id: form.vendor_id,
     codes: filledCodes(),
-    release_code_on_writeoff: releaseCodeOnWriteoff.value,
+    // При одном коде высвобождать нечего, и сервер всё равно не станет
+    // ничего освобождать: помечаем явно, чтобы в базе не лежала пометка,
+    // которая ничего не значит.
+    release_code_on_writeoff: releaseCodeOnWriteoff.value && filledCodes().length > 1,
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
   }

@@ -1,6 +1,6 @@
 <template>
   <div class="codes-editor">
-    <div v-for="(code, index) in codes" :key="index" class="input-group codes-editor__row">
+    <div v-for="(code, index) in rows" :key="index" class="input-group codes-editor__row">
       <!--
         Кнопки перестановки — слева от поля, а не перетаскивание.
         Перетаскивание на адаптиве не работает: попасть пальцем в
@@ -38,10 +38,9 @@
       />
 
       <!--
-        Ровно те же кнопки, что у значений свойств: «−» убирает строку,
-        «+» заводит новую. Разница одна — здесь строки не группируются
-        попарно, поэтому «−» не растягивается на две кнопки: он и в верхних
-        строках последний в группе, и скругление достаётся ему.
+        Кнопка «−» убирает строку. Кнопки «+» нет и не нужна: пустая строка
+        в конце списка всегда есть, и следующая появляется сама, как только
+        в поле что-то введено.
       -->
       <button
         v-if="!readonly"
@@ -50,14 +49,6 @@
         :title="index === 0 ? t('items.code_clear') : t('items.code_remove')"
         @click="removeCode(index)"
       >−</button>
-
-      <button
-        v-if="!readonly && index === codes.length - 1"
-        type="button"
-        class="input-group__btn input-group__btn--icon input-group__btn--add"
-        :title="t('items.code_add_more')"
-        @click="addCode"
-      >+</button>
     </div>
 
     <p class="field-hint">
@@ -65,16 +56,12 @@
     </p>
 
     <!--
-      Крыжик «списывать по коду» живёт под списком кодов, а не в настройках:
-      у большинства предметов несколько кодов означают несколько наклеек
-      одного товара, и списание их не трогает. Пометка нужна ровно тем
-      предметам, у которых код принадлежит конкретной единице, — а это видно
-      только рядом с кодами.
-
-      Показываем при двух и более кодах: при одном высвобождать нечего, и
-      крыжик был бы обещанием, которое нельзя выполнить.
+      Показываем при двух и более заполненных кодах: при одном высвобождать
+      нечего, и крыжик был бы обещанием, которое нельзя выполнить. Считаются
+      именно коды, а не строки: пустая строка в конце списка есть всегда, и
+      вместе с ней крыжик появлялся бы уже у предмета с одним кодом.
     -->
-    <label v-if="!readonly && codes.length > 1" class="field field--check">
+    <label v-if="!readonly && filledCount(rows) > 1" class="field field--check">
       <input
         type="checkbox"
         class="field-check"
@@ -100,7 +87,7 @@
  * Разбор сканирования — в composable useScanIntoField: он же нужен и полю
  * кода на формах хранилищ.
  */
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useScanIntoField } from '~/composables/useScanIntoField'
 
 const { t } = useI18n()
@@ -128,7 +115,7 @@ const emit = defineEmits<{
 function toggleReleaseCode(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
 
-  if (checked && codes.value.length < 2) {
+  if (checked && filledCount(rows.value) < 2) {
     ;(event.target as HTMLInputElement).checked = false
     return
   }
@@ -151,6 +138,56 @@ function toggleReleaseCode(event: Event): void {
  */
 const codes = ref<string[]>([...props.modelValue])
 
+/**
+ * Список с пустой строкой в конце — то, что и рисуется на экране.
+ *
+ * Кнопка «+» убрана: пустая строка в конце всегда есть, и это попутно
+ * избавляет от пустого списка, в который некуда целиться сканером.
+ * Пустая строка — только для ввода, на сервер она не уходит (см. filledCodes
+ * на страницах предмета).
+ *
+ * При просмотре предмет пустых строк не показывает: пустое поле у
+ * предмета, который смотрят, выглядило бы как недоделка.
+ */
+const rows = computed(() => (props.readonly ? codes.value : ensureTrailingRow(codes.value)))
+
+/**
+ * Буфер с ровно одной пустой строкой в конце.
+ *
+ * Пустая строка живёт в самом буфере, а не только на экране, потому что по
+ * индексам строк идут и запись значения, и перестановка, и установка курсора.
+ * Если бы пустая строка дорисовывалась при отрисовке, индексы на экране и в
+ * буфере разошлись бы, и правка попала бы не в то поле.
+ *
+ * Новые строки заводить перестаём: пока в последней строке не набрано
+ * MAX_CODES кодов, пустая строка в конце есть всегда, и вводить дальше
+ * можно прямо в неё. Дальше лимит сервера, и новую строку не заводим, чтобы
+ * не предлагать ввод, который сервер всё равно отвергнет.
+ */
+function ensureTrailingRow(list: string[]): string[] {
+  // Хвостовые пустые строки убираются: человек мог стереть последний код
+  // целиком, и пустых строк в конце могло оказаться несколько. Внутри списка
+  // пустые строки остаются — их человек оставил нарочно.
+  const last = lastFilledIndex(list)
+  const filled = list.slice(0, last + 1)
+
+  return filledCount(filled) >= MAX_CODES ? filled : [...filled, '']
+}
+
+/** Индекс последней строки с кодом, а -1, если кодов нет вовсе. */
+function lastFilledIndex(list: string[]): number {
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    // Строка может оказаться не строкой: буфер приходит и из props, куда его
+    // кладёт родитель, и пустые строки в нём местами остаются undefined.
+    // Такие строки кодом не считаются.
+    if ((list[index] ?? '').trim() !== '') {
+      return index
+    }
+  }
+
+  return -1
+}
+
 watch(
   () => props.modelValue,
   (next) => {
@@ -167,31 +204,36 @@ function setInput(el: unknown, index: number) {
   inputs.value[index] = (el as HTMLInputElement | null) ?? null
 }
 
+/**
+ * Больше кодов предмету не положить: сервер отвергает такой список целиком,
+ * и человек потерял бы всё, что набрал. Предел в 100 взят с запасом —
+ * наклеек на единицу столько не бывает, а упереться в него на живой работе
+ * не должен никто.
+ */
+const MAX_CODES = 100
+
 function update(next: string[]) {
-  codes.value = next
-  emit('update:modelValue', next)
+  const list = props.readonly ? next : ensureTrailingRow(next)
+  codes.value = list
+  emit('update:modelValue', list)
 }
 
+/**
+ * Дописывает значение в строку. Следующая пустая строка появляется сама —
+ * см. ensureTrailingRow: буфер всегда заканчивается пустой строкой.
+ *
+ * Правка по индексу строки, а не по полю поиска: одинаковые коды у предмета
+ * законны, и по значению нашлась бы не та строка.
+ */
 function onInput(index: number, e: Event) {
   const next = [...codes.value]
   next[index] = (e.target as HTMLInputElement).value
   update(next)
 }
 
-async function addCode() {
-  update([...codes.value, ''])
-
-  // Курсор — в конец новой строки: иначе после «+» пришлось бы снова брать
-  // мышь, а весь смысл кнопки в том, чтобы продолжить ввод. В конец, а не в
-  // начало: новый код дописывают, а не заменяют им уже напечатанное.
-  await nextTick()
-
-  const input = inputs.value[codes.value.length - 1]
-  if (input) {
-    input.focus()
-    const end = input.value.length
-    input.setSelectionRange(end, end)
-  }
+/** Заполненных кодов в списке — их и принимает сервер, пустые строки не в счёт. */
+function filledCount(list: string[]): number {
+  return list.filter((code) => (code ?? '').trim() !== '').length
 }
 
 function removeCode(index: number) {
@@ -200,7 +242,7 @@ function removeCode(index: number) {
   // Последняя строка не исчезает: предмет без кода всё равно получит
   // сгенерированный UUID, но пустое поле на форме выглядит как ошибка
   // и мешает прицелиться сканером. Пустая строка просто не уходит на сервер.
-  update(next.length > 0 ? next : [''])
+  update(next)
 }
 
 /**
@@ -237,32 +279,29 @@ async function moveCode(index: number, delta: number) {
 
 const { onKeydown: onScanKeydown } = useScanIntoField()
 
-/** Сервер принимает не больше 20 кодов на предмет. */
-const MAX_CODES = 20
-
 /**
- * Отсканированный код сразу заводит следующую строку, и то же делает Enter,
- * которым закончен ручной ввод кода.
+ * Отсканированный код сразу переводит ввод в следующую строку, и то же
+ * делает Enter, которым закончен ручной ввод.
  *
  * Кодов у предмета обычно несколько — наклейка на каждую единицу, — и после
- * каждого кода возвращаться мышью к «+» неудобно: сканер только что отдал
- * код и стоит наготове для следующего, а ручной ввод закончен Enter'ом.
+ * каждого кода возвращаться мышью куда-то за новой строкой неудобно: сканер
+ * только что отдал код и стоит наготове для следующего, а ручной ввод закончен
+ * Enter'ом. Новая пустая строка к этому моменту уже появилась сама (см.
+ * ensureTrailingRow), здесь только переводим в неё курсор.
  *
- * Новое поле заводится только если в поле есть код: Enter в пустом поле —
- * это обычное сохранение формы, и перехватывать его незачем. По той же
- * причине пустая строка, добавленная «+», в список кодов предмета не идёт
- * (см. filledCodes на страницах предмета).
+ * В пустом поле Enter не перехватывается: там это обычное сохранение формы,
+ * как и во всех остальных полях.
  *
  * Разбор скана идёт первым: он вписывает накопленный набор в поле, иначе
- * проверка «поле непустое» смотрела бы на старое содержимое.
+ * проверка «поле не пустое» смотрела бы на прежнее содержимое.
  */
 function onKeydown(e: KeyboardEvent) {
   onScanKeydown(e)
 
   // props.readonly, а не readonly: в <script setup> пропсы не лежат в
   // отдельных переменных, и обращение к голому readonly — обращение к
-  // несуществующему имени. Оно роняло обработчик целиком, и новое поле не
-  // заводилось вовсе.
+  // несуществующему имени. Оно роняло обработчик целиком, и курсор никогда
+  // бы не переехал.
   if (e.key !== 'Enter' || props.readonly) {
     return
   }
@@ -273,16 +312,29 @@ function onKeydown(e: KeyboardEvent) {
     return
   }
 
-  // Больше кодов принимать некуда: сервер отверг бы такой список целиком,
-  // и человек потерял бы всё, что набрал.
-  if (codes.value.length >= MAX_CODES) {
-    return
-  }
-
   e.preventDefault()
   e.stopPropagation()
 
-  addCode()
+  focusRow(input.value.trim() === '' ? 0 : -1)
+}
+
+/**
+ * Ставит курсор в пустую строку: в заданную, а при -1 — в последнюю.
+ *
+ * Курсор в конец строки: новый код дописывают, а не заменяют им уже
+ * напечатанное.
+ */
+async function focusRow(index: number) {
+  await nextTick()
+
+  const row = index === -1 ? rows.value.length - 1 : index
+  const input = inputs.value[row]
+
+  if (input) {
+    input.focus()
+    const end = input.value.length
+    input.setSelectionRange(end, end)
+  }
 }
 </script>
 
