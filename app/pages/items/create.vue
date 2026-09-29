@@ -66,13 +66,23 @@
 
         <label class="field">
           <span class="field-label">{{ t('form.quantity') }}</span>
+          <!--
+            Количество помеченного предмета — это число его кодов, и сервер
+            считает его сам после сохранения. Поле остаётся видимым, но
+            не редактируется: выставленное руками число разошлось бы с
+            наклейками, и списание пошло бы не по тем единицам.
+          -->
           <input
             v-model="quantityInput"
             type="number"
             class="field-input"
             step="1"
             :placeholder="t('items.quantity_placeholder')"
+            :readonly="releaseCodeOnWriteoff"
           />
+          <span v-if="releaseCodeOnWriteoff" class="field-hint">
+            {{ t('items.quantity_by_codes_hint') }}
+          </span>
         </label>
       </section>
 
@@ -98,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { CategoryResponse } from '~/repository/modules/category'
 import type { VendorResponse } from '~/repository/modules/vendor'
@@ -135,7 +145,7 @@ const copyCodes = parseCopiedCodes(route.query.copy_codes, route.query.code)
  * закладкой или передать в мессенджере до того, как появился список, и
  * такой ссылкой ещё пользуются.
  */
-function parseCopiedCodes(raw: unknown, scanned: string): string[] {
+function parseCopiedCodes(raw: unknown, scanned: unknown): string[] {
   if (typeof raw === 'string' && raw !== '') {
     try {
       const parsed = JSON.parse(raw)
@@ -152,11 +162,14 @@ function parseCopiedCodes(raw: unknown, scanned: string): string[] {
     }
   }
 
-  if (scanned !== '') {
-    return [scanned]
-  }
+  // Параметр ссылки приходит и массивом (код повторился в адресе), и вовсе
+  // отсутствует. Берём первый непустой вариант: без этого в списке кодов
+  // оказывалось undefined, и любое обращение к нему падало — страница
+  // создания не открывалась вовсе.
+  const candidates = (Array.isArray(scanned) ? scanned : [scanned])
+    .filter((value): value is string => typeof value === 'string' && value !== '')
 
-  return ['']
+  return candidates.length > 0 ? [candidates[0]] : ['']
 }
 
 function parseCopiedProperties(raw: unknown): ItemPropertyInput[] {
@@ -212,18 +225,40 @@ const codes = ref<string[]>(copyCodes)
 /**
  * Пометка «списывать по коду»: сервер хранит её у предмета, отдельным полем.
  *
- * У нового предмета она включена по умолчанию. Человек, который завёл
- * несколько кодов, скорее всего заводит предмет с несколькими единицами под
- * своими кодами, и включать пометку потом — лишний шаг, который почти всегда
- * нужен. Снятие галочки уважается: дальше подсказка под крыжиком объясняет,
- * что значат оба варианта, а включить обратно можно одним кликом.
- *
- * Пометку имеет смысл ставить, только когда кодов больше одного: при одном
- * коде высвобождать нечего, и крыжик не показывается вовсе.
+ * По умолчанию выключена, и это осознанно. Пометка меняет смысл списания —
+ * вместо «сколько угодно единиц» получается «ровно одна единица и один код на
+ * каждую», — и включённая по умолчанию галочка вводила бы в заблуждение
+ * невнимательных: человек поставил бы её, не читая, и потом удивлялся бы,
+ * почему списание идёт не так. Включать её нужно осознанно, прочитав подсказку.
  */
-const releaseCodeOnWriteoff = ref(true)
+const releaseCodeOnWriteoff = ref(false)
 
 const quantityInput = ref(copyQuantity)
+
+/**
+ * Количество помеченного предмета — это число его кодов.
+ *
+ * Пересчёт идёт на лету, при каждой правке списка кодов, а не после
+ * сохранения: иначе человек видел бы напротив своих кодов чужое число и
+ * удивлялся, откуда оно взялось, только после сохранения. Сервер при
+ * сохранении считает так же — здесь то же самое число нужно, чтобы форма
+ * показывала то, что будет записано.
+ */
+watch(
+  [codes, releaseCodeOnWriteoff],
+  () => {
+    if (!releaseCodeOnWriteoff.value) {
+      return
+    }
+
+    // Пустые строки кодом не считаются: строки в списке бывают, и последняя
+    // из них всегда пустая под следующий код.
+    const count = codes.value.filter((code) => code.trim() !== '').length
+
+    quantityInput.value = count === 0 ? '' : String(count)
+  },
+  { immediate: true },
+)
 
 const storeGroups = computed<StoreSelectGroup[]>(() => useStoreSelectOptions(stores.value))
 

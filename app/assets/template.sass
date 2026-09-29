@@ -612,6 +612,17 @@
 
 .item-card__title
   font-size: 16px
+
+// Название-ссылка в строке операции. Подчёркивание постоянное: человек
+// должен видеть, что это ссылка, не наводя мышь на каждую строку.
+.item-card__title--link
+  color: var(--link)
+  text-decoration: underline
+  text-underline-offset: 3px
+
+.item-card__title--link:hover
+  color: var(--link-hover)
+  text-decoration-thickness: 2px
   color: var(--text)
   word-break: break-word
 

@@ -3,7 +3,18 @@
     <ItemPhoto :images="item.images" :alt="item.title_print || item.title" />
 
     <div class="item-card__info">
-      <div class="item-card__title">{{ item.title }}</div>
+      <!--
+        В режимах операции название ведёт в карточку предмета: там видно,
+        сколько его на складе, где он лежит и какие у него свойства, а без
+        перехода пришлось бы искать его в списке предметов отдельно.
+        Ссылка включается только там, где карточка — строка операции: в
+        выдаче поиска карточка и сама является выбором, и вложенная ссылка
+        мешала бы нажимать.
+      -->
+      <NuxtLink v-if="linkTitle" :to="`/items/${item.id}`" class="item-card__title item-card__title--link">
+        {{ item.title }}
+      </NuxtLink>
+      <div v-else class="item-card__title">{{ item.title }}</div>
       <div v-if="item.title_print" class="item-card__print">
         {{ item.title_print }}
       </div>
@@ -133,9 +144,12 @@ const props = withDefaults(defineProps<{
    * поведение.
    */
   as?: string
+  /** Название как ссылка в карточку предмета. */
+  linkTitle?: boolean
 }>(), {
   code: null,
   kind: null,
+  linkTitle: false,
   collisionCount: 1,
   chain: () => [],
   as: 'div',

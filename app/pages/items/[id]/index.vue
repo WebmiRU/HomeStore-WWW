@@ -78,14 +78,23 @@
 
           <label class="field">
             <span class="field-label">{{ t('form.quantity') }}</span>
+            <!--
+              У предмета, который живёт по кодам, количество равно числу его
+              кодов: сервер считает его сам. Поле оставлено видимым, но не
+              редактируемым — иначе человек выставил бы число, противоречащее
+              наклейкам, и списание пошло бы не по тем единицам.
+            -->
             <input
               v-model="quantityInput"
               type="number"
               class="field-input"
               step="1"
               :placeholder="t('items.quantity_placeholder')"
-              :readonly="!canEdit"
+              :readonly="!canEdit || releaseCodeOnWriteoff"
             />
+            <span v-if="releaseCodeOnWriteoff" class="field-hint">
+              {{ t('items.quantity_by_codes_hint') }}
+            </span>
           </label>
         </section>
 
@@ -145,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import type { ItemPayload } from '~/repository/modules/code'
 import type { ItemResponse, ItemPropertyInput } from '~/repository/modules/item'
 import type { ImageResponse } from '~/repository/modules/image'
@@ -245,6 +254,30 @@ const originalCodes = ref<string[]>([''])
 const releaseCodeOnWriteoff = ref(false)
 /** Пометка как её отдал сервер: к ней возвращает «Сброс». */
 const originalReleaseCodeOnWriteoff = ref(false)
+
+/**
+ * Количество помеченного предмета — это число его кодов, и пересчёт идёт на
+ * лету, при каждой правке списка кодов, а не после сохранения: иначе рядом с
+ * кодами стояло бы чужое число, и человек узнал бы правильное лишь после
+ * сохранения.
+ *
+ * Сервер при сохранении считает так же — это число нужно, чтобы форма
+ * показывала то, что будет записано, а не то, что было при открытии.
+ */
+watch(
+  [codes, releaseCodeOnWriteoff],
+  () => {
+    if (!releaseCodeOnWriteoff.value) {
+      return
+    }
+
+    // Пустые строки кодом не считаются: строка в списке всегда есть, и
+    // последняя из них пустая — под следующий код.
+    const count = codes.value.filter((code) => code.trim() !== '').length
+
+    quantityInput.value = count === 0 ? '' : String(count)
+  },
+)
 
 const properties = ref<ItemPropertyInput[]>([])
 const categoryProperties = ref<PropertyResponse[]>([])
@@ -379,6 +412,22 @@ async function save() {
     const saved = await $api.item.update(Number(id), payload)
     $notify.add(t('form.saved', { title: t('items.one') }), { type: 'success' })
     notifyCodeConflicts(saved)
+
+    // Ответ содержит то, что сервер сделал с предметом, а форма до этого
+    // показывала то, что человек в неё вводил. Разница видна не сразу, и
+    // обе величины меняются сами собой:
+    //
+    //   - коды: обычному предмету без кодов сервер подставляет сгенерированный
+    //     UUID, и в форме до перезагрузки страницы его не видно;
+    //   - количество помеченного предмета пересчитано по кодам.
+    const savedCodes = saved.codes ?? []
+    if (savedCodes.length > 0) {
+      codes.value = [...savedCodes]
+      originalCodes.value = [...savedCodes]
+    }
+
+    const savedQuantity = saved.payload?.quantity
+    quantityInput.value = savedQuantity != null ? String(savedQuantity) : ''
   } catch (err: any) {
     $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
   } finally {

@@ -185,6 +185,7 @@ export const en: Record<TranslationKey, string> = {
     quantity_placeholder: 'no quantity',
     release_code_on_writeoff: 'Write off by code',
     release_code_on_writeoff_hint: 'The code belongs to one specific unit: writing it off releases that code, and it can be stuck on something else. Reversing the write-off brings the code back. Without this mark the codes stay in place: for an ordinary product, several labels do not mean several units.',
+    quantity_by_codes_hint: 'The quantity is counted from the codes: one code is one unit. To replenish such an item, stick a new code on it.',
     codes_hint: 'An item can have several codes — one per label. The top one counts as the main: it is printed on the label by default and shown on the card. Put the cursor in the field and the scanner will insert the code right into it instead of taking you to the home page.',
     own_storage_hint: '● — your own storage, ○ — access by rights',
       one: 'Item',

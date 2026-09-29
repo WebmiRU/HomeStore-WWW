@@ -166,6 +166,7 @@
         :code="entry.code"
         :collision-count="entry.matches.length"
         :chain="scanChains[keyOf(entry)] ?? []"
+        link-title
       >
           <template #foot>
             <div v-if="!entry.done && entry.payload.quantity != null" class="item-card__stock">
@@ -195,8 +196,17 @@
           <template #side>
             <div class="scan-row__action">
               <template v-if="!entry.done">
+                <!--
+                  У предмета, который живёт по кодам, количество равно числу
+                  кодов, и менять его в строке нельзя: списание по коду снимает
+                  ровно единицу за штуку. Показываем 1 и гасим поле, чтобы
+                  было видно, что количество задано самими кодами.
+                -->
+                <span v-if="entry.payload.release_code_on_writeoff" class="scan-row__whole">
+                  1 {{ t('units.pcs') }}
+                </span>
                 <input
-                  v-if="entry.payload.quantity != null"
+                  v-else-if="entry.payload.quantity != null"
                   v-model.number="entry.count"
                   type="number"
                   min="1"
@@ -648,8 +658,19 @@ function addToScanList(code: string, payload: ItemPayload, matches?: ItemPayload
   const matchList = matches && matches.length > 0 ? matches : [payload]
   const key = `${code}|${payload.id}`
   const existing = scanList.value.find((entry) => keyOf(entry) === key)
+
   if (existing) {
-    // Повторное сканирование: увеличиваем количество к списанию/пополнению.
+    // Повторное сканирование того же кода: у обычного предмета это означает
+    // «списать ещё одну такую же», и количество растёт.
+    //
+    // У предмета, который живёт по кодам, иначе: там 1 код = 1 единица, и код
+    // при списании высвобождается. Повтор того же кода не должен ни удваивать
+    // количество, ни ждать, пока тот же код спишут второй раз, — он уже занят
+    // в первой строке. Просто ничего не делаем.
+    if (payload.release_code_on_writeoff) {
+      return
+    }
+
     // Для предметов без количества — всегда единственный экземпляр, ничего не делаем.
     if (payload.quantity != null) {
       existing.count += 1
