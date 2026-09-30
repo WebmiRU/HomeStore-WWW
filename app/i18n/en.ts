@@ -134,6 +134,7 @@ export const en: Record<TranslationKey, string> = {
   items: {
     list: 'Item list',
     add: 'Add',
+    filters: 'Filters',
     edit: 'Editing item #{id}',
     create: 'New item',
     main_tab: 'Main parameters',

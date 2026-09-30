@@ -8,11 +8,32 @@
           :store-ids="[]"
           @done="clearSelection"
         />
+        <!--
+          Фильтры свёрнуты, а кнопка живёт рядом с «Добавить».
+          --
+          Развёрнутая панель занимала 75px над таблицей на каждой странице
+          списка, и на ноутбуке выдавала список из десяти строк с кнопками
+          пагинации за нижним краем экрана: половина списка и «вперёд/назад» —
+          внизу, а отбор — наверху, и прокрутка туда-обратно ради одного
+          переключателя. Свернутая панель занимает одну кнопку, а когда
+          фильтры заданы, кнопка показывает, что они заданы, и панель
+          подсвечивается.
+        -->
+        <button
+          type="button"
+          class="btn-add btn-filters"
+          :class="{ 'btn-filters--on': filtersOpen || hasActiveFilters }"
+          :aria-expanded="filtersOpen"
+          @click="filtersOpen = !filtersOpen"
+        >
+          <img src="/img/icon/filter.svg" class="btn-filters-icon" alt="" />
+          {{ t('items.filters') }}
+        </button>
         <NuxtLink to="/items/create" class="btn-add">{{ t('items.add') }}</NuxtLink>
       </div>
     </div>
 
-    <div class="filter-bar">
+    <div v-if="filtersOpen" class="filter-bar">
       <!--
         Подсказка про вложенные категории стоит под своим селектом, а не в
         конце панели: у производителя вложенности нет, и рядом с ним такая
@@ -237,6 +258,25 @@ const vendorFilter = computed<number | null>(() => {
   return Number.isFinite(value) && value > 0 ? value : null
 })
 
+/**
+ * Панель фильтров свёрнута.
+ *
+ * Открыта сразу только тогда, когда фильтр уже задан — пришли по ссылке
+ * «предметы категории» и должны увидеть, что список отобран, иначе кнопка
+ * молчала бы о чужом состоянии.
+ */
+const filtersOpen = ref(false)
+
+watch(
+  [categoryFilter, vendorFilter],
+  ([category, vendor]) => {
+    if (category || vendor) filtersOpen.value = true
+  },
+  { immediate: true },
+)
+
+const hasActiveFilters = computed(() => !!(categoryFilter.value || vendorFilter.value))
+
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => items.value.length > 0 && items.value.every(i => selected.value.has(i.payload.id)))
@@ -390,7 +430,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .page-title {
@@ -418,7 +458,7 @@ watch(
   align-items: flex-start;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .filter {
@@ -511,6 +551,46 @@ watch(
   background: var(--accent);
 }
 
+/*
+ * Кнопка «Фильтры» — та же, что «Добавить», но спокойнее: она не ведёт
+ * на новую карточку, а раскрывает панель на этой же странице, и заливать её
+ * акцентом значило бы уравнять её по весу с главным действием.
+ *
+ * Отмеченная — заливка акцентом: фильтры заданы, и панель сейчас свёрнута.
+ * Без отметки человек увидит отфильтрованный список и не поймёт, почему он
+ * такой короткий.
+ */
+.btn-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+
+.btn-filters:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.btn-filters--on {
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.btn-filters-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  /* Иконка currentColor, но задать её здесь: сама по себе она в наследуемой
+   * заливке кнопки оказалась бы того же акцентного тона на акцентном фоне и
+   * пропала. */
+  color: inherit;
+}
+
 .loading,
 .error,
 .empty {
@@ -531,7 +611,15 @@ watch(
 
 .items-table th,
 .items-table td {
-  padding: 8px 12px;
+  /*
+   * Вертикальный отступ 6px, а не 8px.
+   *
+   * Высоту строки задаёт фотография в 32px, и на 10 строках каждые два пикселя
+   * — это 20px, которых не хватало кнопкам пагинации: список показан, а
+   * перелистывать его приходилось прокруткой. По горизонтали 12px оставлены:
+   * там они держат колонки, а высоты строки не касаются.
+   */
+  padding: 6px 12px;
   text-align: left;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
