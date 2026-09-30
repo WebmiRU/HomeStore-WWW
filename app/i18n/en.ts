@@ -192,6 +192,8 @@ export const en: Record<TranslationKey, string> = {
     partial_title: 'Write off in parts by properties',
     partial_hint: 'A property becomes a stock rather than a description: “Volume 1000 ml” on a bottle means the bottle holds 1000 ml, and you can write off 200 without drinking it. Mark the numeric properties that get used up; the value of any other numeric property stays a description.',
     partial_exclusive_hint: 'Writing off by code and writing off in parts do not go together: the unit is a code there and a property stock here. The enabled one turns the other off.',
+    release_blocked_by_partial: 'Remove the partial write-off settings by property first — the two modes cannot work together.',
+    partial_blocked_by_code: 'Uncheck “Write off by code” first — with it the count comes from codes, not from property balances.',
     partial_no_properties: 'There is nothing to write off in parts: the item has no numeric properties. Fill them in on the “Properties” tab first.',
     partial_step: 'Step',
     partial_step_hint: 'How much is offered for write-off per scan.',
@@ -990,6 +992,33 @@ export const en: Record<TranslationKey, string> = {
     on_quantity: 'for {count}',
     partial_of: '{amount} of {total}',
     partial_units: 'units: {before} → {after}',
+  },
+
+  norm_change: {
+    title: 'The norm has changed',
+    lead: 'The norm is what one unit holds. Changing it changes either the number of units or the balance itself. Only you know which you meant.',
+    now: 'now',
+    recalculate: 'Keep the volume',
+    recalculate_hint: 'The total stays as it is, and the number of units is recalculated for the new norm.',
+    keep: 'Keep the number of units',
+    keep_hint: 'The number of units stays as it is, and the balance is recalculated for the new norm.',
+    will_be: 'Will be',
+    pieces: 'pcs',
+    apply: 'Save this way',
+  },
+
+  correction: {
+    title: 'Adjust the balance',
+    lead: 'Enter what is actually on hand. The difference is calculated by the server and recorded as a movement.',
+    quantity: 'On hand, units',
+    now: 'now',
+    reason: 'Reason',
+    reason_hint: 'for example, stock count',
+    apply: 'Adjust',
+    applied: 'Balance adjusted',
+    failed: 'Could not adjust the balance',
+    fill_at_least_one: 'Fill in at least one field',
+    untouched: 'leave as is',
   },
 
   balance: {

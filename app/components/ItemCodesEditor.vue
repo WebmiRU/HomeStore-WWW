@@ -67,11 +67,19 @@
       крыжик числом кодов значило бы прятать настройку ровно у тех предметов,
       где она нужнее всего.
     -->
+    <!--
+      Крыжик гасится, а не снимает другой режим молча. Раньше при включении
+      «списывать по коду» настройки расхода по свойствам исчезали, и человек
+      узнавал об этом из плавающего уведомления — к тому моменту, когда оно
+      исчезло, он уже мог уйти с вкладки. Теперь крыжик не нажимается, а под
+      ним стоит объяснение, что мешает и что снять.
+    -->
     <label v-if="!readonly" class="field field--check">
       <input
         type="checkbox"
         class="field-check"
         :checked="releaseCodeOnWriteoff"
+        :disabled="releaseBlocked"
         @change="toggleReleaseCode"
       >
       <span>{{ t('items.release_code_on_writeoff') }}</span>
@@ -79,6 +87,9 @@
         {{ t('items.release_code_on_writeoff_hint') }}
       </span>
     </label>
+    <p v-if="!readonly && releaseBlocked && !releaseCodeOnWriteoff" class="field-hint field-hint--block">
+      {{ t('items.release_blocked_by_partial') }}
+    </p>
   </div>
 </template>
 
@@ -103,9 +114,19 @@ const props = withDefaults(defineProps<{
   readonly?: boolean
   /** Пометка «списывать по коду» живёт в карточке предмета, а не здесь. */
   releaseCodeOnWriteoff?: boolean
+  /**
+   * У предмета настроено списание частями по свойствам.
+   *
+   * Два режима списания несовместимы: количество у одного считается по кодам,
+   * у другого — по остатку свойств, и при обоих включённых количество уезжало
+   * бы двумя несовместимыми способами. Здесь не даём включить второй, пока не
+   * снят первый.
+   */
+  releaseBlocked?: boolean
 }>(), {
   readonly: false,
   releaseCodeOnWriteoff: false,
+  releaseBlocked: false,
 })
 
 const emit = defineEmits<{
@@ -537,5 +558,19 @@ async function focusRow(index: number) {
 
 .codes-editor__row:focus-within .input-group__control::placeholder {
   color: var(--success);
+}
+
+/*
+ * Отступ сверху: крыжик идёт сразу за подсказкой про коды, и без него обе
+ * строки слипались в одну — читалось, что это продолжение того же абзаца, а
+ * не отдельная настройка.
+ */
+.field--check {
+  margin-top: 14px;
+}
+
+.field-hint--block {
+  margin: -8px 0 12px 24px;
+  color: var(--warn);
 }
 </style>

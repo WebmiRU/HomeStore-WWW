@@ -61,6 +61,7 @@
           <ItemCodesEditor
             v-model="codes"
             v-model:release-code-on-writeoff="releaseCodeOnWriteoff"
+            :release-blocked="partialProperties.length > 0"
           />
         </div>
 
@@ -105,7 +106,11 @@
         -->
         <div v-if="!propertiesLoading" class="field partial-block">
           <span class="field-label">{{ t('items.partial_title') }}</span>
-          <ItemPartialWriteoffEditor v-model="partialProperties" :properties="partialCandidates" />
+          <ItemPartialWriteoffEditor
+            v-model="partialProperties"
+            :properties="partialCandidates"
+            :blocked="releaseCodeOnWriteoff"
+          />
         </div>
       </section>
 
@@ -359,33 +364,6 @@ const partialCandidates = computed(() => {
     }
   })
 })
-
-/**
- * Два режима списания взаимоисключающи, и выключает включающий: там единица —
- * код, здесь — запас свойства, а при обоих включённых количество уменьшалось бы
- * двумя несовместимыми способами. Молча снимать нельзя — человек должен знать,
- * что режим сменился.
- */
-watch(
-  partialProperties,
-  (value) => {
-    if (value.length > 0 && releaseCodeOnWriteoff.value) {
-      releaseCodeOnWriteoff.value = false
-      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
-    }
-  },
-  { deep: true },
-)
-
-watch(
-  releaseCodeOnWriteoff,
-  (value) => {
-    if (value && partialProperties.value.length > 0) {
-      partialProperties.value = []
-      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
-    }
-  },
-)
 
 const categoryOptions = computed(() => categorySelectOptions(categories.value))
 

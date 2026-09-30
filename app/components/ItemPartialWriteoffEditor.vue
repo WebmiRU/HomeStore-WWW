@@ -18,7 +18,7 @@
             type="checkbox"
             class="field-check"
             :checked="row.enabled"
-            :disabled="readonly"
+            :disabled="readonly || blocked"
             @change="toggleProperty(index, $event)"
           >
           <span class="partial-editor__name">{{ row.title }}</span>
@@ -45,7 +45,7 @@
               type="checkbox"
               class="field-check"
               :checked="row.is_full_reason"
-              :disabled="readonly"
+              :disabled="readonly || blocked"
               @change="toggleReason(index, $event)"
             >
             <span>{{ t('items.partial_full_reason') }}</span>
@@ -63,6 +63,9 @@
       </p>
       <p v-if="!readonly && hasReason" class="partial-editor__hint">
         {{ t('items.partial_exclusive_hint') }}
+      </p>
+      <p v-if="!readonly && blocked" class="partial-editor__hint partial-editor__hint--block">
+        {{ t('items.partial_blocked_by_code') }}
       </p>
     </template>
 
@@ -122,9 +125,20 @@ const props = withDefaults(defineProps<{
   readonly?: boolean
   /** Подсказка об остатках: сервер их присылает, а из значений не вывести. */
   totals?: Record<number, { total: number; remaining: number; norm: number }>
+  /**
+   * У предмета включено списание по коду.
+   *
+   * Тогда количество считается по кодам, а расходовать остатки свойств нельзя:
+   * при обоих режимах количество уезжало бы двумя несовместимыми способами.
+   * Раньше настройки при этом сбрасывались молча, и человек узнавал об этом
+   * из уведомления, которое к тому моменту уже исчезало. Теперь галочки не
+   * нажимаются, а под ними стоит объяснение.
+   */
+  blocked?: boolean
 }>(), {
   readonly: false,
   totals: () => ({}),
+  blocked: false,
 })
 
 const emit = defineEmits<{
@@ -332,5 +346,12 @@ function toggleReason(index: number, event: Event): void {
   font-size: 12px;
   line-height: 1.4;
   color: var(--text-dim);
+}
+
+/* Подсказка о том, что режим заблокирован: она и объясняет причину, и
+   отличается цветом от обычных подсказок — иначе тонет среди них. */
+.partial-editor__hint--block {
+  margin-top: 6px;
+  color: var(--warn);
 }
 </style>

@@ -62,6 +62,18 @@ class OperationModule extends FetchFactory<OperationRequest> {
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as OperationStoreResult
   }
+
+  /**
+   * Корректировка остатка фактическим: сколько на руках, а не на сколько.
+   *
+   * Дельту считает сервер. Если бы её считал клиент, ошибка в арифметике была
+   * бы неотличима от ошибки в остатке, и журнал показал бы не то движение.
+   */
+  async correct(data: { payload: Record<string, unknown>[]; comment?: string | null }): Promise<{ id: number }> {
+    const result = await this.call('POST', `${this.baseUrl}/correction`, data)
+    const unwrapped = (result as any)?.data ?? result
+    return unwrapped as { id: number }
+  }
 }
 
 export default OperationModule

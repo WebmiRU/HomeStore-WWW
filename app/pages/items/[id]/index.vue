@@ -8,7 +8,25 @@
     <template v-else>
       <TabBar :tabs="tabs" class="edit-tabs" />
 
-      <form @submit.prevent="save" class="edit-form">
+      <!--
+      Обе формы — поверх всего, а не внутри вкладки: диалог смены нормы
+      приходит с вкладки свойств, а вкладка основных параметров в этот момент
+      не отрисована, и модалка внутри неё просто не появилась бы.
+    -->
+    <ItemCorrectionDialog
+      :item="correctionOpen ? itemEntity : null"
+      @close="correctionOpen = false"
+      @applied="onCorrected"
+    />
+
+    <ItemNormChangeDialog
+      v-if="normDialogOpen"
+      :rows="normChangeRows"
+      @cancel="normDialogOpen = false"
+      @apply="applyNormDecision"
+    />
+
+    <form @submit.prevent="save()" class="edit-form">
         <section v-if="activeTab === 'main'" class="tab-section">
           <label class="field">
             <span class="field-label">{{ t('form.title') }}</span>
@@ -71,6 +89,7 @@
             <ItemCodesEditor
               v-model="codes"
               v-model:release-code-on-writeoff="releaseCodeOnWriteoff"
+              :release-blocked="partialEnabled"
               :readonly="!canEdit"
             />
             <button v-if="codesChanged && canEdit" type="button" class="btn-reset-code" @click="resetCodes">{{ t('common.reset') }}</button>
@@ -99,6 +118,25 @@
               {{ t('items.quantity_by_partial_hint') }}
             </span>
           </label>
+
+          <!--
+            Кнопка рядом с количеством, а не в «Движениях» или отдельной
+            вкладкой: править остаток решают там, где на него смотрят, и
+            иначе пришлось бы сначала догадаться, куда идти. Подгонять остаток
+            списаниями нельзя — это значит соврать в журнале, а журнал для того
+            и ведётся.
+          -->
+          <!--
+            У предмета, который живёт по кодам, кнопки нет: количество равно
+            числу наклеек, и поправить его можно только кодом. Показывать кнопку
+            значило бы предлагать действие, которое сервер всё равно перезапишет.
+          -->
+          <div v-if="canEdit && !releaseCodeOnWriteoff" class="field">
+            <button type="button" class="btn-correct" @click="correctionOpen = true">
+              {{ t('correction.title') }}
+            </button>
+          </div>
+
         </section>
 
         <section v-if="activeTab === 'properties'" class="tab-section">
@@ -124,6 +162,7 @@
               v-model="partialProperties"
               :properties="partialCandidates"
               :readonly="!canEdit"
+              :blocked="releaseCodeOnWriteoff"
             />
           </div>
         </section>
@@ -273,6 +312,37 @@ const originalCodes = ref<string[]>([''])
  * и общий сброс, и общая копирование.
  */
 const releaseCodeOnWriteoff = ref(false)
+
+/** Открыта ли форма корректировки остатка. */
+const correctionOpen = ref(false)
+
+/** Диалог смены нормы и решение, принятое по нему. */
+const normDialogOpen = ref(false)
+const normChangeRows = ref<{ property_id: number; title: string; from: number; to: number; current: number; unit: string | null }[]>([])
+
+/**
+ * После корректировки перечитываем предмет.
+ *
+ * Количество и остатки свойств считает сервер, и в форме они неправлены
+ * (у расходуемого поле количества вообще не редактируется) — значит, без
+ * перечитывания человек увидел бы прежний остаток и решил, что правка не
+ * сработала.
+ */
+async function onCorrected(): Promise<void> {
+  try {
+    const item = await $api.item.get(Number(id))
+    itemEntity.value = item
+    quantityInput.value = item.payload.quantity != null ? String(item.payload.quantity) : ''
+    partialProperties.value = (item.partial ?? []).map((row) => ({
+      property_id: row.property_id,
+      step: row.step,
+      is_full_reason: row.is_full_reason,
+      sort: row.sort,
+    }))
+  } catch (err: any) {
+    $notify.add(formatApiError(err, t('form.load_failed')), { type: 'error', timer: 10 })
+  }
+}
 /** Пометка как её отдал сервер: к ней возвращает «Сброс». */
 const originalReleaseCodeOnWriteoff = ref(false)
 
@@ -352,26 +422,6 @@ const partialEnabled = computed(() => partialProperties.value.length > 0)
  * в журнале. Молча снимать нельзя: человек должен знать, что режим сменился,
  * поэтому ему показывается объяснение.
  */
-watch(
-  partialProperties,
-  (value) => {
-    if (value.length > 0 && releaseCodeOnWriteoff.value) {
-      releaseCodeOnWriteoff.value = false
-      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
-    }
-  },
-  { deep: true },
-)
-
-watch(
-  releaseCodeOnWriteoff,
-  (value) => {
-    if (value && partialProperties.value.length > 0) {
-      partialProperties.value = []
-      $notify.add(t('items.partial_exclusive_hint'), { type: 'info', timer: 8 })
-    }
-  },
-)
 const propertiesLoading = ref(false)
 const propertiesKey = ref('')
 
@@ -489,13 +539,24 @@ async function load() {
   }
 }
 
-async function save() {
+/**
+ * Сохранение карточки.
+ *
+ * Смена нормы расходуемого свойства требует решения, и сервер без него
+ * сохранение отклоняет: объём и число штук связаны через норму, а угадать, что
+ * человек имел в виду, нельзя. Отказ разбирается здесь же — показывается
+ * выбор, и сохранение повторяется с решением.
+ *
+ * @param  Record<number, 'recalculate' | 'keep'>  $normDecisions  решение по нормам, если оно уже принято
+ */
+async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {}) {
   saving.value = true
   try {
     const payload: Partial<ItemPayload> & {
       codes?: string[]
       properties?: ItemPropertyInput[]
       partial_properties?: ItemPartialPropertyInput[]
+      partial_norms?: Record<number, 'recalculate' | 'keep'>
     } = {
       title: form.title,
       title_print: form.title_print || null,
@@ -506,6 +567,10 @@ async function save() {
       properties: properties.value,
       partial_properties: partialProperties.value,
       release_code_on_writeoff: releaseCodeOnWriteoff.value,
+    }
+
+    if (Object.keys($normDecisions).length > 0) {
+      payload.partial_norms = $normDecisions
     }
     const qty = String(quantityInput.value).trim()
     if (qty !== '') {
@@ -543,10 +608,55 @@ async function save() {
       }))
     }
   } catch (err: any) {
-    $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
+    const rows = err?.data?.errors?.partial_norms_rows
+
+    // Отказ именно по нормам — не ошибка, а вопрос: показываем варианты и
+    // повторяем сохранение с решением, а не ругаемся на сервер.
+    if (Array.isArray(rows) && rows.length > 0) {
+      normChangeRows.value = rows.map((row: any) => ({
+        property_id: Number(row.property_id),
+        title: propertyTitleOf(Number(row.property_id)),
+        from: Number(row.from),
+        to: Number(row.to),
+        current: Number(row.current),
+        unit: unitOf(Number(row.property_id)),
+        outcomes: row.outcomes
+          ? {
+              recalculate: {
+                quantity: Number(row.outcomes.recalculate?.quantity ?? 0),
+                stock: Number(row.outcomes.recalculate?.stock ?? 0),
+              },
+              keep: {
+                quantity: Number(row.outcomes.keep?.quantity ?? 0),
+                stock: Number(row.outcomes.keep?.stock ?? 0),
+              },
+            }
+          : undefined,
+      }))
+      normDialogOpen.value = true
+    } else {
+      $notify.add(formatApiError(err, t('form.save_failed')), { type: 'error', timer: 10 })
+    }
   } finally {
     saving.value = false
   }
+}
+
+function applyNormDecision(mode: 'recalculate' | 'keep'): void {
+  const decisions = Object.fromEntries(
+    normChangeRows.value.map((row) => [row.property_id, mode])
+  ) as Record<number, 'recalculate' | 'keep'>
+
+  normDialogOpen.value = false
+  save(decisions)
+}
+
+function propertyTitleOf(propertyId: number): string {
+  return allProperties.value.find((p) => p.id === propertyId)?.title ?? String(propertyId)
+}
+
+function unitOf(propertyId: number): string | null {
+  return allProperties.value.find((p) => p.id === propertyId)?.unit?.title_short ?? null
 }
 
 onMounted(load)
@@ -692,6 +802,27 @@ onMounted(load)
   display: flex;
   gap: 10px;
   margin-top: 6px;
+}
+
+/*
+ * Кнопка корректировки: спокойная, как второстепенное действие. Яркой остаётся
+ * «Сохранить» — правка остатка не то же самое, что правка карточки, и путать
+ * их не надо.
+ */
+.btn-correct {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-correct:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
 }
 
 .btn-save {
