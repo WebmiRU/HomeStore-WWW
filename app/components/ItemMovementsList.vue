@@ -44,6 +44,7 @@
             <th>{{ t('item_movements.comment') }}</th>
             <th>{{ t('form.quantity') }}</th>
             <th>{{ t('item_movements.remainder') }}</th>
+            <th>{{ t('journal.actor') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -91,6 +92,16 @@
               </span>
               <span v-else-if="balanceOf(op)">{{ balanceOf(op) }}</span>
               <span v-else>—</span>
+            </td>
+            <!--
+              Кто провёл операцию — ссылкой на его карточку. Имя само по себе
+              отвечает на вопрос «чей это расход», но не отвечает на следующий:
+              «а он вообще что делает в системе». Ссылка ведёт туда, где это
+              видно.
+            -->
+            <td class="mvlist__cell-author">
+              <NuxtLink v-if="op.author" :to="`/users/${op.author.id}`" class="mvlist__author">{{ op.author.name }}</NuxtLink>
+              <span v-else class="muted">—</span>
             </td>
           </tr>
         </tbody>
@@ -424,5 +435,21 @@ onMounted(() => load(1))
 .mvlist__page-info {
   font-size: 13px;
   color: var(--text-muted);
+}
+/*
+ * Ссылка на автора операции: тот же вид, что у ссылок в списках предметов и
+ * складах, иначе колонка выглядит частью текста, а не переходом.
+ */
+.mvlist__cell-author {
+  white-space: nowrap;
+}
+
+.mvlist__author {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.mvlist__author:hover {
+  text-decoration: underline;
 }
 </style>
