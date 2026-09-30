@@ -828,6 +828,8 @@ export const ru = {
     uploaded: 'Изображение «{name}» загружено',
     upload_failed: 'ошибка загрузки',
     deleted: 'Изображение удалено',
+    removed_from_draft: 'убрано из списка; файл останется в общем хранилище',
+    draft_hint: 'фото прикрепятся при сохранении',
     alt_save_failed: 'Ошибка сохранения alt',
     alt_saved: 'Alt сохранён',
     duplicate_in_list: '«{name}» уже был в списке',

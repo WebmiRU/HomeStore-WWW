@@ -109,6 +109,17 @@
         </div>
       </section>
 
+      <!--
+        Фото грузятся до сохранения: предмета ещё нет, привязать к нему не
+        к чему. Файлы уходят на диск без привязки, а при создании их id
+        перечисляются вместе с остальной формой — сервер привяжет их в той же
+        транзакции, так что предмет не останется без части фотографий из-за
+        ошибки на середине.
+      -->
+      <section v-if="activeTab === 'images'" class="tab-section">
+        <ImagesTable v-model="images" entity="item" />
+      </section>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
         <button type="button" @click="saveAndCopy" class="btn-save-copy" :disabled="saving">{{ t('form.save_and_clone') }}</button>
@@ -126,6 +137,7 @@ import type { VendorResponse } from '~/repository/modules/vendor'
 import type { DictionaryResponse } from '~/repository/modules/dictionary'
 import type { PropertyResponse } from '~/repository/modules/property'
 import type { ItemPropertyInput, ItemPartialPropertyInput } from '~/repository/modules/item'
+import type { ImageResponse } from '~/repository/modules/image'
 import { useStoreSelectOptions, type StoreSelectGroup } from '~/composables/storeSelectOptions'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
 import { vendorSelectOptions } from '~/composables/vendorSelectOptions'
@@ -232,6 +244,7 @@ function parseCopiedProperties(raw: unknown): ItemPropertyInput[] {
 const tabs = computed(() => [
   { key: 'main', label: t('items.main_tab') },
   { key: 'properties', label: t('form.properties_tab') },
+  { key: 'images', label: t('images.title') },
 ])
 
 // TabBar живёт на query, поэтому и здесь вкладка берётся из адреса, а не из
@@ -247,6 +260,9 @@ const activeTab = computed(() => {
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const saving = ref(false)
+
+/** Фото, загруженные до создания: ждут id предмета, чтобы быть привязанными. */
+const images = ref<ImageResponse[]>([])
 
 const form = reactive({
   title: copyTitle,
@@ -450,7 +466,20 @@ function itemPayload() {
     quantity: String(quantityInput.value).trim() === '' ? null : Number(quantityInput.value),
     properties: properties.value,
     partial_properties: partialProperties.value,
+    images: imagesPayload(),
   }
+}
+
+/**
+ * Фото для отправки: сортировка по весу и без лишних полей.
+ *
+ * Порядок задаётся перестановкой в списке, а сервер расставляет веса заново по
+ * порядку перечисления — поэтому сортируем здесь.
+ */
+function imagesPayload(): { id: number; alt?: string | null }[] {
+  return [...images.value]
+    .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
+    .map((img) => ({ id: img.id, alt: img.alt ?? null }))
 }
 
 async function save() {

@@ -822,6 +822,8 @@ export const en: Record<TranslationKey, string> = {
     uploaded: 'Image “{name}” uploaded',
     upload_failed: 'upload failed',
     deleted: 'Image deleted',
+    removed_from_draft: 'removed from the list; the file stays in shared storage',
+    draft_hint: 'photos will be attached on save',
     alt_save_failed: 'Could not save the alt text',
     alt_saved: 'Alt text saved',
     duplicate_in_list: '“{name}” was already in the list',

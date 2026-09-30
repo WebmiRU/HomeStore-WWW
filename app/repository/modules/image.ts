@@ -48,6 +48,21 @@ class ImageModule extends FetchFactory<any> {
     super(fetcher)
   }
 
+  /**
+   * Загрузка без привязки — для формы создания, где сущности ещё нет.
+   *
+   * Картинка появляется в базе сразу и ждёт владельца: при сохранении нового
+   * предмета, склада или хранилища её id перечисляется в images, и она
+   * привязывается. Если человек закрыл форму, картинка остаётся лишней —
+   * такие убираются при обслуживании.
+   */
+  async uploadUnattached(file: File): Promise<ImageResponse> {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await this.call('POST', this.baseUrl, form)
+    return ((result as any)?.data ?? result) as ImageResponse
+  }
+
   async uploadForItem(itemId: number, file: File): Promise<ImageUploadResult> {
     const form = new FormData()
     form.append('file', file)

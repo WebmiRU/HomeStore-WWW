@@ -68,7 +68,16 @@ class WarehouseModule extends FetchFactory<any> {
     return unwrapped as WarehouseResponse
   }
 
-  async create(data: { title: string; user_id: number }): Promise<WarehouseResponse> {
+  async create(data: {
+    title: string
+    user_id: number
+    /**
+     * Фото, загруженные до создания: сущности ещё не было, привязать их было
+     * не к чему, и теперь они перечисляются здесь — сервер привяжет их в той
+     * же транзакции, что и сам склад.
+     */
+    images?: { id: number; alt?: string | null }[]
+  }): Promise<WarehouseResponse> {
     const result = await this.call('POST', this.baseUrl, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as WarehouseResponse

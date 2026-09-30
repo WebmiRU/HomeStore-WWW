@@ -110,7 +110,15 @@ class StoreModule extends FetchFactory<any> {
     return unwrapped as StoreResponse
   }
 
-  async create(data: { title: string; title_print?: string | null; parent_id?: number | null; warehouse_id?: number | null; code?: string | null }): Promise<StoreResponse> {
+  async create(data: {
+    title: string
+    title_print?: string | null
+    parent_id?: number | null
+    warehouse_id?: number | null
+    code?: string | null
+    /** Фото, загруженные до создания склада: привязываются вместе с ним. */
+    images?: { id: number; alt?: string | null }[]
+  }): Promise<StoreResponse> {
     const result = await this.call('POST', this.baseUrl, data)
     const unwrapped = (result as any)?.data ?? result
     return unwrapped as StoreResponse

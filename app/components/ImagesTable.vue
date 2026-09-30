@@ -1,7 +1,10 @@
 <template>
   <div class="images-manager">
     <div class="images-toolbar">
-      <span class="images-toolbar__title">{{ t('images.title') }}&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}</span>
+      <span class="images-toolbar__title">
+        {{ t('images.title') }}&nbsp;{{ sortedImages.length ? `(${sortedImages.length})` : '' }}
+        <span v-if="detached" class="images-toolbar__hint">{{ t('images.draft_hint') }}</span>
+      </span>
       <input
         v-if="!readonly"
         ref="fileInput"
@@ -110,7 +113,12 @@ import type { ImageResponse } from '~/repository/modules/image'
 
 const props = withDefaults(defineProps<{
   entity: 'item' | 'store' | 'warehouse'
-  entityId: number
+  /**
+   * Id сущности. В форме создания его ещё нет, и компонент переходит в
+   * черновой режим: файлы грузятся без привязки, порядок и подписи живут
+   * только в списке, а при сохранении отправляются вместе с сущностью.
+   */
+  entityId?: number
   modelValue: ImageResponse[]
   readonly?: boolean
 }>(), {
@@ -154,6 +162,9 @@ const METHODS = {
 } as const
 
 const methods = computed(() => METHODS[props.entity])
+
+/** Сущности ещё нет: работаем с локальным списком, сервер пока не знает о фото. */
+const detached = computed(() => !props.entityId)
 
 // Ячейка занимает 80×60 css-пикселей. Дальше браузер сам возьмёт из трёх
 // вариантов тот, который нужен его экрану: 80 на обычном, 120 на 1.5×, 160 на
@@ -223,6 +234,10 @@ function applyOrder(newOrder: ImageResponse[]) {
 }
 
 async function persistOrder() {
+  // В черновике порядок держится в самом списке: привязки ещё нет, и
+  // переставлять нечего. Пересортировка сохранится при создании сущности.
+  if (detached.value) return
+
   const ids = sortedImages.value.map((img) => img.id)
   reordering.value = true
   try {
@@ -315,8 +330,26 @@ async function onFileChange(event: Event) {
     progress.value = { ...progress.value, done: progress.value.done + 1 }
 
     try {
+      if (detached.value) {
+        // Файла у клиента ещё нет, и привязать его не к чему: грузим без
+        // привязки, id запоминаем, а при сохранении сущности перечислим его
+        // в поле images. Тот же файл может уже лежать в базе — сервер вернёт
+        // ту же строку, и в списке она окажется дважды, если её не проверить.
+        const image = await $api.image.uploadUnattached(file)
+
+        if (items.value.some((img) => img.id === image.id)) {
+          $notify.add(t('images.duplicate_skipped'), { type: 'info' })
+          continue
+        }
+
+        items.value = [...items.value, { ...image, weight: sortedImages.value.length }]
+        emitItems()
+        $notify.add(t('images.uploaded', { name: file.name }), { type: 'success' })
+        continue
+      }
+
       const uploaded =
-        await methods.value.upload(props.entityId, file)
+        await methods.value.upload(props.entityId as number, file)
 
       // Дубль: картинка уже была в списке, сервер новую привязку не создал.
       // В списке она уже есть, добавлять её второй раз нельзя — вместо
@@ -350,7 +383,18 @@ async function removeImage(imageId: number) {
   if (props.readonly) return
   removingId.value = imageId
   try {
-    await methods.value.remove(props.entityId, imageId)
+    if (detached.value) {
+      // Файл уже лежит в базе, но привязан к кому-то другому либо, наоборот,
+      // пока ни к кому: удалять его с диска нельзя — это чужой файл. Убираем
+      // только из списка, а строка без владельца, если она останется, чистится
+      // при обслуживании.
+      items.value = items.value.filter((img) => img.id !== imageId)
+      emitItems()
+      $notify.add(t('images.removed_from_draft'), { type: 'success' })
+      return
+    }
+
+    await methods.value.remove(props.entityId as number, imageId)
     items.value = items.value.filter((img) => img.id !== imageId)
     emitItems()
     $notify.add(t('images.deleted'), { type: 'success' })
@@ -367,10 +411,21 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   const value = input.value.trim()
   if (value === (img.alt ?? '')) return
 
+  // В черновике подпись ни к чему не привязана: храним её в списке и
+  // отправляем вместе с остальным при сохранении.
+  if (detached.value) {
+    const idx = items.value.findIndex((i) => i.id === img.id)
+    if (idx !== -1) {
+      items.value[idx] = { ...items.value[idx], alt: value || null }
+      emitItems()
+    }
+    return
+  }
+
   savingAltId.value = img.id
   try {
     const updated =
-      await methods.value.saveAlt(props.entityId, img.id, value || null)
+      await methods.value.saveAlt(props.entityId as number, img.id, value || null)
     const idx = items.value.findIndex((i) => i.id === img.id)
     if (idx !== -1) {
       items.value[idx] = { ...items.value[idx], alt: updated.alt ?? null }
@@ -434,6 +489,13 @@ async function onAltBlur(event: Event, img: ImageResponse) {
 .images-toolbar__title {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+/* Подсказка черновика: фото ещё ни к чему не привязаны. */
+.images-toolbar__hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .images-table-wrap {

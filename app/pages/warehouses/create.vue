@@ -4,6 +4,7 @@
 
     <TabBar :tabs="tabs" class="create-tabs" />
 
+    <template v-if="activeTab === 'main'">
     <form @submit.prevent="save" class="create-form">
       <label class="field">
         <span class="field-label">{{ t('form.title') }}</span>
@@ -23,6 +24,16 @@
         <NuxtLink to="/warehouses" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
+    </template>
+
+    <div v-else class="create-form">
+      <ImagesTable v-model="images" entity="warehouse" />
+
+      <div class="form-actions">
+        <button type="button" @click="save" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/warehouses" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -30,6 +41,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
+import type { ImageResponse } from '~/repository/modules/image'
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
@@ -38,7 +50,26 @@ const router = useRouter()
 const saving = ref(false)
 const users = ref<UserProfileResponse[]>([])
 
-const tabs = computed(() => [{ key: 'main', label: t('warehouses.main_tab') }])
+const tabs = computed(() => [
+  { key: 'main', label: t('warehouses.main_tab') },
+  { key: 'images', label: t('images.title') },
+])
+
+const route = useRoute()
+const activeTab = computed(() => (route.query.tab === 'images' ? 'images' : 'main'))
+
+/**
+ * Фото, загруженные до создания хранилища: привязать пока не к чему, лежат в
+ * списке и уходят вместе с формой — сервер привяжет их в той же транзакции,
+ * что и сам склад.
+ */
+const images = ref<ImageResponse[]>([])
+
+function imagesPayload(): { id: number; alt?: string | null }[] {
+  return [...images.value]
+    .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
+    .map((img) => ({ id: img.id, alt: img.alt ?? null }))
+}
 
 const form = reactive({
   title: '',
@@ -60,7 +91,11 @@ async function save() {
   }
   saving.value = true
   try {
-    const created = await $api.warehouse.create({ title: form.title, user_id: form.user_id })
+    const created = await $api.warehouse.create({
+      title: form.title,
+      user_id: form.user_id,
+      images: imagesPayload(),
+    })
     $notify.add(t('form.created', { title: t('warehouses.one') }), { type: 'success' })
     router.push(`/warehouses/${created.id}`)
   } catch (err: any) {

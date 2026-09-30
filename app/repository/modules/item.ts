@@ -83,6 +83,12 @@ export type ItemData = Partial<ItemPayload> & {
   vendor_id?: number | null
   properties?: ItemPropertyInput[]
   partial_properties?: ItemPartialPropertyInput[]
+  /**
+   * Фото, загруженные до создания предмета: сущности ещё не было, привязать
+   * было не к чему, и теперь они перечисляются здесь — сервер привяжет их в
+   * той же транзакции, что и сам предмет.
+   */
+  images?: { id: number; alt?: string | null }[]
 }
 
 export type ItemResponse = {

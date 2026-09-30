@@ -7,7 +7,8 @@
     <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
     <div v-else-if="loadError" class="error">{{ loadError }}</div>
 
-    <form v-else @submit.prevent="save" class="create-form">
+    <template v-else-if="activeTab === 'main'">
+    <form @submit.prevent="save" class="create-form">
       <label class="field">
         <span class="field-label">{{ t('form.title') }}</span>
         <input v-model="form.title" type="text" class="field-input" maxlength="500" required />
@@ -51,6 +52,16 @@
         <NuxtLink to="/stores" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
       </div>
     </form>
+    </template>
+
+    <div v-else class="create-form">
+      <ImagesTable v-model="images" entity="store" />
+
+      <div class="form-actions">
+        <button type="button" @click="save" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
+        <NuxtLink to="/stores" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -58,6 +69,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { StoreResponse } from '~/repository/modules/store'
 import type { WarehouseResponse } from '~/repository/modules/warehouse'
+import type { ImageResponse } from '~/repository/modules/image'
 import { useScanIntoField } from '~/composables/useScanIntoField'
 
 const { $api, $notify } = useNuxtApp()
@@ -73,7 +85,22 @@ const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.
 const copyParentId = typeof route.query.copy_parent_id === 'string' ? Number(route.query.copy_parent_id) : null
 const copyWarehouseId = typeof route.query.copy_warehouse_id === 'string' ? Number(route.query.copy_warehouse_id) : null
 
-const tabs = computed(() => [{ key: 'main', label: t('stores.main_tab') }])
+const tabs = computed(() => [
+  { key: 'main', label: t('stores.main_tab') },
+  { key: 'images', label: t('images.title') },
+])
+
+/** Активная вкладка живёт в адресе: перезагрузка и «назад» её не теряют. */
+const activeTab = computed(() => (route.query.tab === 'images' ? 'images' : 'main'))
+
+/**
+ * Фото, загруженные до создания склада.
+ *
+ * Привязать их пока не к чему — склада ещё нет, — поэтому лежат в списке и
+ * уходят вместе с формой: сервер привяжет их в той же транзакции, что и сам
+ * склад, и он не останется без части фотографий из-за ошибки на середине.
+ */
+const images = ref<ImageResponse[]>([])
 
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -88,6 +115,18 @@ const form = reactive({
 })
 
 const warehouseOptions = ref<WarehouseResponse[]>([])
+
+/**
+ * Фото для отправки: только те, что действительно загружены.
+ *
+ * Порядок в списке уже задан весом, и сервер расставит веса заново по порядку
+ * перечисления — поэтому список сортируется здесь, а не отправляется как есть.
+ */
+function imagesPayload(): { id: number; alt?: string | null }[] {
+  return [...images.value]
+    .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
+    .map((img) => ({ id: img.id, alt: img.alt ?? null }))
+}
 
 interface ParentOption {
   id: number
@@ -162,6 +201,7 @@ async function save() {
       warehouse_id: form.warehouse_id,
       parent_id: form.parent_id,
       code: form.code.trim() || null,
+      images: imagesPayload(),
     })
     $notify.add(t('form.created', { title: t('stores.one') }), { type: 'success' })
     router.push(`/stores/${created.id}`)
@@ -181,6 +221,7 @@ async function saveAndCopy() {
       warehouse_id: form.warehouse_id,
       parent_id: form.parent_id,
       code: form.code.trim() || null,
+      images: imagesPayload(),
     })
     $notify.add(t('form.created', { title: t('stores.one') }), { type: 'success' })
     router.push({
