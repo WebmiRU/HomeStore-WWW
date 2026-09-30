@@ -103,14 +103,37 @@
               редактируемым — иначе человек выставил бы число, противоречащее
               наклейкам, и списание пошло бы не по тем единицам.
             -->
-            <input
-              v-model="quantityInput"
-              type="number"
-              class="field-input"
-              step="1"
-              :placeholder="t('items.quantity_placeholder')"
-              :readonly="!canEdit || releaseCodeOnWriteoff || partialEnabled"
-            />
+            <!--
+              Кнопка корректировки — в группе с полем, справа от него, а не
+              отдельной строкой под формой. Отдельной строкой она отрывалась от
+              того, к чему относится, съедала высоту и из-за себя вытягивала
+              страницу на лишний скролл.
+            -->
+            <div class="quantity-row">
+              <input
+                v-model="quantityInput"
+                type="number"
+                class="field-input quantity-row__control"
+                step="1"
+                :placeholder="t('items.quantity_placeholder')"
+                :readonly="!canEdit || releaseCodeOnWriteoff || partialEnabled"
+              />
+              <!--
+                У предмета, который живёт по кодам, кнопки нет: количество равно
+                числу наклеек, и поправить его можно только кодом. Показывать
+                кнопку значило бы предлагать действие, которое сервер всё равно
+                перезапишет.
+              -->
+              <button
+                v-if="canEdit && !releaseCodeOnWriteoff"
+                type="button"
+                class="quantity-row__btn"
+                :title="t('correction.title')"
+                @click="correctionOpen = true"
+              >
+                {{ t('correction.title') }}
+              </button>
+            </div>
             <span v-if="releaseCodeOnWriteoff" class="field-hint">
               {{ t('items.quantity_by_codes_hint') }}
             </span>
@@ -119,23 +142,7 @@
             </span>
           </label>
 
-          <!--
-            Кнопка рядом с количеством, а не в «Движениях» или отдельной
-            вкладкой: править остаток решают там, где на него смотрят, и
-            иначе пришлось бы сначала догадаться, куда идти. Подгонять остаток
-            списаниями нельзя — это значит соврать в журнале, а журнал для того
-            и ведётся.
-          -->
-          <!--
-            У предмета, который живёт по кодам, кнопки нет: количество равно
-            числу наклеек, и поправить его можно только кодом. Показывать кнопку
-            значило бы предлагать действие, которое сервер всё равно перезапишет.
-          -->
-          <div v-if="canEdit && !releaseCodeOnWriteoff" class="field">
-            <button type="button" class="btn-correct" @click="correctionOpen = true">
-              {{ t('correction.title') }}
-            </button>
-          </div>
+
 
         </section>
 
@@ -844,7 +851,10 @@ onMounted(load)
 .form-actions {
   display: flex;
   gap: 10px;
-  margin-top: 6px;
+  /* Отступ сверху больше прежних 6px: кнопки стояли почти вплотную к полю
+     количества и читались как его продолжение — часть того же поля, а не
+     отдельные действия сохранения. */
+  margin-top: 16px;
 }
 
 /*
@@ -852,19 +862,46 @@ onMounted(load)
  * «Сохранить» — правка остатка не то же самое, что правка карточки, и путать
  * их не надо.
  */
-.btn-correct {
-  padding: 6px 14px;
+/*
+ * Поле количества и кнопка корректировки — одна группа.
+ *
+ * Кнопка примыкает к правому краю поля, как кнопки «−» и «+» у значений
+ * свойств: та же группа, тот же стык без просвета, та же высота. Стояла она
+ * раньше отдельной строкой под формой и была оторвана от количества, к
+ * которому относится, — и одна эта строка вытягивала карточку на лишний
+ * скролл.
+ */
+.quantity-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.quantity-row__control {
+  flex: 1;
+  min-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.quantity-row__btn {
+  padding: 0 16px;
   font-size: 13px;
   font-family: inherit;
-  color: var(--text);
+  white-space: nowrap;
+  color: var(--text-secondary);
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  /* Левую грань кнопки рисуем сами: у поля и кнопки своя рамка, и без этого
+     между ними была бы двойная линия, а со снятой — просвет. */
+  border-left: none;
+  border-radius: 0 4px 4px 0;
   cursor: pointer;
 }
 
-.btn-correct:hover {
+.quantity-row__btn:hover {
   background: var(--bg-hover);
+  color: var(--accent-ink);
   border-color: var(--accent);
 }
 
