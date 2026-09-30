@@ -141,7 +141,7 @@
         </section>
 
         <section v-if="activeTab === 'stats'" class="tab-section">
-          <EntityAuditStats entity-type="item" :entity-id="Number(id)" />
+          <EntityAuditStats entity-type="item" :entity-id="Number(id)" :partial="itemEntity?.partial ?? []" />
         </section>
 
         <div class="form-actions">

@@ -118,7 +118,27 @@
               <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} {{ t('placeholders.deleted') }}</span>
               <span v-else class="muted">—</span>
             </td>
-            <td :data-label="t('items.quantity_short')">{{ item.payload.quantity ?? '—' }}</td>
+            <!--
+              У расходуемого предмета одного числа мало: «2» ничего не говорит о
+              том, сколько на самом деле осталось, — расход идёт по свойствам, и
+              штука может быть неполной. Поэтому штуки и запас рядом: «2 шт
+              (1800 мл)». Единицы в таблице нет, а названия свойств и так в
+              колонке «Свойства» этой же строки.
+            -->
+            <td :data-label="t('items.quantity_short')">
+              <template v-if="item.partial && item.partial.length">
+                <span class="qty-main">{{ item.payload.quantity ?? '—' }} {{ t('items.pieces_word') }}</span>
+                <span
+                  class="qty-partial"
+                  :title="item.partial
+                    .map((p) => `${p.property_title}: ${formatAmount(p.total)} ${p.unit_full ?? p.unit_short ?? ''}`)
+                    .join('; ')"
+                >
+                  ({{ item.partial.map((p) => `${formatAmount(p.total)} ${p.unit_short ?? ''}`.trim()).join(', ') }})
+                </span>
+              </template>
+              <template v-else>{{ item.payload.quantity ?? '—' }}</template>
+            </td>
             <td :data-label="t('common.created')">{{ formatDate(item.payload.created_at) }}</td>
             <td :data-label="t('common.updated')">{{ formatDate(item.payload.updated_at) }}</td>
             <td v-if="showOwnerColumn" :data-label="t('common.owner')">
@@ -177,6 +197,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { formatAmount } from '~/utils/amount'
 import type { ItemResponse } from '~/repository/modules/item'
 import type { CategoryResponse } from '~/repository/modules/category'
 import type { VendorResponse } from '~/repository/modules/vendor'
@@ -459,6 +480,20 @@ watch(
 
 .muted {
   color: var(--text-faint);
+}
+
+/*
+ * Остаток у расходуемого предмета — вторая строка под количеством, мельче и
+ * приглушённее: главное в колонке число штук, а запас по свойствам его
+ * уточняет. Отдельной строкой, а не в скобках в том же: у предмета с двумя
+ * расходуемыми свойствами запись в скобках не помещалась в колонку и ломала
+ * строку таблицы.
+ */
+.qty-partial {
+  display: block;
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 
 .btn-add {

@@ -179,6 +179,7 @@ export const ru = {
     delete_failed: 'Ошибка удаления',
     delete_blocked: 'Нельзя удалить',
     quantity_short: 'Кол-во',
+    pieces_word: 'шт',
     no_items: 'Нет предметов',
     codes_empty: 'Кодов пока нет',
     code_clear: 'Очистить код',
@@ -533,6 +534,10 @@ export const ru = {
     analytics: 'Аналитика',
     all_objects: 'Все объекты',
     total_for_period: 'Всего за период:',
+    // Заголовки сводки остатков по свойствам: «Списано» и «Пополнено» — про
+    // суммы за период, а не про отдельные движения журнала.
+    writeoff_word: 'Списано',
+    replenish_word: 'Пополнено',
     days: 'дни',
     hours: 'часы',
     object_label: 'Объект:',
@@ -1004,6 +1009,9 @@ export const ru = {
     year: 'Год',
     all_time: 'Всё время',
     remainder_word: 'Остаток',
+    property: 'Свойство',
+    pieces: 'Штук',
+    pieces_hint: 'шт',
   },
 
   item_properties: {

@@ -16,11 +16,16 @@
       </div>
 
       <!--
-        Сводка у расходуемого предмета — по свойствам. «Остаток: 2, мин 1, макс 2»
-        у бутылки, из которой списали 300 мл, сказала бы только, что количество
-        не изменилось, — то есть ничего.
+        У расходуемого предмета сводка и по штукам, и по свойствам: «Остаток: 2,
+        мин 1, макс 2» у бутылки, из которой списали 300 мл, сказала бы только,
+        что количество не изменилось. Но и заменить штуки свойствами нельзя —
+        сколько бутылок осталось, человек спросит справедливо, и ответ должен
+        быть на виду.
       -->
       <div v-if="hasPropertySeries" class="summary">
+        <span v-if="hasQtySeries">
+          {{ t('balance.pieces') }}: <b class="sum-val">{{ lastQty }}</b>
+        </span>
         <span v-for="row in propertyRemainders" :key="row.property_id">
           {{ row.title }}: <b class="sum-val">{{ row.qty }}</b>
         </span>
@@ -86,8 +91,23 @@ const series = ref<AuditLogBalanceSeries[]>([])
 
 const hasPropertySeries = computed(() => series.value.some((row) => row.points.length > 0))
 
-/** Есть ли что рисовать: у расходуемого предмета штук может не быть вовсе. */
-const hasVisibleData = computed(() => visible.value.length > 1 || points.value.length > 1)
+/**
+ * Есть ли ряд по штукам.
+ *
+ * Отдельно от hasPropertySeries: у расходуемого предмета штуки обычно есть, но
+ * у только что созданного — одна точка, и рисовать по ней нечего.
+ */
+const hasQtySeries = computed(() => points.value.length > 0)
+
+/**
+ * Есть ли что рисовать.
+ *
+ * Раньше требовались две точки, и предмет с одной операцией показывал «Нет
+ * данных» — при том что остаток на руках есть и он же показан в сводке. Человек
+ * читал это как «остатков не заведено». Рисуем по любой точке: одна — это
+ * отрезок нулевой длины, но отметка на оси видна, и пустоты нет.
+ */
+const hasVisibleData = computed(() => visible.value.length > 0 || points.value.length > 0)
 
 const lastQty = computed(() => (points.value.length ? points.value[points.value.length - 1].qty : 0))
 const minQty = computed(() => (points.value.length ? Math.min(...points.value.map((p) => p.qty)) : 0))
@@ -195,11 +215,36 @@ function buildOption(): any {
           connectNulls: false,
           data: visible.value.map((p) => [timestamp(p), byTime.get(timestamp(p)) ?? null]),
           symbol: 'circle',
-          symbolSize: 0,
+          // При одной точке линии не видно вовсе, и остаётся пустое поле с
+          // подписью о периоде. Маркер показывает, что отсчёт есть.
+          symbolSize: visible.value.length < 2 ? 6 : 0,
           lineStyle: { color: seriesColor(index), width: 2 },
           itemStyle: { color: seriesColor(index) },
         }
       })
+    : []
+
+  // Штуки — на своей оси. В одной с линиями свойств они были бы не видны:
+  // «2 шт» и «1800 мл» разного порядка, и линия штук улетала бы в самое дно
+  // графика, где её не отличить от оси.
+  const qtySeries = hasPropertySeries.value && points.value.length > 0
+    ? [
+        {
+          name: `${t('balance.pieces')} (${t('balance.pieces_hint')})`,
+          type: 'line',
+          step: 'end',
+          yAxisIndex: 1,
+          connectNulls: false,
+          // Штуки меняются редко, поэтому по времени берём каждую запись, а не
+          // только те, где совпало с шагом сетки свойств: иначе изменение
+          // количества попало бы в точку, которой на оси нет.
+          data: points.value.map((p) => [timestamp(p), p.qty]),
+          symbol: 'circle',
+          symbolSize: points.value.length < 2 ? 6 : 0,
+          lineStyle: { color: themeToken('--text-dim'), width: 2, type: 'dashed' },
+          itemStyle: { color: themeToken('--text-dim') },
+        },
+      ]
     : []
 
   return {
@@ -219,14 +264,42 @@ function buildOption(): any {
       axisTick: { show: false },
       splitLine: { show: false },
     },
-    yAxis: {
-      type: 'value',
-      min: 0,
-      axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
-      axisLine: { show: false },
-      axisTick: { show: false },
-      splitLine: { lineStyle: { color: themeToken('--border') } },
-    },
+    // Правая ось — только когда есть чем её читать, то есть у расходуемого
+    // предмета с рядом штук. Подпись «шт» на самой оси: по цвету линии её не
+    // отличить, а ось без подписи выглядит как «в чём эти числа».
+    yAxis: qtySeries.length
+      ? [
+          {
+            type: 'value',
+            min: 0,
+            axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            splitLine: { show: false },
+          },
+          {
+            type: 'value',
+            min: 0,
+            // Штуки целые, а ось без шага показывала 0,5 и 1,5 штуки.
+            minInterval: 1,
+            name: t('balance.pieces_hint'),
+            nameTextStyle: { color: themeToken('--text-muted'), fontSize: 11, align: 'right' },
+            nameGap: 8,
+            position: 'right',
+            axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            splitLine: { show: false },
+          },
+        ]
+      : {
+          type: 'value',
+          min: 0,
+          axisLabel: { color: themeToken('--text-muted'), fontSize: 11 },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { lineStyle: { color: themeToken('--border') } },
+        },
     legend: propertySeries.length
       ? {
           show: true,
@@ -236,15 +309,16 @@ function buildOption(): any {
           itemHeight: 10,
         }
       : { show: false },
-    grid: { left: 44, right: 14, top: 12, bottom: propertySeries.length ? 44 : 28 },
-    series: propertySeries.length ? propertySeries : [
+    // Справа место под подпись второй оси, иначе она наезжает на край.
+    grid: { left: 44, right: qtySeries.length ? 46 : 14, top: 12, bottom: propertySeries.length ? 44 : 28 },
+    series: propertySeries.length ? [...propertySeries, ...qtySeries] : [
       {
         name: t('balance.remainder_word'),
         type: 'line',
         step: 'end',
         data,
         symbol: 'circle',
-        symbolSize: 0,
+        symbolSize: data.length < 2 ? 6 : 0,
         lineStyle: { color: themeToken('--chart-line', '#7aa8a4'), width: 2 },
         itemStyle: { color: themeToken('--chart-line', '#7aa8a4') },
         areaStyle: {

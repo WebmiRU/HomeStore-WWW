@@ -171,6 +171,7 @@ export const en: Record<TranslationKey, string> = {
     delete_failed: 'Could not delete the item',
     delete_blocked: 'Cannot delete',
     quantity_short: 'Qty',
+    pieces_word: 'pcs',
     no_items: 'No items',
     delete_done: 'Storage deleted',
     delete_confirm: 'Delete the storage?',
@@ -527,6 +528,8 @@ export const en: Record<TranslationKey, string> = {
     analytics: 'Analytics',
     all_objects: 'All objects',
     total_for_period: 'Total for the period:',
+    writeoff_word: 'Written off',
+    replenish_word: 'Replenished',
     days: 'days',
     hours: 'hours',
     object_label: 'Object:',
@@ -999,6 +1002,9 @@ export const en: Record<TranslationKey, string> = {
     year: 'Year',
     all_time: 'All time',
     remainder_word: 'Balance',
+    property: 'Property',
+    pieces: 'Units',
+    pieces_hint: 'pcs',
   },
 
   item_properties: {

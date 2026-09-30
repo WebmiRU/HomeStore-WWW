@@ -43,6 +43,18 @@ export type AuditLogStatsParams = {
   date_to?: string
 }
 
+/** Строка сводки расхода по расходуемому свойству за период. */
+export type AuditLogPartialSummaryRow = {
+  property_id: number
+  property_title: string | null
+  /** Короткая единица («мл») — для показа в строке. */
+  unit_short: string | null
+  /** Полная («миллилитр») — для подсказки. */
+  unit_full: string | null
+  writeoff: number
+  replenish: number
+}
+
 export type AuditLogBalancePoint = {
   at: string
   qty: number
@@ -117,6 +129,18 @@ class AuditLogModule extends FetchFactory<any> {
    * штук у такого предмета почти не меняется, и график по нему сказал бы
    * «ничего не происходило», хотя расход был.
    */
+  /**
+   * Расход по расходуемым свойствам за период: сколько списано и сколько
+   * пришло. Текущий остаток сюда не входит — он есть в карточке.
+   */
+  async partialSummary(params: { entity_type: string; entity_id: number; date_from?: string; date_to?: string }): Promise<AuditLogPartialSummaryRow[]> {
+    const result = await this.call('GET', `${this.baseUrl}/partial-summary`, undefined, {
+      params: { ...params },
+    })
+    const unwrapped = (result as any)?.data ?? result
+    return (Array.isArray(unwrapped) ? unwrapped : []) as AuditLogPartialSummaryRow[]
+  }
+
   async balance(params: AuditLogBalanceParams): Promise<AuditLogBalance> {
     const result = await this.call('GET', `${this.baseUrl}/balance`, undefined, {
       params: { ...params },

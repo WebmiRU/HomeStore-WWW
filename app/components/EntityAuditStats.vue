@@ -48,6 +48,46 @@
       </div>
     </div>
 
+    <!--
+      Остатки расходуемых свойств: что лежит сейчас и сколько ушло за период.
+      Журнал ниже показывает каждое движение отдельной строкой, а суммы по
+      свойствам не было нигде — вопрос «сколько масла списали за неделю»
+      приходилось складывать вручную.
+    -->
+    <div v-if="props.entityType === 'item' && partialRows.length" class="partial-summary">
+      <table class="partial-summary__table">
+        <thead>
+          <tr>
+            <th>{{ t('balance.property') }}</th>
+            <th>{{ t('balance.remainder') }}</th>
+            <th>{{ t('journal.writeoff_word') }}</th>
+            <th>{{ t('journal.replenish_word') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in partialRows" :key="row.property_id">
+            <td :data-label="t('balance.property')">{{ row.title }}</td>
+            <td :data-label="t('balance.remainder')">
+              <template v-if="row.current !== null">
+                {{ formatAmount(row.current) }} {{ row.unit }}
+              </template>
+              <span v-else class="muted">—</span>
+            </td>
+            <!-- Ноль выводим прочерком: «0 мл» в графе «Пополнено» выглядит
+                 как ещё одно число, хотя за период ничего не приходило. -->
+            <td :data-label="t('journal.writeoff_word')">
+              <template v-if="row.writeoff">{{ formatAmount(row.writeoff) }} {{ row.unit }}</template>
+              <span v-else class="muted">—</span>
+            </td>
+            <td :data-label="t('journal.replenish_word')">
+              <template v-if="row.replenish">{{ formatAmount(row.replenish) }} {{ row.unit }}</template>
+              <span v-else class="muted">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div v-if="statsLoading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="statsError" class="error">{{ statsError }}</div>
 
@@ -135,7 +175,8 @@ import {
   type PeriodPreset,
   defaultPeriodPresets,
 } from '~/utils/periodPresets'
-import type { AuditLogEntry, AuditLogStatsPoint } from '~/repository/modules/auditLog'
+import type { AuditLogEntry, AuditLogStatsPoint, AuditLogPartialSummaryRow } from '~/repository/modules/auditLog'
+import { formatAmount } from '~/utils/amount'
 import '@vuepic/vue-datepicker/dist/main.css'
 
 const VueDatepicker = defineAsyncComponent(() =>
@@ -145,7 +186,22 @@ const VueDatepicker = defineAsyncComponent(() =>
 const props = defineProps<{
   entityType: string
   entityId: number
+  /**
+   * Остатки расходуемых свойств из карточки: `partial` предмета. Считать их
+   * здесь заново означало бы второй расход на ту же карточку, а блок и так
+   * показывается только у расходуемого предмета.
+   */
+  partial?: { property_id: number; total: number; unit_short?: string | null }[]
 }>()
+
+// Без immediate: остатки объявлены ниже, и вызов до их инициализации падал бы
+// с «cannot access before initialization». Первое значение всё равно подставит
+// onMounted.
+watch(
+  () => props.partial,
+  (value) => setPartialRemainders(value),
+  { deep: true },
+)
 
 const { t } = useI18n()
 
@@ -232,6 +288,58 @@ async function loadStats() {
   }
 }
 
+// ---- остатки по расходуемым свойствам ----
+/**
+ * Остатки на сейчас — из данных предмета, расход за период — из журнала.
+ *
+ * Оба приходят разными запросами и по разным причинам: остаток считается из
+ * количества и нормы (это не журнал, а само состояние), а суммы за период
+ * существуют только в журнале. Склеиваются по property_id.
+ */
+const partialRemainders = ref<Record<number, { total: number; unit_short?: string | null }>>({})
+const partialSummary = ref<AuditLogPartialSummaryRow[]>([])
+
+const partialRows = computed(() =>
+  partialSummary.value.map((row) => {
+    const rest = partialRemainders.value[row.property_id] ?? null
+
+    return {
+      property_id: row.property_id,
+      title: row.property_title ?? String(row.property_id),
+      unit: row.unit_short ?? '',
+      // Остаток есть не всегда: свойство могли списать раньше начала периода,
+      // и тогда за период строк нет вовсе — а остаток как раз есть.
+      current: rest ? rest.total : null,
+      writeoff: row.writeoff,
+      replenish: row.replenish,
+    }
+  })
+)
+
+/** Остатки предмета кладёт страница карточки: считать их второй раз незачем. */
+function setPartialRemainders(value: unknown): void {
+  const list = (value ?? []) as { property_id: number; total: number; unit_short?: string | null }[]
+  const map: Record<number, { total: number; unit_short?: string | null }> = {}
+  for (const row of list) {
+    map[row.property_id] = { total: row.total, unit_short: row.unit_short }
+  }
+  partialRemainders.value = map
+}
+
+async function loadPartialSummary() {
+  try {
+    partialSummary.value = await $api.auditLog.partialSummary({
+      entity_type: props.entityType,
+      entity_id: props.entityId,
+      ...rangeParams(),
+    })
+  } catch {
+    // Блок остатков — дополнение к журналу, а не основа: его отсутствие не
+    // должно оставлять страницу пустой, молчание здесь честнее ошибки.
+    partialSummary.value = []
+  }
+}
+
 // ---- записи ----
 const entries = ref<AuditLogEntry[]>([])
 const listLoading = ref(true)
@@ -270,6 +378,7 @@ function reloadAll() {
   page.value = 1
   loadStats()
   loadList()
+  loadPartialSummary()
 }
 
 function setGranularity(value: 'day' | 'hour') {
@@ -283,8 +392,10 @@ function goToPage(next: number) {
 }
 
 onMounted(() => {
+  setPartialRemainders(props.partial)
   loadStats()
   loadList()
+  loadPartialSummary()
 })
 
 watch(
@@ -357,6 +468,84 @@ watch(
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px;
+}
+
+/*
+ * Сводка остатков по свойствам. Карточка-обводка, как у графика, но без
+ * заголовка внутри: столбцы таблицы говорят сами за себя, а лишний заголовок
+ * «Остатки» над «Активность и действия» читался бы как часть графика.
+ */
+.partial-summary {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px 12px;
+  margin-bottom: 14px;
+}
+
+.partial-summary__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.partial-summary__table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 0 6px;
+  white-space: nowrap;
+}
+
+.partial-summary__table td {
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.partial-summary__table th + th,
+.partial-summary__table td + td {
+  padding-left: 18px;
+}
+
+@media (max-width: 768px) {
+  /* На телефоне таблица остатков перестаёт быть таблицей: четыре столбца с
+   * числами не помещаются, и подпись уезжает на отдельную строку. */
+  .partial-summary__table thead {
+    display: none;
+  }
+
+  .partial-summary__table,
+  .partial-summary__table tbody,
+  .partial-summary__table tr,
+  .partial-summary__table td {
+    display: block;
+    width: 100%;
+  }
+
+  .partial-summary__table tr {
+    margin-bottom: 8px;
+  }
+
+  .partial-summary__table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: none;
+    padding: 2px 0;
+  }
+
+  .partial-summary__table td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .partial-summary__table td + td {
+    padding-left: 0;
+  }
 }
 
 .chart-title {
