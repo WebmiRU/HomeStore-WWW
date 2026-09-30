@@ -34,7 +34,22 @@
     <div v-for="group in grouped" :key="group.key" class="props-group">
       <div v-if="group.label" class="props-group__title">{{ group.label }}</div>
 
-      <div v-for="property in group.properties" :key="property.id" class="prop-row">
+      <!--
+        Одна сетка на весь список свойств, а не по контейнеру на строку: блок
+        единиц измерения тогда общий для всех и выравнивается по самому
+        широкому сам. По контейнеру на строку каждая строка считала ширину
+        отдельно, и «мл» с «г» в одном списке давали разные размеры.
+
+        Свойство занимает первую колонку и столько строк, сколько у него
+        значений (grid-row: span), а каждое значение раскладывается по колонкам
+        само: display: contents у обёртки значения убирает её из раскладки,
+        и поле, единица и кнопки становятся прямо ячейками общей сетки.
+      -->
+      <div
+        v-for="property in group.properties"
+        :key="property.id"
+        class="prop-row prop-grid"
+      >
         <!--
           Крестик удаления свойства — справа от названия, а не справа от поля.
           Справа от поля он выглядел болтающимся: значение с «-» и «+» уже
@@ -46,7 +61,10 @@
           Отдельной колонки под крестик не делаем: у свойств из набора по
           умолчанию его не бывает, и колонка сдвинула бы все подписи вправо.
         -->
-        <span class="prop-row__label">
+        <span
+          class="prop-row__label prop-grid__label"
+          :style="{ gridRow: `span ${Math.max(1, valuesOf(property.id).length)}` }"
+        >
           <span class="prop-row__head">
             <span class="prop-row__title">{{ property.title }}</span>
             <button
@@ -60,8 +78,14 @@
           <span v-if="isDefault(property.id)" class="prop-row__default">{{ t('item_properties.by_default') }}</span>
         </span>
 
-        <div class="prop-row__values">
-          <div v-for="(slot, index) in valuesOf(property.id)" :key="index" class="input-group prop-value">
+        <!--
+          Обёртка значений убирается из раскладки: её содержимое становится
+          прямыми ячейками общей сетки строки. Пока она оставалась обычным
+          блоком, значения жили внутри него, а сетка видела только пустую
+          колонку — и блок единиц растягивался на всю ширину поля.
+        -->
+        <div class="prop-row__values prop-grid__values">
+          <div v-for="(slot, index) in valuesOf(property.id)" :key="index" class="input-group prop-value prop-grid__row">
             <select
               v-if="property.type === 'dictionary'"
               class="field-select input-group__control"
@@ -504,11 +528,121 @@ watch(
   margin-bottom: 8px;
 }
 
-.prop-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+/*
+ * Общая сетка на весь список свойств.
+ *
+ * Колонки: название, поле, единица, «−», «+». Единица — одна колонка на все
+ * строки, поэтому блоки выравниваются по самому широкому из них без единиц
+ * «в ширину двух знаков» и без измерений в скрипте: добавили свойство с новой
+ * единицей — сетка пересчиталась сама.
+ *
+ * gap: 0 намеренно: блоки должны стоять встык, как детали одной группы, и
+ * каждая линия между ними — это граница одного блока, а не просвет.
+ */
+.prop-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 260px) 1fr max-content auto auto;
+  align-items: start;
+
+  /* Интервал между строками значений держит сетка. Раньше его давал
+   * gap у флекс-колонки .prop-row__values, а та стала display: contents — и
+   * строки слиплись: без этого поля вставали друг к другу вплотную. */
+  row-gap: 6px;
   padding: 5px 0;
+}
+
+/*
+ * Обёртка значения убрана из раскладки: её дети — поле, единица и кнопки —
+ * становятся ячейками общей сетки напрямую. Иначе каждая строка снова была бы
+ * отдельной группой, и колонка единиц считалась бы по ней одной.
+ */
+.prop-grid__row {
+  display: contents;
+}
+
+.prop-grid__row > .input-group__control {
+  grid-column: 2;
+  grid-row: auto;
+  border-radius: 4px 0 0 4px;
+}
+
+/*
+ * Единица — отдельная ячейка со своей рамкой, и одинаковая у всех строк.
+ *
+ * Ширину задаёт колонка max-content: блок ровно по самому широкому из них, а
+ * внутри — только отступы вокруг текста, без минимальной ширины. Раньше здесь
+ * стоял min-width в два знака, и однобуквенная «г» занимала место, где в
+ * другой строке стояло «мл», — блок выглядел пустым и раздутым.
+ */
+.prop-grid__row > .input-group-text {
+  grid-column: 3;
+  grid-row: auto;
+  justify-content: center;
+  background: var(--bg-sunken);
+}
+
+.prop-grid__row > .input-group__btn--minus {
+  grid-column: 4;
+  grid-row: auto;
+  border-left: none;
+  border-radius: 0;
+}
+
+/*
+ * В верхних строках «+» нет, и без растяжки «−» поле уезжало бы вправо на его
+ * ширину: колонки-то у всех строк общие. Поэтому «−» занимает сразу две
+ * колонки — ровно столько, сколько в нижней строке занимают «−» и «+» вместе.
+ */
+.prop-grid__row > .input-group__btn--wide {
+  grid-column: 4 / span 2;
+  border-radius: 0 4px 4px 0;
+}
+
+.prop-grid__row > .input-group__btn--add {
+  grid-column: 5;
+  grid-row: auto;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+/*
+ * У строки без кнопок (режим просмотра) правый край срезается: кнопок, кому
+ * достать скругление, нет, и квадратный угол смотрелся бы обрывом.
+ */
+.prop-grid__row:last-child > .input-group-text:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+/*
+ * Названия свойств в первой колонке. У них своя рамка не нужна, но отступы
+ * остаются: иначе подпись прилипла бы к полю.
+ */
+.prop-grid__label {
+  grid-column: 1;
+  grid-row: auto / span 1;
+  align-self: start;
+  padding-right: 12px;
+}
+
+/*
+ * На узком экране колонка названия и поля больше не умещаются рядом: названия
+ * уходят в свою строку над значением, а колонки сжимаются до нужного.
+ */
+@media (max-width: 768px) {
+  .prop-grid {
+    grid-template-columns: 1fr auto auto auto;
+  }
+
+  .prop-grid__label {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    padding-right: 0;
+    padding-bottom: 4px;
+  }
+
+  .prop-grid__row > .input-group__control {
+    grid-column: 1;
+  }
 }
 
 /*
@@ -558,6 +692,17 @@ watch(
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
+}
+
+/*
+ * Обёртка значений убирается из раскладки — её содержимое становится прямыми
+ * ячейками общей сетки строки. Объявлено после .prop-row__values: у правил
+ * одинаковая специфичность, и перебивает то, которое ниже. Пока обёртка была
+ * обычным блоком, сетка видела в ней пустую колонку, а блок единиц
+ * растягивался на всю ширину поля.
+ */
+.prop-grid .prop-row__values {
+  display: contents;
 }
 
 /*

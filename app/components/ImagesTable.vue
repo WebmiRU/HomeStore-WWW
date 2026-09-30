@@ -397,13 +397,19 @@ async function onAltBlur(event: Event, img: ImageResponse) {
   display: none;
 }
 
+/*
+ * Рамка — цвет самой кнопки. Здесь стоял --accent, и зелёная кнопка
+ * «Загрузить» получалась с синей рамкой: два разных цвета рядом, и выглядело
+ * как ошибка вёрстки. По общему правилу рамка кнопки всегда того же цвета,
+ * что и её заливка.
+ */
 .btn-upload {
   padding: 8px 16px;
   font-size: 13px;
   font-family: inherit;
-  color: var(--success-hover);
+  color: var(--success-ink);
   background: var(--success-bg);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--success);
   border-radius: 4px;
   cursor: pointer;
 }

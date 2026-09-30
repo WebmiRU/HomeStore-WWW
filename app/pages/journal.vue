@@ -612,40 +612,47 @@ watch(activeTab, () => loadActive())
   border: 1px solid var(--border-strong);
 }
 
+/*
+ * Бейджи идут по общему правилу: цветная заливка, текст того же цвета в
+ * тёмном варианте (ink), рамка — сам цвет. Раньше сочетания были случайными:
+ * зелёная заливка с синим текстом и синей рамкой, синяя заливка с рамкой в
+ * цвет заливки (рамки не видно), оранжевая заливка с красным текстом. Рядом
+ * друг с другом это читалось как ошибка вёрстки, а не как обозначение.
+ */
 .badge--success {
   background: var(--success-bg);
-  color: var(--info);
-  border-color: var(--accent);
+  color: var(--success-ink);
+  border-color: var(--success);
 }
 
 .badge--restore {
   background: var(--info-bg);
-  color: var(--info);
-  border-color: var(--info-bg);
+  color: var(--info-ink);
+  border-color: var(--info);
 }
 
 .badge--danger {
   background: var(--danger-bg);
   color: var(--danger-ink);
-  border-color: var(--warn);
+  border-color: var(--danger);
 }
 
 .badge--auth {
   background: var(--info-bg);
-  color: var(--info);
-  border-color: var(--info-bg);
+  color: var(--info-ink);
+  border-color: var(--info);
 }
 
 .badge--op {
   background: var(--warn-bg);
-  color: var(--danger-ink);
-  border-color: var(--bg-elevated);
+  color: var(--warn-ink);
+  border-color: var(--warn);
 }
 
 .badge--label {
-  background: var(--info-bg);
-  color: var(--info);
-  border-color: var(--info-bg);
+  background: var(--note-bg);
+  color: var(--note-ink);
+  border-color: var(--note);
 }
 
 .entity-id {
