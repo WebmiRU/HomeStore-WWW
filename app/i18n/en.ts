@@ -860,9 +860,6 @@ export const en: Record<TranslationKey, string> = {
     remember_mode_hint:
       'When on, the home page opens in the same mode after a reload and on another device. When off, it always starts with search, and switching works only until the page is reloaded.',
     interface_title: 'Interface',
-    show_code_block: 'Show the code block at the bottom of pages',
-    show_code_block_hint:
-      'A field for typing a code by hand. The scanner keeps working either way: it reads the keyboard on any page.',
     theme_title: 'Theme',
     theme_hint:
       'A theme is more than colours: each one has its own look for buttons, tables and fields. The theme is yours and follows you to another device. “As in the system” follows the system setting: change it there and it changes here.',

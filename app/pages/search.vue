@@ -292,11 +292,48 @@ function navigateOperation(code: string, mode: 'replenish' | 'writeoff') {
   void router.push({ path: '/', query: { scan: code, mode } })
 }
 
+/**
+ * Введён ли в поиск код — буквально, символ в символ.
+ *
+ * Код набирают руками чаще, чем кажется: принтер этикеток отдал лист, код
+ * сгорел, наклейка переехала с ящика на ящик. Искать его в общем поиске —
+ * путь: он не название, не артикул и не производитель, и в выдаче он
+ * терялся среди предметов «похожих». Теперь такой ввод идёт тем же путём,
+ * что и сканирование, — на главную с кодом, где сценарий уже есть целиком:
+ * предмет найден, код не найден, код без привязки.
+ *
+ * Проверка идёт тем же запросом, что и у сканера, и «найдено» считается
+ * строго: ответ с предметом или хранилищем и без вариантов. Код без
+ * привязки и код, подходящий под несколько предметов, — это уже не
+ * однозначное совпадение, и обычный поиск полезнее.
+ */
+async function isExactCode(q: string): Promise<boolean> {
+  try {
+    const result = await $api.code.search(q)
+
+    return 'payload' in result && result.payload !== null
+  } catch {
+    // Код не найден или сеть отвалилась — ищем как обычный текст.
+    return false
+  }
+}
+
 async function search() {
   const q = route.query.q as string
   if (!q) {
     error.value = t('search.no_query')
     loading.value = false
+    return
+  }
+
+  // Пока идёт проверка кода, показываем тот же индикатор, что и при поиске:
+  // запрос уходит в сеть, и пустой экран читался бы как зависшая страница.
+  loading.value = true
+
+  if (await isExactCode(q)) {
+    loading.value = false
+    void router.push({ path: '/', query: { scan: q } })
+
     return
   }
 

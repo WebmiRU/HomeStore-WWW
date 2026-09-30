@@ -13,7 +13,6 @@ const defaultOptions = (): OptionResponse => ({
   menu_hidden: [],
   operation_mode: 'search',
   locale: 'ru',
-  show_code_block: true,
   remember_operation_mode: true,
   // Те же умолчания, что отдаёт сервер: тема «как в системе» и синий акцент.
   // Дублирование неприятное, но без него на первый экран, пока настройки не

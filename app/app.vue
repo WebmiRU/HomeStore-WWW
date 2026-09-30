@@ -20,24 +20,6 @@
 
     <NuxtPage />
 
-    <!--
-      Блок сканера внизу прячется настройкой. Скрытие только здесь: сканер
-      продолжит работать, он же слушает клавиатуру на любой странице, — просто
-      поле для ручного ввода кода исчезает.
-    -->
-    <footer v-if="showCodeBlock" class="page-footer">
-      <div class="uuid-search">
-        <span class="uuid-label">{{ t('scanner.code_label') }}</span>
-        <input
-          v-model="uuidQuery"
-          type="text"
-          :placeholder="t('scanner.code_placeholder')"
-          class="uuid-input"
-          @keydown.enter="doUuidSearch"
-        />
-        <button class="uuid-btn" @click="doUuidSearch">{{ t('scanner.find') }}</button>
-      </div>
-    </footer>
   </div>
 </template>
 
@@ -70,9 +52,7 @@ useHead({
 // Прячется по настройке, а настройки приезжают после монтирования: до ответа
 // блок виден, как и раньше, и исчезает сам. Прыгать им на сервере нельзя —
 // настройки читаются с токеном, который живёт в localStorage.
-const showCodeBlock = computed(() => options.value.show_code_block)
 
-const uuidQuery = ref('')
 const { next: triggerSearch } = useSearchTrigger()
 
 // Клавиатурный буфер-сканер, работающий на любой странице: отсканированный
@@ -146,13 +126,6 @@ async function doSearch(q: string) {
   }
 }
 
-function doUuidSearch() {
-  const q = uuidQuery.value.trim()
-  if (!q) return
-  // Эмулируем сканер: код обрабатывается на главной тем же сценарием,
-  // что и ввод с устройства (режим, найденное/список, «код не найден»).
-  router.push({ path: '/', query: { scan: q } })
-}
 </script>
 
 <style>
@@ -336,29 +309,6 @@ body {
     padding: 12px !important;
   }
 
-  .uuid-search {
-    width: 100%;
-    box-sizing: border-box;
-    flex-wrap: wrap;
-    row-gap: 6px;
-  }
-
-  .uuid-label {
-    flex: 1 1 100%;
-  }
-
-  .uuid-input {
-    flex: 1 1 140px;
-    width: auto;
-    min-width: 0;
-    font-size: 16px;
-  }
-
-  .uuid-btn {
-    flex-shrink: 0;
-    font-size: 16px;
-  }
-
   input, select, textarea {
     font-size: 16px !important;
   }
@@ -389,60 +339,5 @@ body {
    */
   margin: 9px 0 8px;
   background: linear-gradient(to right, var(--bg-hover), var(--bg-elevated) 30%, var(--bg-hover));
-}
-
-.page-footer {
-  margin-top: auto;
-  padding-top: 40px;
-  display: flex;
-  justify-content: center;
-}
-
-.uuid-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-
-.uuid-label {
-  font-size: 13px;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.uuid-input {
-  width: 300px;
-  padding: 6px 10px;
-  font-size: 13px;
-  font-family: monospace;
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  outline: none;
-}
-
-.uuid-input:focus {
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
-.uuid-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-muted);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.uuid-btn:hover {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-  color: var(--text);
 }
 </style>

@@ -160,20 +160,6 @@
       <h5 class="options-card__subtitle">{{ t('options_page.accent_title') }}</h5>
       <AccentPicker v-model="accentChoice" :theme="themePreview" />
       <p class="options-card__hint">{{ t('options_page.accent_hint') }}</p>
-
-      <label class="menu-row menu-row--plain">
-        <span class="menu-row__check">
-          <input
-            type="checkbox"
-            :checked="showCodeBlock"
-            @change="showCodeBlock = !showCodeBlock"
-          />
-          <span class="menu-row__label">{{ t('options_page.show_code_block') }}</span>
-        </span>
-      </label>
-      <p class="options-card__hint">
-        {{ t('options_page.show_code_block_hint') }}
-      </p>
     </section>
 
     <section v-else class="options-card">
@@ -247,7 +233,6 @@ const modes: { value: OperationMode; labelKey: TranslationKey }[] = [
 const order = ref<string[]>([])
 const hidden = ref<Set<string>>(new Set())
 const operationMode = ref<OperationMode>('search')
-const showCodeBlock = ref(true)
 const rememberOperationMode = ref(true)
 /** Язык в форме: он же и то, что сейчас показано на экране. */
 const localeChoice = ref<Locale>('ru')
@@ -354,7 +339,6 @@ function fillFromOptions(): void {
   order.value = sortNavKeys(navKeys(), options.value.menu_order)
   hidden.value = new Set(options.value.menu_hidden)
   operationMode.value = options.value.operation_mode
-  showCodeBlock.value = options.value.show_code_block
   rememberOperationMode.value = options.value.remember_operation_mode
   localeChoice.value = options.value.locale
 }
@@ -364,7 +348,6 @@ function fillDefaults(): void {
   order.value = navKeys()
   hidden.value = new Set()
   operationMode.value = 'search'
-  showCodeBlock.value = true
   rememberOperationMode.value = true
   localeChoice.value = 'ru'
 }
@@ -408,7 +391,6 @@ const dirty = computed(
     order.value.join() !== storedOrder.value.join() ||
     [...hidden.value].sort().join() !== [...options.value.menu_hidden].sort().join() ||
     operationMode.value !== options.value.operation_mode ||
-    showCodeBlock.value !== options.value.show_code_block ||
     rememberOperationMode.value !== options.value.remember_operation_mode ||
     localeChoice.value !== options.value.locale ||
     themeChoice.value !== options.value.theme ||
@@ -425,7 +407,6 @@ async function saveAll(): Promise<void> {
       menu_order: order.value,
       menu_hidden: [...hidden.value],
       operation_mode: operationMode.value,
-      show_code_block: showCodeBlock.value,
       remember_operation_mode: rememberOperationMode.value,
       locale: localeChoice.value,
       theme: themeChoice.value,
