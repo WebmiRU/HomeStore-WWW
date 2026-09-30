@@ -542,7 +542,14 @@ watch(
 .prop-grid {
   display: grid;
   grid-template-columns: minmax(120px, 260px) 1fr max-content auto auto;
-  align-items: start;
+  /*
+   * Растяжка по высоте, а не start: пока дети были флекс-группой, высоту им
+   * давал align-items: stretch, и единица с кнопками были во всю строку
+   * вместе с полем. Обёртки значений стали display: contents, и растягивать
+   * их стало нечем — с align-items: start единица (19px) и кнопки (20px)
+   * осели у верха поля высотой 36px, и колонка выглядела разобранной.
+   */
+  align-items: stretch;
 
   /* Интервал между строками значений держит сетка. Раньше его давал
    * gap у флекс-колонки .prop-row__values, а та стала display: contents — и
@@ -581,10 +588,16 @@ watch(
   background: var(--bg-sunken);
 }
 
+/*
+ * Левую рамку здесь не переопределяем: у «−» и «+» она своя, из template.sass,
+ * и она отличает кнопку от поля рядом. Правило сетки и так выше по
+ * специфичности, и стоило здесь написать border-left: none — рамка пропадала
+ * совсем: у кнопок не оставалось границы слева, а у поля она была, и стык
+ * читался как разрыв.
+ */
 .prop-grid__row > .input-group__btn--minus {
   grid-column: 4;
   grid-row: auto;
-  border-left: none;
   border-radius: 0;
 }
 
@@ -601,7 +614,6 @@ watch(
 .prop-grid__row > .input-group__btn--add {
   grid-column: 5;
   grid-row: auto;
-  border-left: none;
   border-radius: 0 4px 4px 0;
 }
 
