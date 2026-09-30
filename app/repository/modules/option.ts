@@ -27,7 +27,7 @@ export type Theme = 'dark' | 'light' | 'system'
  * Одно поле означало бы, что «светлая пурпурная» — это отдельное значение, и
  * список тем разрастался бы на каждое сочетание.
  */
-export type Accent = 'green' | 'purple' | 'blue' | 'amber'
+export type Accent = 'green' | 'purple' | 'blue' | 'amber' | 'red' | 'teal' | 'pink' | 'slate'
 
 export type OptionResponse = {
   /**

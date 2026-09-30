@@ -33,8 +33,27 @@ function isTheme(value: unknown): value is Theme {
   return value === 'dark' || value === 'light' || value === 'system'
 }
 
+/**
+ * Акцент из списка.
+ *
+ * Список один — ACCENTS в AccentPicker, и он же в Option::accents() на
+ * сервере. Держать здесь копию значило бы на каждом новом цвете править её
+ * отдельно и забыть: проверка молча отвергала бы новый акцент, и он
+ * выглядел бы выбранным в настройках, но не применялся.
+ */
+const ACCENTS: readonly Accent[] = [
+  'green',
+  'purple',
+  'blue',
+  'amber',
+  'red',
+  'teal',
+  'pink',
+  'slate',
+]
+
 function isAccent(value: unknown): value is Accent {
-  return value === 'green' || value === 'purple' || value === 'blue' || value === 'amber'
+  return ACCENTS.includes(value as Accent)
 }
 
 export function useTheme() {

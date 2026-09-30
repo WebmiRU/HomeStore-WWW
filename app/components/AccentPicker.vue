@@ -35,18 +35,25 @@ const { t } = useI18n()
  * Список акцентов. Следит за ним сервер: Option::accents() отвергнет значение,
  * которого здесь нет, а лишний пункт молча не появился бы.
  */
-const options: Accent[] = ['green', 'purple', 'blue', 'amber']
+const options: Accent[] = [
+  'green',
+  'purple',
+  'blue',
+  'amber',
+  'red',
+  'teal',
+  'pink',
+  'slate',
+]
 
-const labelOf = (option: Accent): string =>
-  t(
-    option === 'green'
-      ? 'options_page.accent_green'
-      : option === 'purple'
-        ? 'options_page.accent_purple'
-        : option === 'blue'
-          ? 'options_page.accent_blue'
-          : 'options_page.accent_amber',
-  )
+/**
+ * Подпись акцента — по ключу с его именем.
+ *
+ * Раньше здесь была цепочка вложенных тернарников на четыре значения; на
+ * восьми она стала бы нечитаемой — правило вложенности растёт квадратично, и
+ * новый цвет пришлось бы вписывать ещё на два уровня глубже.
+ */
+const labelOf = (option: Accent): string => t(`options_page.accent_${option}`)
 </script>
 
 <style scoped>

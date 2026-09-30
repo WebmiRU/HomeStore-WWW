@@ -152,6 +152,34 @@
 [data-theme='light'][data-accent='amber']
   --accent-base: #8a5f2a
 
+// Остальные акценты добавлены позже первых четырёх. Оттенки подобраны по тем же
+// правилам: на тёмном фоне сочнее и с тёмной подписью, на светлом — глуше и с
+// белой. У серого на тёмном фоне подпись светлая, иначе серый акцент на
+// тёмном фоне давал бы нечитаемую подпись на кнопке.
+[data-accent='red']
+  --accent-base: #e05a5a
+
+[data-theme='light'][data-accent='red']
+  --accent-base: #a32e2e
+
+[data-accent='teal']
+  --accent-base: #2fa89c
+
+[data-theme='light'][data-accent='teal']
+  --accent-base: #1f6f68
+
+[data-accent='pink']
+  --accent-base: #e06fae
+
+[data-theme='light'][data-accent='pink']
+  --accent-base: #9c3d72
+
+[data-accent='slate']
+  --accent-base: #8a93a3
+
+[data-theme='light'][data-accent='slate']
+  --accent-base: #5a6272
+
 // Производные акцента — общие для всех цветов и обеих тем. Подложка
 // под меткой берётся от цвета панели, а не от белого или чёрного: на тёмной
 // теме подложка остаётся тёмной, на светлой — светлой.

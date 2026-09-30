@@ -159,7 +159,13 @@
 
       <h5 class="options-card__subtitle">{{ t('options_page.accent_title') }}</h5>
       <AccentPicker v-model="accentChoice" :theme="themePreview" />
-      <p class="options-card__hint">{{ t('options_page.accent_hint') }}</p>
+      <!--
+        Отступ сверху у этой подсказки: она идёт сразу за образцами цветов, и
+        без воздуха прилипала к нижнему ряду кнопок — читалась как продолжение
+        списка, а не как пояснение к нему. У остальных подсказок отступ снизу,
+        им он и нужен.
+      -->
+      <p class="options-card__hint accent-hint">{{ t('options_page.accent_hint') }}</p>
     </section>
 
     <section v-else class="options-card">
@@ -478,6 +484,10 @@ watch(options, fillFromOptions)
   margin: 0 0 4px;
   font-size: 15px;
   color: var(--text);
+}
+
+.accent-hint {
+  margin: 12px 0 0;
 }
 
 .options-card__hint {
