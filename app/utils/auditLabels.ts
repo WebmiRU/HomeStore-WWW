@@ -150,6 +150,11 @@ export function formatDate(iso: string): string {
   })
 }
 
+/** Пополнение это operation.replenish — у него знак плюс, у списания минус. */
+function isReplenish(action: string): boolean {
+  return action === 'operation.replenish'
+}
+
 export function summarize(entry: AuditLogEntry): string {
   const p = entry.payload ?? {}
   const snapshot = p.snapshot
@@ -158,6 +163,21 @@ export function summarize(entry: AuditLogEntry): string {
     if (entry.action.includes('image.')) return title
     if (entry.action.startsWith('operation.')) {
       const parts = [title]
+      // Расход по свойству показывается вместо дельты штук: у бутылки списали
+      // 300 мл, а количество осталось прежним, и строка «2 → 2 (0)» сказала бы
+      // только, что ничего не произошло. Поля присылает сервер вместе с записью.
+      if (p.amount != null && p.property_title) {
+        parts.push(
+          useI18n().t('journal.partial_amount', {
+            title: p.property_title,
+            sign: isReplenish(entry.action) ? '+' : '−',
+            amount: p.amount,
+            before: p.property_before ?? p.amount,
+            after: p.property_after ?? p.amount,
+          }),
+        )
+        return parts.join(' · ')
+      }
       if (p.delta != null) parts.push(`${p.before ?? '—'} → ${p.after ?? '—'} (${p.delta > 0 ? '+' : ''}${p.delta})`)
       return parts.join(' · ')
     }

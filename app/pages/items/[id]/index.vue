@@ -159,7 +159,10 @@
                 copy_codes: JSON.stringify(filledCodes()),
                 copy_quantity: quantityInput,
                 copy_properties: JSON.stringify(properties),
-                copy_partial_properties: JSON.stringify(partialProperties.value),
+                // Без .value: в шаблоне ссылка на ref уже развёрнута, и
+                // «partialProperties.value» здесь давал undefined — параметр
+                // молча пропадал из ссылки «создать копию».
+                copy_partial_properties: JSON.stringify(partialProperties),
               },
             }"
             class="btn-copy"

@@ -7,7 +7,30 @@
     </div>
 
     <template v-else>
-      <div class="mvlist__sum">
+      <!--
+        Сводка по штукам у расходуемого предмета показывала бы нули: списали
+        350 мл из бутылки, штуки не сдвинулись. Поэтому у него своя сводка —
+        сумма расхода по каждому свойству. Штуки и доли свойств складывать
+        нельзя, они несводимы.
+      -->
+      <div v-if="spentSummary.length" class="mvlist__sum">
+        <!--
+          Префикс «расход по свойству» один на весь список: повторять его у
+          каждого свойства незачем, он и так стоит в заголовке блока.
+        -->
+        <span class="mvlist__sum-item">
+          {{ t('movements.partial_amount') }}:
+          <template v-for="(row, i) in spentSummary" :key="row.property_id">
+            <span v-if="i > 0">; </span>{{ row.title }}
+            <b>−{{ row.writeoff }}</b>
+            <span class="mvlist__sum-dim">/ +{{ row.replenish }}</span>
+          </template>
+        </span>
+        <span class="mvlist__sum-item">
+          {{ t('movements.reversals') }}: <b>{{ summary.reversals }}</b>
+        </span>
+      </div>
+      <div v-else class="mvlist__sum">
         <span class="mvlist__sum-item">{{ t('main.done_writeoff') }}: <b>{{ summary.writeoff.units }}</b> {{ t('units.pcs') }}</span>
         <span class="mvlist__sum-item">{{ t('main.done_replenish') }}: <b>{{ summary.replenish.units }}</b> {{ t('units.pcs') }}</span>
         <span class="mvlist__sum-item">{{ t('movements.reversals') }}: <b>{{ summary.reversals }}</b></span>
@@ -47,8 +70,19 @@
                 </span>
               </span>
               <template v-else>{{ mineOf(op) }}</template>
-              <span v-if="op.rows.some((r) => r.is_returned)" class="mvlist__returned">
-                t('item_movements.reversal_of', { id: returnedOf(op) })
+              <!--
+                У частичной строки показывается возвращённый расход числом, а не
+                номер возврата: возвращённое там дробное, и сумма по штукам
+                давала «возврат №0» — ни о чём не говорящую строку.
+              -->
+              <span v-if="reversedPartial(op) !== null" class="mvlist__returned">
+                {{ t('movements.partial_returned', { amount: reversedPartial(op) ?? 0 }) }}
+                <span class="mvlist__returned-by">
+                  ({{ returnedByTitle(op) }})
+                </span>
+              </span>
+              <span v-else-if="op.rows.some((r) => r.is_returned)" class="mvlist__returned">
+                {{ t('item_movements.reversal_of', { id: reversalOf(op) }) }}
               </span>
             </td>
             <td class="mvlist__cell-balance">
@@ -115,9 +149,71 @@ function mineOf(op: StockOperation): number {
     .reduce((sum, row) => sum + row.quantity, 0)
 }
 
+/**
+ * Сводка расхода по свойствам: сколько списано и сколько возвращено.
+ *
+ * Отдельно по каждому свойству, потому что складывать 350 мл сиропа с 200 кг
+ * риса в одно число бессмысленно — получится величина, которой нигде нет.
+ * Пустая сводка означает обычный предмет, и тогда показываются штуки.
+ */
+const spentSummary = computed(() => {
+  const totals = new Map<number, { title: string; writeoff: number; replenish: number }>()
+
+  for (const op of operations.value) {
+    for (const row of rowsOf(op)) {
+      if (!row.is_partial || row.property_id === null) continue
+
+      const entry = totals.get(row.property_id) ?? {
+        title: row.property_title ?? String(row.property_id),
+        writeoff: 0,
+        replenish: 0,
+      }
+      const amount = row.amount ?? 0
+
+      if (op.direction === 'writeoff') entry.writeoff += amount
+      else entry.replenish += amount
+
+      totals.set(row.property_id, entry)
+    }
+  }
+
+  return [...totals.entries()]
+    .map(([property_id, value]) => ({ property_id, ...value }))
+    .sort((a, b) => a.title.localeCompare(b.title))
+})
+
 /** Строки частичного расхода по этому предмету: по ним показывается расход. */
 function partialsOf(op: StockOperation) {
   return rowsOf(op).filter((row) => row.is_partial)
+}
+
+/** Возвращено по частичным строкам операции, либо null, если возврата не было. */
+function reversedPartial(op: StockOperation): number | null {
+  const sum = partialsOf(op).reduce((total, row) => total + (row.reversed_amount ?? 0), 0)
+
+  return sum > 0 ? Math.round(sum * 1000) / 1000 : null
+}
+
+/** Названия свойств, по которым был возврат: смешивать их в одну строку нельзя. */
+function returnedByTitle(op: StockOperation): string {
+  return partialsOf(op)
+    .filter((row) => (row.reversed_amount ?? 0) > 0)
+    .map((row) => row.property_title ?? String(row.property_id))
+    .join(', ')
+}
+
+/** Всего списано по частичным строкам операции. */
+function spentTotal(op: StockOperation): number {
+  const sum = partialsOf(op).reduce((total, row) => total + (row.amount ?? 0), 0)
+
+  return Math.round(sum * 1000) / 1000
+}
+
+/** Откуда эта строка — возврат: номер строки исходной операции. */
+function reversalOf(op: StockOperation): number {
+  const partial = partialsOf(op).find((row) => row.source_row_id)
+
+  return partial?.source_row_id ?? returnedOf(op)
 }
 
 function returnedOf(op: StockOperation): number {
@@ -290,6 +386,10 @@ onMounted(() => load(1))
   display: block;
   font-size: 12px;
   color: var(--text-dim);
+}
+
+.mvlist__sum-dim {
+  margin-left: 4px;
 }
 
 .mvlist__returned {

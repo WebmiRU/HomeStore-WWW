@@ -517,6 +517,7 @@ export const ru = {
   },
 
   journal: {
+    partial_amount: '{title} {sign}{amount} ({before} → {after})',
     title: 'Журнал действий',
     group_by: 'Группировать по',
     group_actions: 'Действиям',
@@ -946,6 +947,8 @@ export const ru = {
   },
 
   movements: {
+    partial_returned: 'возвращено {amount}',
+    partial_amount: 'Расход по свойству',
     title: 'Списания и пополнения',
     period: 'Период:',
     direction: 'Направление:',
@@ -985,7 +988,6 @@ export const ru = {
     reverse_done: '{direction}: возврат операции №{id} — {rows} строк',
     reverse_failed: 'Не удалось выполнить возврат',
     on_quantity: 'на {count}',
-    partial_amount: 'Расход по свойству',
     partial_of: '{amount} из {total}',
     partial_units: 'штук: {before} → {after}',
   },

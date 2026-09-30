@@ -511,6 +511,7 @@ export const en: Record<TranslationKey, string> = {
   },
 
   journal: {
+    partial_amount: '{title} {sign}{amount} ({before} → {after})',
     title: 'Action journal',
     group_by: 'Group by',
     group_actions: 'Actions',
@@ -941,6 +942,8 @@ export const en: Record<TranslationKey, string> = {
   },
 
   movements: {
+    partial_returned: 'returned {amount}',
+    partial_amount: 'Used up by property',
     title: 'Write-offs and replenishments',
     period: 'Period:',
     direction: 'Direction:',
@@ -980,7 +983,6 @@ export const en: Record<TranslationKey, string> = {
     reverse_done: '{direction}: reversal of operation no. {id} — {rows} rows',
     reverse_failed: 'Could not run the reversal',
     on_quantity: 'for {count}',
-    partial_amount: 'Used up by property',
     partial_of: '{amount} of {total}',
     partial_units: 'units: {before} → {after}',
   },

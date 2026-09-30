@@ -140,12 +140,31 @@ const route = useRoute()
 const scannedCode = typeof route.query.code === 'string' ? route.query.code : ''
 const copyTitle = typeof route.query.copy_title === 'string' ? route.query.copy_title : ''
 const copyTitlePrint = typeof route.query.copy_title_print === 'string' ? route.query.copy_title_print : ''
-const copyStoreId = typeof route.query.copy_store_id === 'string' ? Number(route.query.copy_store_id) : null
-const copyVendorId = typeof route.query.copy_vendor_id === 'string' ? Number(route.query.copy_vendor_id) : null
+const copyStoreId = copyIdParam(route.query.copy_store_id)
+/**
+ * Число из параметра ссылки либо null.
+ *
+ * Отдельная функция, потому что Number('') даёт 0, а не «пусто»: ссылка
+ * «создать копию» у предмета без поставщика и категории передаёт эти параметры
+ * пустыми строками, и 0 уходил на сервер как id — с ответом «category_id не
+ * найдена», из-за чего копия предмета вообще не сохранялась.
+ */
+function copyIdParam(raw: unknown): number | null {
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+
+  if (trimmed === '') return null
+
+  const value = Number(trimmed)
+
+  return Number.isFinite(value) && value > 0 ? value : null
+}
+
+const copyVendorId = copyIdParam(route.query.copy_vendor_id)
 const copyQuantity = typeof route.query.copy_quantity === 'string' ? route.query.copy_quantity : ''
 // Копия предмета наследует категорию и заполненные ею свойства: иначе
 // после «создать копию» пришлось бы вбивать всё заново.
-const copyCategoryId = typeof route.query.copy_category_id === 'string' ? Number(route.query.copy_category_id) : null
+const copyCategoryId = copyIdParam(route.query.copy_category_id)
 const copyProperties = parseCopiedProperties(route.query.copy_properties)
 const copyPartialProperties = parseCopiedPartialProperties(route.query.copy_partial_properties)
 const copyCodes = parseCopiedCodes(route.query.copy_codes, route.query.code)
@@ -233,8 +252,8 @@ const form = reactive({
   title: copyTitle,
   title_print: copyTitlePrint,
   store_id: copyStoreId,
-  vendor_id: copyVendorId !== null && Number.isFinite(copyVendorId) ? copyVendorId : null,
-  category_id: copyCategoryId !== null && Number.isFinite(copyCategoryId) ? copyCategoryId : null,
+  vendor_id: copyVendorId,
+  category_id: copyCategoryId,
 })
 
 /**
@@ -298,6 +317,15 @@ const dictionaries = ref<DictionaryResponse[]>([])
 const allProperties = ref<PropertyResponse[]>([])
 
 /** Свойства, которые редактор расхода может предложить: заполненные и числовые. */
+/**
+ * Настройки расхода частями: какие свойства и с каким шагом.
+ *
+ * Объявлено до списка кандидатов и наблюдателей: они читают partialProperties
+ * сразу при создании компонента, а `const` в этом месте ещё не инициализирован,
+ * и страница падала с «Cannot access 'partialProperties' before initialization».
+ */
+const partialProperties = ref<ItemPartialPropertyInput[]>(copyPartialProperties)
+
 const partialCandidates = computed(() => {
   const byId = new Map(allProperties.value.map((property) => [property.id, property]))
 
@@ -349,14 +377,7 @@ const vendorOptions = computed(() => vendorSelectOptions(vendors.value))
 
 const properties = ref<ItemPropertyInput[]>(copyProperties)
 
-/**
- * Настройки расхода частями: какие свойства и с каким шагом.
- *
- * Объявлена рядом со значениями свойств, а не в месте первого упоминания:
- * редактор расхода работает с теми же полями, и держать их врозь значило бы
- * потом искать, откуда берётся список кандидатов.
- */
-const partialProperties = ref<ItemPartialPropertyInput[]>(copyPartialProperties)
+
 const categoryProperties = ref<PropertyResponse[]>([])
 const propertiesLoading = ref(false)
 /** Редактор перечитывает значения только при смене ключа — так его не затирает собственная выдача. */

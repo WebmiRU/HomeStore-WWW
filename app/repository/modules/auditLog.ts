@@ -48,6 +48,20 @@ export type AuditLogBalancePoint = {
   qty: number
 }
 
+/** Остаток одного расходуемого свойства во времени. */
+export type AuditLogBalanceSeries = {
+  property_id: number
+  title: string
+  points: AuditLogBalancePoint[]
+}
+
+export type AuditLogBalance = {
+  /** Остаток штук предмета. */
+  points: AuditLogBalancePoint[]
+  /** Остатки по свойствам — у обычного предмета пусто. */
+  series: AuditLogBalanceSeries[]
+}
+
 export type AuditLogBalanceParams = {
   entity_type: string
   entity_id: number
@@ -95,12 +109,24 @@ class AuditLogModule extends FetchFactory<any> {
     return (Array.isArray(unwrapped) ? unwrapped : []) as AuditLogStatsPoint[]
   }
 
-  async balance(params: AuditLogBalanceParams): Promise<AuditLogBalancePoint[]> {
+  /**
+   * Ряд остатков: по штукам предмета и, если он расходуется частями, по
+   * каждому расходуемому свойству.
+   *
+   * Серии по свойствам приходят отдельно и в общий ряд не входят: количество
+   * штук у такого предмета почти не меняется, и график по нему сказал бы
+   * «ничего не происходило», хотя расход был.
+   */
+  async balance(params: AuditLogBalanceParams): Promise<AuditLogBalance> {
     const result = await this.call('GET', `${this.baseUrl}/balance`, undefined, {
       params: { ...params },
     })
     const unwrapped = (result as any)?.data ?? result
-    return (Array.isArray(unwrapped) ? unwrapped : []) as AuditLogBalancePoint[]
+
+    return {
+      points: (Array.isArray(unwrapped) ? unwrapped : []) as AuditLogBalancePoint[],
+      series: ((result as any)?.series ?? []) as AuditLogBalanceSeries[],
+    }
   }
 }
 
