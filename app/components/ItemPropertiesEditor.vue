@@ -85,7 +85,12 @@
           колонку — и блок единиц растягивался на всю ширину поля.
         -->
         <div class="prop-row__values prop-grid__values">
-          <div v-for="(slot, index) in valuesOf(property.id)" :key="index" class="input-group prop-value prop-grid__row">
+          <div
+              v-for="(slot, index) in valuesOf(property.id)"
+              :key="index"
+              class="input-group prop-value prop-grid__row"
+              :class="{ 'prop-grid__row--no-unit': !property.unit }"
+            >
             <select
               v-if="property.type === 'dictionary'"
               class="field-select input-group__control"
@@ -120,7 +125,17 @@
               @input="onTextChange(property.id, index, $event)"
             />
 
-            <span v-if="property.unit" class="input-group-text">{{ property.unit.title_short }}</span>
+            <!--
+              Единицы у свойства нет — блока единицы тоже нет, а место под
+              него в сетке оставалось: пустой просвет между полем и «−» шириной
+              во всю колонку единиц. Видно это только там, где в списке есть
+              и свойства с единицей, и без: строки без единицы оказывались
+              короче строк с ней на ширину блока «мл».
+            -->
+            <span
+              v-if="property.unit"
+              class="input-group-text"
+            >{{ property.unit.title_short }}</span>
 
             <!--
               «-» в верхних строках занимает место сразу за двух: там, где в
@@ -582,7 +597,21 @@ watch(
    * их стало нечем — с align-items: start единица (19px) и кнопки (20px)
    * осели у верха поля высотой 36px, и колонка выглядела разобранной.
    */
-  align-items: stretch;
+  align-items: start;
+
+  /*
+   * Высота строки фиксирована полем, а не названием.
+   *
+   * Пока стояло stretch, длинное название («Максимальное давление» в две
+   * строки) делало строку выше, и поле с кнопками растягивалось вместе с
+   * ней: соседние строки отличались высотой на треть, и колонка значений
+   * выглядела разобранной — будто часть блоков наехала на соседей.
+   *
+   * Теперь растягиваться нечему: блок задаёт высоту, остальное к нему
+   * пристраивается. Название при этом выравнивается по вертикали по центру
+   * строки (align-self: center ниже) — так двухстрочное название читается
+   * ровнее, чем прилипшее к верху поля.
+   */
 
   /* Интервал между строками значений держит сетка. Раньше его давал
    * gap у флекс-колонки .prop-row__values, а та стала display: contents — и
@@ -608,6 +637,22 @@ watch(
   grid-column: 2;
   grid-row: auto;
   border-radius: 4px 0 0 4px;
+}
+
+/*
+ * Строка без единицы отдаёт её колонку полю.
+ *
+ * Колонка единиц — одна на весь список, шириной с самый длинный блок. У
+ * строки без единицы ячейка пуста: между полем и «−» остаётся просвет во всю
+ * ширину «мл», и строка выглядит короче соседних с единицей. Поле занимает
+ * обе колонки, и «−» встаёт к нему вплотную — как в строках, где единица
+ * есть. Правый угол поля не скругляется: справа от него не пустота, а сама
+ * группа от «−» до «+», и скругление досталось бы ей же.
+ */
+.prop-grid__row--no-unit > .input-group__control {
+  grid-column: 2 / 4;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /*
@@ -682,7 +727,9 @@ watch(
 .prop-grid__label {
   grid-column: 1;
   grid-row: auto / span 1;
-  align-self: start;
+  /* По центру строки, а не по верху: название в две строки прижатое к
+   * полю выглядело так, будто оно вылезло из своей строки на кнопки. */
+  align-self: center;
   padding-right: 12px;
 }
 
@@ -704,6 +751,10 @@ watch(
 
   .prop-grid__row > .input-group__control {
     grid-column: 1;
+  }
+
+  .prop-grid__row--no-unit > .input-group__control {
+    grid-column: 1 / 3;
   }
 }
 
