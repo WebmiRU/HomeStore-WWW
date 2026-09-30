@@ -106,7 +106,10 @@
           <p v-for="line in actualLines" :key="line.property_id" class="norm-change__actual-line">
             {{ line.title }}:
             <b class="norm-change__num">{{ line.total }}</b> {{ line.unit }}
-            — {{ t('norm_change.that_is') }} <b class="norm-change__num">{{ line.pieces }}</b> {{ t('norm_change.pieces') }}<span v-if="line.entered !== null">, {{ t('norm_change.entered_word') }} <b class="norm-change__num">{{ line.entered }}</b></span>
+            <span class="norm-change__actual-as">
+              — {{ t('norm_change.that_is') }}
+              <b class="norm-change__num">{{ line.whole }}</b> {{ plural(line.whole, t('norm_change.whole_one'), t('norm_change.whole_few'), t('norm_change.whole_many')) }}<span v-if="line.remainder !== '0'">, {{ t('norm_change.plus') }} <b class="norm-change__num">{{ line.remainder }}</b> {{ line.unit }}</span> — {{ t('norm_change.total_pieces') }} <b class="norm-change__num">{{ line.pieces }}</b> {{ t('norm_change.pieces') }}<span v-if="line.entered !== null">, {{ t('norm_change.entered_word') }} <b class="norm-change__num">{{ line.entered }}</b></span>
+            </span>
           </p>
         </div>
       </div>
@@ -137,7 +140,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '~/utils/amount'
-import { piecesInStock } from '~/utils/partialMath'
+import { splitByNorm } from '~/utils/partialMath'
 
 export type NormChangeRow = {
   property_id: number
@@ -167,6 +170,23 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+/**
+ * Согласование существительного с числом.
+ *
+ * «1 полная», «2 полных», «5 полных»: варианта «1 полных» в подсказке быть не
+ * должно — она и так читается как приговор, а если в ней ещё и ошибка
+ * согласования, доверия не остаётся совсем.
+ */
+function plural(count: number, one: string, few: string, many: string): string {
+  const mod100 = Math.abs(count) % 100
+  const mod10 = Math.abs(count) % 10
+
+  if (mod100 >= 11 && mod100 <= 14) return many
+  if (mod10 === 1) return one
+  if (mod10 >= 2 && mod10 <= 4) return few
+  return many
+}
 
 // По умолчанию сохраняется объём: человек менял норму (то есть описание
 // штуки), а не хотел избавиться от части товара.
@@ -208,7 +228,16 @@ const actualLines = computed(() => {
   const quantity = Number(actualQuantity.value)
   const quantityFilled = actualQuantity.value !== '' && actualQuantity.value !== null && Number.isFinite(quantity)
 
-  const lines: { property_id: number; title: string; total: string; unit: string; pieces: number; entered: number | null }[] = []
+  const lines: {
+    property_id: number
+    title: string
+    total: string
+    unit: string
+    whole: number
+    remainder: string
+    pieces: number
+    entered: number | null
+  }[] = []
   // Во сколько штук укладывается вписанное — по большему из заполненных полей:
   // штуку держит любое из отмеченных свойств, и наибольшее требование и есть
   // искомое число штук.
@@ -226,18 +255,24 @@ const actualLines = computed(() => {
     if (!filled) continue
 
     sawTotal = true
-    const pieces = piecesInStock(total, row.to)
-    fitsPieces = Math.max(fitsPieces, pieces)
+
+    // Считается точно: сколько целых норм помещается и сколько остаётся
+    // сверху. Округление перед делением теряло бы то либо штуку, либо остаток
+    // — на 40 001 мл при норме 10 000 это ровно четыре целые и миллилитр.
+    const split = splitByNorm(total, row.to)
+    fitsPieces = Math.max(fitsPieces, split.pieces)
 
     lines.push({
       property_id: row.property_id,
       title: row.title,
       total: formatAmount(total),
       unit: row.unit ?? '',
-      pieces,
+      whole: split.whole,
+      remainder: formatAmount(split.remainder),
+      pieces: split.pieces,
       // Совпавшее число штук не повторяем: «это 5 шт, а введено 5» читается
       // как противоречие, которого нет.
-      entered: quantityFilled && quantity > 0 && quantity !== pieces ? quantity : null,
+      entered: quantityFilled && quantity > 0 && quantity !== split.pieces ? quantity : null,
     })
   }
 
