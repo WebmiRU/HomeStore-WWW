@@ -168,12 +168,14 @@ class ItemModule extends FetchFactory<any> {
     page?: number,
     categoryId?: number | null,
     vendorId?: number | null,
+    storeId?: number | null,
   ): Promise<PaginatedResponse<ItemResponse>> {
     const result = await this.call('GET', this.baseUrl, undefined, {
       params: {
         ...(page ? { page } : {}),
         ...(categoryId ? { category_id: categoryId } : {}),
         ...(vendorId ? { vendor_id: vendorId } : {}),
+        ...(storeId ? { store_id: storeId } : {}),
       },
     })
     return result as unknown as PaginatedResponse<ItemResponse>

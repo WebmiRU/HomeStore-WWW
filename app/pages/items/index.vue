@@ -60,8 +60,28 @@
         </select>
       </label>
 
+      <!--
+        Хранилище — третий фильтр, рядом с категорией и производителем.
+        Вложенности у него нет: у предмета ровно одно хранилище, и отбор «лежит
+        здесь» — это и есть вопрос, который фильтр и задаёт.
+      -->
+      <label class="filter">
+        <span class="filter-label">{{ t('items.store') }}</span>
+        <select :value="storeFilter" class="filter-select" @change="onStoreChange">
+          <option :value="null">{{ t('placeholders.all') }}</option>
+          <option v-for="option in storeOptions" :key="option.id" :value="option.id">
+            {{ '—'.repeat(option.depth) }}{{ option.depth > 0 ? ' ' : '' }}{{ option.title }}
+          </option>
+        </select>
+      </label>
+
       <span class="filter-reset-wrap">
-        <a v-if="categoryFilter || vendorFilter" href="#" class="filter-reset" @click.prevent="resetFilters">{{ t('common.reset') }}</a>
+        <a
+          v-if="categoryFilter || vendorFilter || storeFilter"
+          href="#"
+          class="filter-reset"
+          @click.prevent="resetFilters"
+        >{{ t('common.reset') }}</a>
       </span>
     </div>
 
@@ -198,6 +218,7 @@ import { formatAmount } from '~/utils/amount'
 import type { ItemResponse } from '~/repository/modules/item'
 import type { CategoryResponse } from '~/repository/modules/category'
 import type { VendorResponse } from '~/repository/modules/vendor'
+import type { StoreResponse } from '~/repository/modules/store'
 import type { AccessRight } from '~/repository/modules/access'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
@@ -211,6 +232,7 @@ const router = useRouter()
 const items = ref<ItemResponse[]>([])
 const categories = ref<CategoryResponse[]>([])
 const vendors = ref<VendorResponse[]>([])
+const stores = ref<StoreResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
@@ -233,6 +255,40 @@ const vendorFilter = computed<number | null>(() => {
   return Number.isFinite(value) && value > 0 ? value : null
 })
 
+/** Фильтр по хранилищу живёт в адресе — как и остальные два. */
+const storeFilter = computed<number | null>(() => {
+  const value = Number(route.query.store_id)
+
+  return Number.isFinite(value) && value > 0 ? value : null
+})
+
+/**
+ * Хранилища плоским списком с отступом по глубине.
+ *
+ * Готовый useStoreSelectOptions отдаёт группы по складам — так устроен выбор
+ * хранилища в карточке предмета, где сначала выбирают склад, потом ящик. В
+ * фильтре складов нет, и группы превратились бы в лишний уровень вложенности.
+ */
+const storeOptions = computed(() => {
+  const byParent = new Map<number | null, StoreResponse[]>()
+  for (const store of stores.value) {
+    const list = byParent.get(store.parent_id) ?? []
+    list.push(store)
+    byParent.set(store.parent_id, list)
+  }
+
+  const rows: { id: number; title: string; depth: number }[] = []
+  const walk = (parentId: number | null, depth: number) => {
+    for (const store of (byParent.get(parentId) ?? []).sort((a, b) => a.id - b.id)) {
+      rows.push({ id: store.id, title: store.title, depth })
+      walk(store.id, depth + 1)
+    }
+  }
+  walk(null, 0)
+
+  return rows
+})
+
 /**
  * Панель фильтров свёрнута.
  *
@@ -243,14 +299,14 @@ const vendorFilter = computed<number | null>(() => {
 const filtersOpen = ref(false)
 
 watch(
-  [categoryFilter, vendorFilter],
-  ([category, vendor]) => {
-    if (category || vendor) filtersOpen.value = true
+  [categoryFilter, vendorFilter, storeFilter],
+  ([category, vendor, store]) => {
+    if (category || vendor || store) filtersOpen.value = true
   },
   { immediate: true },
 )
 
-const hasActiveFilters = computed(() => !!(categoryFilter.value || vendorFilter.value))
+const hasActiveFilters = computed(() => !!(categoryFilter.value || vendorFilter.value || storeFilter.value))
 
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
@@ -326,7 +382,7 @@ async function loadItems(page?: number) {
   loading.value = true
   error.value = null
   try {
-    const result = await $api.item.list(page, categoryFilter.value, vendorFilter.value)
+    const result = await $api.item.list(page, categoryFilter.value, vendorFilter.value, storeFilter.value)
     items.value = result.data
     meta.value = {
       current_page: result.meta.current_page,
@@ -374,6 +430,13 @@ function onVendorChange(event: Event) {
   router.push({ query })
 }
 
+function onStoreChange(event: Event) {
+  const raw = Number((event.target as HTMLSelectElement).value)
+  const query = { ...route.query, page: undefined, store_id: raw > 0 ? raw : undefined }
+
+  router.push({ query })
+}
+
 /** Сброс снимает оба фильтра разом: сбросили категорию — остался производитель. */
 function resetFilters() {
   router.push({ query: { ...route.query, page: undefined, category_id: undefined, vendor_id: undefined } })
@@ -404,11 +467,18 @@ onMounted(async () => {
   } catch {
     // Производители нужны только фильтру: без них список всё равно виден.
   }
+
+  try {
+    stores.value = await $api.store.list()
+  } catch {
+    // Хранилища нужны только фильтру — так же, как производители.
+  }
+
   loadItems(Number(route.query.page) || 1)
 })
 
 watch(
-  () => [route.query.page, route.query.category_id],
+  () => [route.query.page, route.query.category_id, route.query.vendor_id, route.query.store_id],
   () => loadItems(Number(route.query.page) || 1),
 )
 </script>
