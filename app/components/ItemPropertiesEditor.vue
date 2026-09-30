@@ -1,5 +1,5 @@
 <template>
-  <div class="props-editor">
+  <div class="props-editor prop-grid">
     <div class="props-editor__head">
       <span class="field-label">{{ t('form.properties_tab') }}</span>
       <span class="field-hint">{{ hint }}</span>
@@ -48,7 +48,7 @@
       <div
         v-for="property in group.properties"
         :key="property.id"
-        class="prop-row prop-grid"
+        class="prop-row"
       >
         <!--
           Крестик удаления свойства — справа от названия, а не справа от поля.
@@ -514,10 +514,36 @@ watch(
   line-height: 1.5;
 }
 
-.props-group + .props-group {
+/*
+ * Обёртки не участвуют в раскладке: сетка общая для всего списка, иначе каждая
+ * группа (а с ней каждое свойство внутри) считала бы ширину колонки отдельно.
+ * Заголовок группы при этом становится элементом сетки на всю ширину, и раз��елитель
+ * между группами переезжает на него.
+ */
+.props-group,
+.prop-row {
+  display: contents;
+}
+
+.props-editor__head,
+.props-picker,
+.props-picker__hint,
+.props-editor__empty,
+.props-group__title {
+  grid-column: 1 / -1;
+}
+
+.props-group__title {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
+}
+
+/* Первая группа начинает список, и отчерчивать её не от чего. */
+.props-group:first-of-type .props-group__title {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .props-group__title {
@@ -542,6 +568,13 @@ watch(
 .prop-grid {
   display: grid;
   grid-template-columns: minmax(120px, 260px) 1fr max-content auto auto;
+  /*
+   * Сетка живёт на всём списке свойств, а не на каждом свойстве отдельно.
+   * Пока она была на контейнере одной строки, каждая строка считала ширину
+   * колонки сама по себе: «мл» и «г» в одном списке получали разные размеры,
+   * и это было видно глазом — вопреки обещанию в комментарии ниже.
+   */
+
   /*
    * Растяжка по высоте, а не start: пока дети были флекс-группой, высоту им
    * давал align-items: stretch, и единица с кнопками были во всю строку
@@ -584,6 +617,12 @@ watch(
 .prop-grid__row > .input-group-text {
   grid-column: 3;
   grid-row: auto;
+  /*
+   * Растяжка по колонке: без неё каждая ячейка равна своему тексту, и «г»
+   * оказывалась вдвое уже «мл» при общей колонке. Столбец единиц должен
+   * выглядеть столбцом, а не лесенкой.
+   */
+  justify-self: stretch;
   justify-content: center;
   background: var(--bg-sunken);
 }
@@ -611,10 +650,17 @@ watch(
   border-radius: 0 4px 4px 0;
 }
 
+/*
+ * Правая граница у «+» не читалась: скругление 4px съедало её у самого края, и
+ * при ширине 38px оставалась полоска в четверть пикселя. Скругление убирать
+ * нельзя — ради него группа и выглядит группой, — поэтому правая рамка вдвое
+ * толще остальных: на скруглении она идёт по дуге и остаётся заметной.
+ */
 .prop-grid__row > .input-group__btn--add {
   grid-column: 5;
   grid-row: auto;
   border-radius: 0 4px 4px 0;
+  border-right-width: 2px;
 }
 
 /*

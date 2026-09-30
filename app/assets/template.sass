@@ -583,7 +583,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 42px;
+  // Минимальной ширины нет: колонку и так задаёт самая длинная надпись, а
+  // min-width превращал «мл» в ячейку шириной с кнопку, сколько отступы
+  // вокруг текста ни убавляй.
+  min-width: 0;
+  // Отступы по 10px: столько же, сколько у соседних блоков формы, и
+  // столько же, сколько нужно, чтобы короткая единица читалась как
+  // подпись, а не как обрезок. Раздутость блока приходила не от них,
+  // а от min-width в два знака, которого здесь больше нет.
   padding: 0 10px;
   font-size: 13px;
   color: var(--text-muted);
@@ -605,7 +612,12 @@
   color: var(--accent-ink);
   background: var(--accent-bg);
   border: 1px solid var(--accent);
-  border-left: none;
+  // Своя левая рамка у всех кнопок группы. Раньше её убирали, чтобы не
+  // задваивать линию на стыке с полем, но получалось, что левая грань кнопки
+  // не обведена вовсе и на скруглении не читалась: кнопка выглядела срезанной.
+  // Задваивания не происходит — рамка кнопки и грань поля лежат на разных
+  // сторонах: кнопка начинается сразу за полем.
+  border-left: 1px solid var(--accent);
   border-radius: 0;
   cursor: pointer;
 
@@ -675,8 +687,12 @@
 .input-group__btn--minus
   color: var(--info-ink);
   background: var(--info-bg);
-  border-color: var(--info);
-  border-left: 1px solid var(--info);
+  // Рамка приглушена на четверть от основного тона: насыщенный синий рядом с
+  // заливкой и знаком цеплял сильнее, чем сам «−», и строка читалась как
+  // черте с рамкой. Границу должно быть видно, но она не должна спорить с
+  // содержимым кнопки.
+  border-color: color-mix(in srgb, var(--info) 75%, var(--bg-elevated));
+  border-left: 1px solid color-mix(in srgb, var(--info) 75%, var(--bg-elevated));
 
 .input-group__btn--minus:hover:not(:disabled)
   background: var(--info-hover);

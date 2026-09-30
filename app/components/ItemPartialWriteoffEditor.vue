@@ -304,6 +304,16 @@ function toggleReason(index: number, event: Event): void {
   padding-left: 24px;
 }
 
+/*
+ * Отступ перед крыжиком «обнуление» больше общего: рядом с полем ввода шага он
+ * примыкал к нему вплотную и читался как часть поля, а не как отдельная
+ * настройка. Общий интервал 20px для checkbox'а смотрится тесно — он ниже
+ * текстовой строки, а не по центру поля.
+ */
+.partial-editor__reason {
+  margin-left: 8px;
+}
+
 .partial-editor__step {
   width: 180px;
   margin: 0;
@@ -335,6 +345,11 @@ function toggleReason(index: number, event: Event): void {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Отступ перед крыжиком «обнуление» больше общего: рядом с полем ввода шага он
+   * примыкал к нему вплотную и читался как часть поля, а не как отдельная
+   * настройка. Общие 20px для checkbox'а смотрятся тесно — он ниже текстовой
+   * строки, а не по центру поля. */
+  margin-left: 8px;
   padding-bottom: 8px;
   font-size: 13px;
   color: var(--text-secondary);
