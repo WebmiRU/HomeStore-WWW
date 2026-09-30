@@ -5,92 +5,46 @@
       <NuxtLink to="/label-presets/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
-
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table class="presets-table" v-if="presets.length">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>{{ t('common.title') }}</th>
-            <th>{{ t('label_presets.page') }}</th>
-            <th>{{ t('label_presets.cell') }}</th>
-            <th>{{ t('label_presets.per_sheet') }}</th>
-            <th>{{ t('label_presets.barcode') }}</th>
-            <th>{{ t('label_presets.font') }}</th>
-            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="p in presets"
-            :key="p.id"
-            @dblclick="p.is_system ? null : openRow($event, `/label-presets/${p.id}`)"
-          >
-            <td data-label="ID">{{ p.id }}</td>
-            <td :data-label="t('common.title')">
-              {{ p.title }}
-              <span v-if="p.is_system" class="system-badge" :title="t('label_presets.system_hint')">
-                {{ t('label_presets.system_word') }}
-              </span>
-            </td>
-            <td :data-label="t('label_presets.page')">{{ p.page_width }}×{{ p.page_height }}</td>
-            <td :data-label="t('label_presets.cell')">{{ p.cell_width }}×{{ p.cell_height }}</td>
-            <td :data-label="t('label_presets.per_sheet')">{{ p.labels_per_sheet }}</td>
-            <td :data-label="t('label_presets.barcode')">{{ p.barcode_position }}</td>
-            <td :data-label="t('label_presets.font')">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</td>
-            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
-              <span
-                v-if="p.user"
-                class="owner-name"
-                :class="isOwner(p.user) ? 'owner--me' : 'owner--other'"
-              >{{ p.user.name }}</span>
-              <span v-else>—</span>
-            </td>
-            <td class="actions">
-              <!-- Системный шаблон только для просмотра: править и удалять
-                   его нельзя, поэтому и ссылок на эти действия не показываем. -->
-              <template v-if="p.is_system">
-                <span class="action-lock" :title="t('label_presets.system_readonly')">
-                  <img src="/img/icon/view.svg" class="action-icon" alt="" />
-                </span>
-              </template>
-              <template v-else>
-                <NuxtLink :to="`/label-presets/${p.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
-                  <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-                </NuxtLink>
-                <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deletePreset(p.id)">
-                  <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-                </a>
-              </template>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('label_presets.no_presets') }}</div>
-
-      <div class="pagination" v-if="meta.last_page > 1">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          @click="goToPage((meta.current_page || 1) - 1)"
-          class="page-btn"
-        >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          @click="goToPage((meta.current_page || 1) + 1)"
-          class="page-btn"
-        >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+    <IndexTable
+      :rows="presets"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('label_presets.no_presets')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="openTo"
+      @page="goToPage"
+    >
+      <template #cell-title="{ row: p }">
+        {{ p.title }}
+        <span v-if="p.is_system" class="system-badge" :title="t('label_presets.system_hint')">
+          {{ t('label_presets.system_word') }}
+        </span>
+      </template>
+      <template #cell-page="{ row: p }">{{ p.page_width }}×{{ p.page_height }}</template>
+      <template #cell-cell="{ row: p }">{{ p.cell_width }}×{{ p.cell_height }}</template>
+      <template #cell-font="{ row: p }">{{ p.font?.name ?? (p.font_id ? '#' + p.font_id : '—') }}</template>
+      <template #cell-user="{ row: p }">
+        <NuxtLink v-if="p.user" :to="`/users/${p.user.id}`" class="row-link">{{ p.user.name }}</NuxtLink>
+        <span v-else class="muted">—</span>
+      </template>
+      <template #actions="{ row: p }">
+        <!-- Системный шаблон только для просмотра: править и удалять его
+             нельзя, поэтому и ссылок на эти действия не показываем. -->
+        <span v-if="p.is_system" class="action-lock" :title="t('label_presets.system_readonly')">
+          <img src="/img/icon/view.svg" class="action-icon" alt="" />
+        </span>
+        <template v-else>
+          <NuxtLink :to="`/label-presets/${p.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
+            <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+          </NuxtLink>
+          <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deletePreset(p.id)">
+            <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+          </a>
+        </template>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
@@ -105,14 +59,31 @@ const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const presets = ref<LabelPresetResponse[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
+/*
+ * Системный шаблон по двойному клику не открывается: он только для чтения,
+ * и открывать его карточку незачем — там нечего править.
+ */
+const openTo = (p: { id: number; is_system: boolean }): string | undefined =>
+  p.is_system ? undefined : `/label-presets/${p.id}`
+
 const showOwnerColumn = computed(() => presets.value.some(p => p.user && p.user.id))
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'title', label: t('common.title') },
+  { key: 'page', label: t('label_presets.page') },
+  { key: 'cell', label: t('label_presets.cell') },
+  { key: 'labels_per_sheet', label: t('label_presets.per_sheet') },
+  { key: 'barcode_position', label: t('label_presets.barcode') },
+  { key: 'font', label: t('label_presets.font') },
+  ...(showOwnerColumn.value ? [{ key: 'user', label: t('common.owner') }] : []),
+])
 
 async function loadPresets(page?: number) {
   loading.value = true
@@ -199,34 +170,6 @@ watch(() => route.query.page, (newPage) => {
   border-radius: 4px;
 }
 
-.presets-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.presets-table th,
-.presets-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.presets-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.presets-table td {
-  color: var(--text-secondary);
-}
-
-.presets-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -286,109 +229,10 @@ watch(() => route.query.page, (newPage) => {
   cursor: help;
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .presets-table,
-  .presets-table tbody,
-  .presets-table tr,
-  .presets-table td {
-    display: block;
-  }
-
-  .presets-table thead {
-    display: none;
-  }
-
-  .presets-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .presets-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .presets-table td.cb-col {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: auto;
-    padding: 0;
-  }
-
-  .presets-table td.cb-col input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
-
-  .presets-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .presets-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .presets-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

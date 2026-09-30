@@ -5,91 +5,60 @@
       <NuxtLink to="/warehouses/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table class="warehouses-table" v-if="warehouses.length">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th class="img-col">{{ t('list_common.photo') }}</th>
-            <th>{{ t('common.title') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}`)">
-            <td data-label="ID">{{ w.id }}</td>
-            <td class="img-col">
-              <ItemPhoto :images="w.images" :alt="w.title" :size="48" lightbox />
-            </td>
-            <td :data-label="t('common.title')">{{ w.title }}</td>
-            <td :data-label="t('common.created')">{{ formatDate(w.created_at) }}</td>
-            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
-              <span
-                v-if="w.user"
-                class="owner-name"
-                :class="isOwner(w.user) ? 'owner--me' : 'owner--other'"
-              >{{ w.user.name }}</span>
-              <span v-else>—</span>
-            </td>
-            <td class="actions">
-              <NuxtLink
-                v-if="canEdit(w)"
-                :to="`/warehouses/${w.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                v-else
-                :to="`/warehouses/${w.id}`"
-                class="action-link action-view"
-                :title="t('common.open')"
-                :aria-label="t('common.open')"
-              >
-                <img src="/img/icon/view.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :class="{ 'action-del--forbidden': !canDelete(w) }"
-                :title="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
-                :aria-label="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
-                @click.prevent="deleteWarehouse(w)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('warehouses.no_warehouses') }}</div>
-
-      <div class="pagination" v-if="meta.last_page > 1">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          @click="goToPage((meta.current_page || 1) - 1)"
-          class="page-btn"
+    <IndexTable
+      :rows="warehouses"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('warehouses.no_warehouses')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="(w) => `/warehouses/${w.id}`"
+      @page="goToPage"
+    >
+      <template #cell-photo="{ row: w }">
+        <ItemPhoto :images="w.images" :alt="w.title" :size="48" lightbox />
+      </template>
+      <template #cell-user="{ row: w }">
+        <span
+          v-if="w.user"
+          class="owner-name"
+          :class="isOwner(w.user) ? 'owner--me' : 'owner--other'"
+        >{{ w.user.name }}</span>
+        <span v-else>—</span>
+      </template>
+      <template #cell-created_at="{ row: w }">{{ formatDate(w.created_at) }}</template>
+      <template #actions="{ row: w }">
+        <NuxtLink
+          v-if="canEdit(w)"
+          :to="`/warehouses/${w.id}`"
+          class="action-link action-edit"
+          :title="t('common.edit')"
+          :aria-label="t('common.edit')"
         >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          @click="goToPage((meta.current_page || 1) + 1)"
-          class="page-btn"
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <NuxtLink
+          v-else
+          :to="`/warehouses/${w.id}`"
+          class="action-link action-view"
+          :title="t('common.open')"
+          :aria-label="t('common.open')"
         >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+          <img src="/img/icon/view.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a
+          href="#"
+          class="action-link action-del"
+          :class="{ 'action-del--forbidden': !canDelete(w) }"
+          :title="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
+          :aria-label="canDelete(w) ? t('common.delete') : t('list_common.delete_blocked')"
+          @click.prevent="deleteWarehouse(w)"
+        >
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
@@ -105,7 +74,6 @@ const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const warehouses = ref<WarehouseResponse[]>([])
 const loading = ref(true)
@@ -113,6 +81,14 @@ const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
 const showOwnerColumn = computed(() => warehouses.value.some(w => w.user && w.user.id))
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'photo', label: t('list_common.photo'), class: 'img-col' },
+  { key: 'title', label: t('common.title') },
+  { key: 'created_at', label: t('common.created') },
+  ...(showOwnerColumn.value ? [{ key: 'user', label: t('common.owner') }] : []),
+])
 
 const rightsOf = (w: WarehouseResponse): AccessRight[] => w.rights ?? []
 const canEdit = (w: WarehouseResponse): boolean => rightsOf(w).includes('edit')
@@ -216,42 +192,6 @@ watch(() => route.query.page, (newPage) => {
   border-radius: 4px;
 }
 
-.warehouses-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.warehouses-table th,
-.warehouses-table td {
-  /*
-   * Вертикальный отступ 6px, как в списке предметов.
-   *
-   * Высоту строки задаёт миниатюра в 48px, и на десяти строках каждые два
-   * пикселя — это 20px. В списке складов на них не хватало: кнопки пагинации
-   * уезжали за нижний край окна 965px, то есть на ноутбуке, где список и
-   * должен помещаться целиком.
-   */
-  padding: 6px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.warehouses-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.warehouses-table td {
-  color: var(--text-secondary);
-}
-
-.warehouses-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -302,96 +242,10 @@ watch(() => route.query.page, (newPage) => {
   opacity: 0.55;
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .warehouses-table,
-  .warehouses-table tbody,
-  .warehouses-table tr,
-  .warehouses-table td {
-    display: block;
-  }
-
-  .warehouses-table thead {
-    display: none;
-  }
-
-  .warehouses-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .warehouses-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .warehouses-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .warehouses-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .warehouses-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

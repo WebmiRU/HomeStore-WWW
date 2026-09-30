@@ -5,74 +5,51 @@
       <NuxtLink to="/units/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table v-if="units.length" class="units-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>{{ t('properties.abbreviation') }}</th>
-            <th>{{ t('common.title') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in units" :key="u.id" @dblclick="openRow($event, `/units/${u.id}`)">
-            <td data-label="ID">{{ u.id }}</td>
-            <td :data-label="t('properties.abbreviation')">{{ u.title_short }}</td>
-            <td :data-label="t('common.title')">{{ u.title_full }}</td>
-            <td :data-label="t('common.created')">{{ formatDate(u.created_at) }}</td>
-            <td class="actions">
-              <NuxtLink
-                :to="`/units/${u.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :title="t('common.delete')"
-                :aria-label="t('common.delete')"
-                @click.prevent="deleteUnit(u)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('properties.no_units') }}</div>
-
-      <div v-if="meta.last_page > 1" class="pagination">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          class="page-btn"
-          @click="goToPage((meta.current_page || 1) - 1)"
+    <!--
+      Таблица, пагинация и раскладка на узкий экран — из IndexTable: то же
+      самое написано было здесь вручную, хотя пагинация уже была отдельным
+      компонентом TablePagination. Копии разъезжались: правили одну — забывали
+      про другую.
+    -->
+    <IndexTable
+      :rows="units"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('properties.no_units')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="(u) => `/units/${u.id}`"
+      @page="goToPage"
+    >
+      <template #cell-created_at="{ row: u }">
+        {{ formatDate(u.created_at) }}
+      </template>
+      <template #actions="{ row: u }">
+        <NuxtLink
+          :to="`/units/${u.id}`"
+          class="action-link action-edit"
+          :title="t('common.edit')"
+          :aria-label="t('common.edit')"
         >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          class="page-btn"
-          @click="goToPage((meta.current_page || 1) + 1)"
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a
+          href="#"
+          class="action-link action-del"
+          :title="t('common.delete')"
+          :aria-label="t('common.delete')"
+          @click.prevent="deleteUnit(u)"
         >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { formatDate } from '~/utils/auditLabels'
 import { formatApiError } from '~/composables/formatApiError'
 import type { UnitResponse } from '~/repository/modules/unit'
@@ -81,9 +58,15 @@ const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const units = ref<UnitResponse[]>([])
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'title_short', label: t('properties.abbreviation') },
+  { key: 'title_full', label: t('common.title') },
+  { key: 'created_at', label: t('common.created') },
+])
+
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
@@ -171,34 +154,6 @@ watch(
   border-radius: 4px;
 }
 
-.units-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.units-table th,
-.units-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.units-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.units-table td {
-  color: var(--text-secondary);
-}
-
-.units-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -230,96 +185,10 @@ watch(
   color: var(--danger);
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .units-table,
-  .units-table tbody,
-  .units-table tr,
-  .units-table td {
-    display: block;
-  }
-
-  .units-table thead {
-    display: none;
-  }
-
-  .units-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .units-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .units-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .units-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .units-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

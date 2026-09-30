@@ -5,76 +5,62 @@
       <NuxtLink to="/categories/create" class="btn-add">{{ t('categories.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <IndexTable
+      :rows="rows"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('categories.no_categories')"
+      :open-to="(row) => `/categories/${row.id}`"
+    >
+      <template #cell-title="{ row }">
+        <span class="tree-prefix">{{ '—'.repeat(row.depth) }}</span>
+        <span v-if="row.depth > 0" class="tree-space"> </span>
+        {{ row.title }}
+      </template>
+      <template #cell-items_count="{ row }">
+        <span v-if="row.itemsCount">{{ row.itemsCount }}</span>
+        <span v-else class="muted">—</span>
+      </template>
+      <template #cell-created_at="{ row }">
+        {{ formatDate(row.createdAt) }}
+      </template>
+      <template #actions="{ row }">
+        <!--
+          Воронка, а не глаз: пункт ведёт в список предметов, отобранных по
+          категории, — это фильтр. Глаз в приложении уже значит «только
+          чтение», и второй значок на то же место сбивал с толку.
+        -->
+        <NuxtLink
+          :to="`/items?category_id=${row.id}`"
+          class="action-link action-view"
+          :title="t('categories.items_of_category')"
+          :aria-label="t('categories.items_of_category')"
+        >
+          <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <NuxtLink
+          :to="`/categories/${row.id}`"
+          class="action-link action-edit"
+          :title="t('common.edit')"
+          :aria-label="t('common.edit')"
+        >
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a
+          href="#"
+          class="action-link action-del"
+          :title="t('common.delete')"
+          :aria-label="t('common.delete')"
+          @click.prevent="deleteCategory(row)"
+        >
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
 
-    <template v-else>
-      <table v-if="rows.length" class="cat-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>{{ t('categories.title') }}</th>
-            <th>{{ t('list_common.items_count') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.id" @dblclick="openRow($event, `/categories/${row.id}`)">
-            <td data-label="ID">{{ row.id }}</td>
-            <td :data-label="t('categories.title')">
-              <span class="tree-prefix">{{ '—'.repeat(row.depth) }}</span>
-              <span v-if="row.depth > 0" class="tree-space"> </span>
-              {{ row.title }}
-            </td>
-            <td :data-label="t('list_common.items_count')">
-              <span v-if="row.itemsCount">{{ row.itemsCount }}</span>
-              <span v-else class="muted">—</span>
-            </td>
-            <td :data-label="t('common.created')">{{ formatDate(row.createdAt) }}</td>
-            <td class="actions">
-              <!--
-                Воронка, а не глаз: пункт ведёт в список предметов, отобранных
-                по категории, — это фильтр. Глаз в приложении уже значит
-                «только чтение» (см. строку предмета, которую править нельзя),
-                и второй значок на то же место сбивал с толку. Цвет другой
-                намеренно: у «Редактирования» он был тот же.
-              -->
-              <NuxtLink
-                :to="`/items?category_id=${row.id}`"
-                class="action-link action-view"
-                :title="t('categories.items_of_category')"
-                :aria-label="t('categories.items_of_category')"
-              >
-                <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                :to="`/categories/${row.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :title="t('common.delete')"
-                :aria-label="t('common.delete')"
-                @click.prevent="deleteCategory(row)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('categories.no_categories') }}</div>
-
-      <p class="page-hint">
-        {{ t('categories.counter_hint') }}</p>
-    </template>
+    <p class="page-hint">
+      {{ t('categories.counter_hint') }}</p>
   </div>
 </template>
 
@@ -87,9 +73,14 @@ import type { CategoryResponse } from '~/repository/modules/category'
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
-const { openRow } = useRowOpen()
 
 const categories = ref<CategoryResponse[]>([])
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'title', label: t('categories.title') },
+  { key: 'items_count', label: t('list_common.items_count') },
+  { key: 'created_at', label: t('common.created') },
+])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
@@ -199,34 +190,6 @@ onMounted(load)
   border-radius: 4px;
 }
 
-.cat-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.cat-table th,
-.cat-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.cat-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.cat-table td {
-  color: var(--text-secondary);
-}
-
-.cat-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .tree-prefix {
   color: var(--text-dim);
 }
@@ -281,60 +244,6 @@ onMounted(load)
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .cat-table,
-  .cat-table tbody,
-  .cat-table tr,
-  .cat-table td {
-    display: block;
-  }
-
-  .cat-table thead {
-    display: none;
-  }
-
-  .cat-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .cat-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .cat-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .cat-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .cat-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

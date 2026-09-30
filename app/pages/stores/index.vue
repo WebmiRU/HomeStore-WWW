@@ -12,97 +12,84 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table class="stores-table" v-if="flatList.length">
-        <thead>
-          <tr>
-            <th class="cb-col">
-              <input
-                type="checkbox"
-                :checked="allSelected"
-                :indeterminate.prop="someSelected && !allSelected"
-                @change="toggleAll"
-              />
-            </th>
-            <th>ID</th>
-            <th class="img-col">{{ t('list_common.photo') }}</th>
-            <th>{{ t('stores.title') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th>{{ t('common.updated') }}</th>
-            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="node in pageList" :key="node.store.id" @dblclick="openRow($event, `/stores/${node.store.id}`)">
-            <td class="cb-col">
-              <input
-                type="checkbox"
-                :checked="selected.has(node.store.id)"
-                @change="toggleOne(node.store.id)"
-              />
-            </td>
-            <td data-label="ID">{{ node.store.id }}</td>
-            <td class="img-col">
-              <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="48" lightbox />
-            </td>
-            <td :data-label="t('stores.title')">
-              <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
-              <span v-if="node.depth > 0" class="tree-space"> </span>
-              {{ node.store.title }}
-            </td>
-            <td :data-label="t('common.created')">{{ formatDate(node.store.created_at) }}</td>
-            <td :data-label="t('common.updated')">{{ formatDate(node.store.updated_at) }}</td>
-            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
-              <span
-                v-if="node.store.user"
-                class="owner-name"
-                :class="isOwner(node.store.user) ? 'owner--me' : 'owner--other'"
-              >{{ node.store.user.name }}</span>
-              <span v-else>—</span>
-            </td>
-            <td class="actions">
-              <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
-              <NuxtLink
-                v-if="canEdit(node.store)"
-                :to="`/stores/${node.store.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                v-else
-                :to="`/stores/${node.store.id}`"
-                class="action-link action-view"
-                :title="t('common.open')"
-                :aria-label="t('common.open')"
-              >
-                <img src="/img/icon/view.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :class="{ 'action-del--forbidden': !canDelete(node.store) }"
-                :title="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
-                :aria-label="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
-                @click.prevent="deleteStore(node.store.id)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('stores.no_stores') }}</div>
-
-      <TablePagination :page="page" :last-page="lastPage" @go="goToPage" />
-    </template>
+    <IndexTable
+      :rows="pageList"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('stores.no_stores')"
+      :page="page"
+      :last-page="lastPage"
+      :open-to="(node) => `/stores/${node.store.id}`"
+      :row-key="(node) => node.store.id"
+      @page="goToPage"
+    >
+      <template #select-all>
+        <input
+          type="checkbox"
+          :checked="allSelected"
+          :indeterminate.prop="someSelected && !allSelected"
+          @change="toggleAll"
+        />
+      </template>
+      <template #cell-select="{ row: node }">
+        <input
+          type="checkbox"
+          :checked="selected.has(node.store.id)"
+          @change="toggleOne(node.store.id)"
+        />
+      </template>
+      <template #cell-id="{ row: node }">{{ node.store.id }}</template>
+      <template #cell-photo="{ row: node }">
+        <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="48" lightbox />
+      </template>
+      <template #cell-title="{ row: node }">
+        <span class="tree-prefix">{{ '—'.repeat(node.depth) }}</span>
+        <span v-if="node.depth > 0" class="tree-space"> </span>
+        {{ node.store.title }}
+      </template>
+      <template #cell-created_at="{ row: node }">{{ formatDate(node.store.created_at) }}</template>
+      <template #cell-updated_at="{ row: node }">{{ formatDate(node.store.updated_at) }}</template>
+      <template #cell-user="{ row: node }">
+        <span
+          v-if="node.store.user"
+          class="owner-name"
+          :class="isOwner(node.store.user) ? 'owner--me' : 'owner--other'"
+        >{{ node.store.user.name }}</span>
+        <span v-else>—</span>
+      </template>
+      <template #actions="{ row: node }">
+        <LabelListToggler :store-id="node.store.id" :in-any-list="storesInLists.has(node.store.id)" @changed="onTogglerChanged" />
+        <NuxtLink
+          v-if="canEdit(node.store)"
+          :to="`/stores/${node.store.id}`"
+          class="action-link action-edit"
+          :title="t('common.edit')"
+          :aria-label="t('common.edit')"
+        >
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <NuxtLink
+          v-else
+          :to="`/stores/${node.store.id}`"
+          class="action-link action-view"
+          :title="t('common.open')"
+          :aria-label="t('common.open')"
+        >
+          <img src="/img/icon/view.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a
+          href="#"
+          class="action-link action-del"
+          :class="{ 'action-del--forbidden': !canDelete(node.store) }"
+          :title="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
+          :aria-label="canDelete(node.store) ? t('common.delete') : t('list_common.delete_blocked')"
+          @click.prevent="deleteStore(node.store.id)"
+        >
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
@@ -115,7 +102,6 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
 const { isOwner } = useCurrentUser()
-const { openRow } = useRowOpen()
 const route = useRoute()
 const router = useRouter()
 
@@ -158,6 +144,15 @@ const someSelected = computed(() => selected.value.size > 0)
 // «Выделить все» отмечает то, что видно на странице, а не всё дерево разом.
 const allSelected = computed(() => pageList.value.length > 0 && pageList.value.every(n => selected.value.has(n.store.id)))
 const showOwnerColumn = computed(() => flatList.value.some(n => n.store.user && n.store.user.id))
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'photo', label: t('list_common.photo'), class: 'img-col' },
+  { key: 'title', label: t('stores.title') },
+  { key: 'created_at', label: t('common.created') },
+  { key: 'updated_at', label: t('common.updated') },
+  ...(showOwnerColumn.value ? [{ key: 'user', label: t('common.owner') }] : []),
+])
 
 const rightsOf = (store: StoreResponse): AccessRight[] => store.rights ?? []
 const canEdit = (store: StoreResponse): boolean => rightsOf(store).includes('edit')
@@ -343,53 +338,6 @@ watch(() => route.query.page, syncPage)
   border-radius: 4px;
 }
 
-.stores-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.stores-table th,
-.stores-table td {
-  /*
-   * Вертикальный отступ 6px, как в списке предметов.
-   *
-   * Высоту строки задаёт миниатюра в 48px, и на десяти строках каждые два
-   * пикселя — это 20px. В списке складов на них не хватало: кнопки пагинации
-   * уезжали за нижний край окна 965px, то есть на ноутбуке, где список и
-   * должен помещаться целиком.
-   */
-  padding: 6px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.stores-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.stores-table td {
-  color: var(--text-secondary);
-}
-
-.stores-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
-.cb-col {
-  width: 1px;
-  white-space: nowrap;
-  padding-right: 0;
-}
-
-.cb-col input[type="checkbox"] {
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 .tree-prefix {
   color: var(--text-dim);
 }
@@ -452,89 +400,6 @@ watch(() => route.query.page, syncPage)
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .stores-table,
-  .stores-table tbody,
-  .stores-table tr,
-  .stores-table td {
-    display: block;
-  }
-
-  .stores-table thead {
-    display: none;
-  }
-
-  .stores-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .stores-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .stores-table td.cb-col {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: auto;
-    padding: 0;
-  }
-
-  .stores-table td.cb-col input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Картинка в узком экране встаёт в верхнюю полосу карточки рядом с галочкой,
-     а не отдельной строкой с подписью «Фото»: подпись над картинкой в сорок
-     пикселей читается как название, и строка получается вдвое выше карточки.
-     Полоса под это и отведена — 44px, из них на картинку уходит 40. */
-  .stores-table td.img-col {
-    position: absolute;
-    top: 1px;
-    left: 42px;
-    width: auto;
-    padding: 0;
-  }
-
-  .stores-table td.img-col::before {
-    display: none;
-  }
-
-  .stores-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .stores-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .stores-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

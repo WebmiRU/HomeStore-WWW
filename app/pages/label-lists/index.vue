@@ -8,89 +8,53 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
-
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table class="lists-table" v-if="lists.length">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>{{ t('common.title') }}</th>
-            <th>{{ t('label_lists.template') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th>{{ t('common.updated') }}</th>
-            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="list in lists" :key="list.id" @dblclick="openRow($event, `/label-lists/${list.id}`)">
-            <td data-label="ID">{{ list.id }}</td>
-            <td :data-label="t('common.title')">
-              {{ list.title }}
-              <span v-if="list.codes_count" class="blank-badge" :title="t('label_lists.codes_generated', { count: list.codes_count })">
-                {{ t('label_lists.preset_without_text') }}
-              </span>
-            </td>
-            <td :data-label="t('label_lists.template')">
-              <!-- Шаблон удаляется мягко, а список его переживает: название
-                   остаётся видимым с пометкой, назначить можно другой. -->
-              <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted">{{ t('placeholders.deleted') }}</template></span>
-              <span v-else class="muted">{{ t('label_lists.no_template') }}</span>
-            </td>
-            <td :data-label="t('common.created')">{{ formatDate(list.created_at) }}</td>
-            <td :data-label="t('common.updated')">{{ formatDate(list.updated_at) }}</td>
-            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
-              <span
-                v-if="list.user"
-                class="owner-name"
-                :class="isOwner(list.user) ? 'owner--me' : 'owner--other'"
-              >{{ list.user.name }}</span>
-              <span v-else>—</span>
-            </td>
-            <td class="actions">
-              <NuxtLink :to="`/label-lists/${list.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteList(list)">
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-              <a
-                href="#"
-                class="action-link action-download"
-                :class="{ disabled: downloading === list.id }"
-                @click.prevent="downloadPdf(list.id)"
-              >
-                <img v-if="downloading !== list.id" src="/img/icon/download.svg" class="action-icon" alt="" />
-                <span v-else class="download-spinner">...</span>
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('label_lists.no_lists') }}</div>
-
-      <div class="pagination" v-if="meta.last_page > 1">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          @click="goToPage((meta.current_page || 1) - 1)"
-          class="page-btn"
+    <IndexTable
+      :rows="lists"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('label_lists.no_lists')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="(list) => `/label-lists/${list.id}`"
+      @page="goToPage"
+    >
+      <template #cell-title="{ row: list }">
+        {{ list.title }}
+        <span v-if="list.codes_count" class="blank-badge" :title="t('label_lists.codes_generated', { count: list.codes_count })">
+          {{ t('label_lists.preset_without_text') }}
+        </span>
+      </template>
+      <template #cell-label_preset="{ row: list }">
+        <!-- Шаблон удаляется мягко, а список его переживает: название остаётся
+             видимым с пометкой, назначить можно другой. -->
+        <span v-if="list.label_preset">{{ list.label_preset.title }}<template v-if="list.label_preset.deleted">{{ t('placeholders.deleted') }}</template></span>
+        <span v-else class="muted">{{ t('label_lists.no_template') }}</span>
+      </template>
+      <template #cell-user="{ row: list }">
+        <NuxtLink v-if="list.user" :to="`/users/${list.user.id}`" class="row-link">{{ list.user.name }}</NuxtLink>
+        <span v-else class="muted">—</span>
+      </template>
+      <template #cell-created_at="{ row: list }">{{ formatDate(list.created_at) }}</template>
+      <template #cell-updated_at="{ row: list }">{{ formatDate(list.updated_at) }}</template>
+      <template #actions="{ row: list }">
+        <NuxtLink :to="`/label-lists/${list.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteList(list)">
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+        <a
+          href="#"
+          class="action-link action-download"
+          :class="{ disabled: downloading === list.id }"
+          @click.prevent="downloadPdf(list.id)"
         >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          @click="goToPage((meta.current_page || 1) + 1)"
-          class="page-btn"
-        >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+          <img v-if="downloading !== list.id" src="/img/icon/download.svg" class="action-icon" alt="" />
+          <span v-else class="download-spinner">...</span>
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
@@ -105,7 +69,6 @@ const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const lists = ref<LabelListResponse[]>([])
 const loading = ref(true)
@@ -113,6 +76,15 @@ const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
 const showOwnerColumn = computed(() => lists.value.some(l => l.user && l.user.id))
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'title', label: t('common.title') },
+  { key: 'label_preset', label: t('label_lists.template') },
+  { key: 'created_at', label: t('common.created') },
+  { key: 'updated_at', label: t('common.updated') },
+  ...(showOwnerColumn.value ? [{ key: 'user', label: t('common.owner') }] : []),
+])
 const downloading = ref<number | null>(null)
 
 function formatDate(iso: string): string {
@@ -246,34 +218,6 @@ watch(() => route.query.page, (newPage) => {
   border-radius: 4px;
 }
 
-.lists-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.lists-table th,
-.lists-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.lists-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.lists-table td {
-  color: var(--text-secondary);
-}
-
-.lists-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -332,109 +276,10 @@ watch(() => route.query.page, (newPage) => {
   vertical-align: middle;
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .lists-table,
-  .lists-table tbody,
-  .lists-table tr,
-  .lists-table td {
-    display: block;
-  }
-
-  .lists-table thead {
-    display: none;
-  }
-
-  .lists-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .lists-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .lists-table td.cb-col {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: auto;
-    padding: 0;
-  }
-
-  .lists-table td.cb-col input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
-
-  .lists-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .lists-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .lists-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

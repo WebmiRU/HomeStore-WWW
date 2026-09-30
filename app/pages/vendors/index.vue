@@ -5,104 +5,75 @@
       <NuxtLink to="/vendors/create" class="btn-add">{{ t('vendors.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table v-if="vendors.length" class="vendors-table">
-        <thead>
-          <tr>
-            <th>{{ t('list_common.logo') }}</th>
-            <th>{{ t('vendors.title') }}</th>
-            <th>{{ t('list_common.description') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="m in vendors"
-            :key="m.id"
-            @dblclick="openRow($event, `/vendors/${m.id}`)"
-          >
-            <td :data-label="t('list_common.logo')" class="cell-logo">
-              <VendorLogo
-                :size="38"
-                :logo-sha="m.logo_sha"
-                :logo-url="m.logo_url"
-                :logo-width="m.logo_width"
-                :logo-height="m.logo_height"
-                :logo-thumbs="m.logo_thumbs"
-                :title="m.title"
-                lightbox
-              />
-            </td>
-            <td :data-label="t('vendors.title')">{{ m.title }}</td>
-            <!-- Описание в списке обрезаем: в таблице ему место в одну строку,
-                 а целиком оно живёт в карточке. -->
-            <td :data-label="t('list_common.description')" class="cell-description">{{ m.description || '—' }}</td>
-            <td :data-label="t('common.created')">{{ formatDate(m.created_at) }}</td>
-            <td class="actions">
-              <!--
-                Воронка, как у категорий: пункт ведёт в список предметов этого
-                производителя. Глаз в приложении уже значит «только чтение», и
-                второй значок на то же место сбивал бы с толку.
-              -->
-              <NuxtLink
-                :to="`/items?vendor_id=${m.id}`"
-                class="action-link action-view"
-                :title="t('vendors.items_of_vendor')"
-                :aria-label="t('vendors.items_of_vendor')"
-              >
-                <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                :to="`/vendors/${m.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :title="t('common.delete')"
-                :aria-label="t('common.delete')"
-                @click.prevent="deleteVendor(m)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('vendors.no_vendors') }}</div>
-
-      <div v-if="meta.last_page > 1" class="pagination">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          class="page-btn"
-          @click="goToPage((meta.current_page || 1) - 1)"
+    <IndexTable
+      :rows="vendors"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('vendors.no_vendors')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="(m) => `/vendors/${m.id}`"
+      @page="goToPage"
+    >
+      <template #cell-logo="{ row: m }">
+        <VendorLogo
+          :size="48"
+          :logo-sha="m.logo_sha"
+          :logo-url="m.logo_url"
+          :logo-width="m.logo_width"
+          :logo-height="m.logo_height"
+          :logo-thumbs="m.logo_thumbs"
+          :title="m.title"
+          lightbox
+        />
+      </template>
+      <template #cell-description="{ row: m }">
+        <!-- Описание в списке обрезаем: в таблице ему место в одну строку,
+             а целиком оно живёт в карточке. -->
+        {{ m.description || '—' }}
+      </template>
+      <template #cell-created_at="{ row: m }">
+        {{ formatDate(m.created_at) }}
+      </template>
+      <template #actions="{ row: m }">
+        <!--
+          Воронка, как у категорий: пункт ведёт в список предметов этого
+          производителя. Глаз в приложении уже значит «только чтение», и второй
+          значок на то же место сбивал бы с толку.
+        -->
+        <NuxtLink
+          :to="`/items?vendor_id=${m.id}`"
+          class="action-link action-view"
+          :title="t('vendors.items_of_vendor')"
+          :aria-label="t('vendors.items_of_vendor')"
         >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          class="page-btn"
-          @click="goToPage((meta.current_page || 1) + 1)"
+          <img src="/img/icon/funnel.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <NuxtLink
+          :to="`/vendors/${m.id}`"
+          class="action-link action-edit"
+          :title="t('common.edit')"
+          :aria-label="t('common.edit')"
         >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a
+          href="#"
+          class="action-link action-del"
+          :title="t('common.delete')"
+          :aria-label="t('common.delete')"
+          @click.prevent="deleteVendor(m)"
+        >
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { formatDate } from '~/utils/auditLabels'
 import { formatApiError } from '~/composables/formatApiError'
 import type { VendorResponse } from '~/repository/modules/vendor'
@@ -111,9 +82,14 @@ const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const vendors = ref<VendorResponse[]>([])
+const columns = computed(() => [
+  { key: 'logo', label: t('list_common.logo'), class: 'img-col cell-logo' },
+  { key: 'title', label: t('vendors.title') },
+  { key: 'description', label: t('list_common.description'), class: 'cell-description' },
+  { key: 'created_at', label: t('common.created') },
+])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
@@ -198,39 +174,6 @@ watch(
   border-radius: 4px;
 }
 
-.vendors-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.vendors-table th,
-.vendors-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.vendors-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.vendors-table td {
-  color: var(--text-secondary);
-}
-
-.vendors-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
-.cell-logo {
-  width: 1%;
-  white-space: nowrap;
-}
-
 .cell-description {
   max-width: 420px;
   overflow: hidden;
@@ -269,103 +212,10 @@ watch(
   color: var(--danger);
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .vendors-table,
-  .vendors-table tbody,
-  .vendors-table tr,
-  .vendors-table td {
-    display: block;
-  }
-
-  .vendors-table thead {
-    display: none;
-  }
-
-  .vendors-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .vendors-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .vendors-table td.cell-logo {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    width: auto;
-  }
-
-  .vendors-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .vendors-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .vendors-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

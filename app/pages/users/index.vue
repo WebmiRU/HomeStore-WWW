@@ -5,67 +5,36 @@
       <NuxtLink to="/users/create" class="btn-add">{{ t('common.add') }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('form.loading') }}</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-
-    <template v-else>
-      <table class="users-table" v-if="users.length">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th class="img-col">{{ t('team.avatar') }}</th>
-            <th>{{ t('common.name') }}</th>
-            <th>E-mail</th>
-            <th>{{ t('common.created') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in users" :key="u.id" @dblclick="openRow($event, `/users/${u.id}`)">
-            <td data-label="ID">{{ u.id }}</td>
-            <td :data-label="t('team.avatar')" class="img-col">
-              <UserAvatar :user="u" :size="38" lightbox />
-            </td>
-            <td :data-label="t('common.name')">{{ u.name }}</td>
-            <td data-label="E-mail">{{ u.email }}</td>
-            <td :data-label="t('common.created')">{{ formatDate(u.created_at) }}</td>
-            <td class="actions">
-              <NuxtLink :to="`/users/${u.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteUser(u.id)">
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('team.no_users') }}</div>
-
-      <div class="pagination" v-if="meta.last_page > 1">
-        <button
-          :disabled="!meta.current_page || meta.current_page <= 1"
-          @click="goToPage((meta.current_page || 1) - 1)"
-          class="page-btn"
-        >
-          ← {{ t('common.back') }}
-        </button>
-        <span class="page-info">{{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-          :disabled="!meta.current_page || meta.current_page >= meta.last_page"
-          @click="goToPage((meta.current_page || 1) + 1)"
-          class="page-btn"
-        >
-          {{ t('common.forward') }} →
-        </button>
-      </div>
-    </template>
+    <IndexTable
+      :rows="users"
+      :columns="columns"
+      :loading="loading"
+      :error="error"
+      :empty-text="t('team.no_users')"
+      :page="meta.current_page || 1"
+      :last-page="meta.last_page"
+      :open-to="(u) => `/users/${u.id}`"
+      @page="goToPage"
+    >
+      <template #cell-avatar="{ row: u }">
+        <UserAvatar :user="u" :size="48" lightbox />
+      </template>
+      <template #cell-name="{ row: u }">{{ u.name }}</template>
+      <template #cell-created_at="{ row: u }">{{ formatDate(u.created_at) }}</template>
+      <template #actions="{ row: u }">
+        <NuxtLink :to="`/users/${u.id}`" class="action-link action-edit" :title="t('common.edit')" :aria-label="t('common.edit')">
+          <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+        </NuxtLink>
+        <a href="#" class="action-link action-del" :title="t('common.delete')" :aria-label="t('common.delete')" @click.prevent="deleteUser(u.id)">
+          <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+        </a>
+      </template>
+    </IndexTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import type { UserProfileResponse } from '~/repository/modules/userProfile'
 
@@ -73,9 +42,15 @@ const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { openRow } = useRowOpen()
 
 const users = ref<UserProfileResponse[]>([])
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'avatar', label: t('team.avatar'), class: 'img-col' },
+  { key: 'name', label: t('common.name') },
+  { key: 'email', label: 'E-mail' },
+  { key: 'created_at', label: t('common.created') },
+])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
@@ -177,34 +152,6 @@ watch(() => route.query.page, (newPage) => {
   border-radius: 4px;
 }
 
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.users-table th,
-.users-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.users-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.users-table td {
-  color: var(--text-secondary);
-}
-
-.users-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -237,111 +184,10 @@ watch(() => route.query.page, (newPage) => {
   color: var(--danger);
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg-hover) 70%, var(--text));
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.page-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .users-table,
-  .users-table tbody,
-  .users-table tr,
-  .users-table td {
-    display: block;
-  }
-
-  .users-table thead {
-    display: none;
-  }
-
-  .users-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    /* Сверху 44px — под кнопки действий, аватар в левом углу стоит на них. */
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .users-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .users-table td.img-col {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    width: auto;
-    padding: 0;
-  }
-
-  /* Подпись колонки у аватара не нужна: картинка и так всё говорит, а на
-     телефоне она в углу и подпись только сбивала бы влево. */
-  .users-table td.img-col::before {
-    display: none;
-  }
-
-  .users-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  .users-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .users-table tr:hover td {
-    background: transparent;
   }
 }
 </style>

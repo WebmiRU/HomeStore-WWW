@@ -70,148 +70,124 @@
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
-      <table class="items-table" v-if="items.length">
-        <thead>
-          <tr>
-            <th class="cb-col">
-              <input
-                type="checkbox"
-                :checked="allSelected"
-                :indeterminate.prop="someSelected && !allSelected"
-                @change="toggleAll"
-              />
-            </th>
-            <th>ID</th>
-            <!--
-              «Фото», а не «Изображение», как в выдаче поиска: колонок здесь больше
-              десяти, и слово из одиннадцати букв отдавало картинке вдвое больше
-              места, чем она занимает, — колонка выходила 94px против 42px самой
-              картинки, а «Название» сжималось до 169px.
-            -->
-            <th class="img-col">{{ t('items.image') }}</th>
-            <th>{{ t('items.title') }}</th>
-            <th>{{ t('items.vendor') }}</th>
-            <th>{{ t('items.category') }}</th>
-            <th>{{ t('items.store') }}</th>
-            <th>{{ t('items.quantity') }}</th>
-            <th>{{ t('common.created') }}</th>
-            <th>{{ t('common.updated') }}</th>
-            <th v-if="showOwnerColumn">{{ t('common.owner') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items" :key="item.payload.id" @dblclick="openRow($event, `/items/${item.payload.id}`)">
-            <td class="cb-col">
-              <input
-                type="checkbox"
-                :checked="selected.has(item.payload.id)"
-                @change="toggleOne(item.payload.id)"
-              />
-            </td>
-            <td data-label="ID">{{ item.payload.id }}</td>
-            <td class="img-col">
-              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="48" lightbox />
-            </td>
-            <td :data-label="t('items.title')">{{ item.payload.title }}</td>
-            <td :data-label="t('items.vendor')">
-              <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
-                {{ item.vendor.title }}
-              </NuxtLink>
-              <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} {{ t('placeholders.deleted') }}</span>
-              <span v-else class="muted">—</span>
-            </td>
-            <td :data-label="t('items.category')">
-              <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
-                {{ item.category.title }}
-              </NuxtLink>
-              <span v-else-if="item.category" class="muted">{{ item.category.title }} {{ t('placeholders.deleted') }}</span>
-              <span v-else class="muted">—</span>
-            </td>
-            <td :data-label="t('items.store')">
-              <!-- Ссылка на карточку хранилища, как у категории и производителя.
-                   В цепочке store первым идёт само хранилище, дальше — предки.
-                   У удалённого ссылки нет: переход вёл бы в 404, поэтому
-                  название остаётся текстом с пометкой. -->
-              <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
-                {{ item.store[0].title }}
-              </NuxtLink>
-              <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} {{ t('placeholders.deleted') }}</span>
-              <span v-else class="muted">—</span>
-            </td>
-            <!--
-              У расходуемого предмета одного числа мало: «2» ничего не говорит о
-              том, сколько на самом деле осталось, — расход идёт по свойствам, и
-              штука может быть неполной. Поэтому штуки и запас рядом: «2 шт
-              (1800 мл)». Единицы в таблице нет, а названия свойств и так в
-              колонке «Свойства» этой же строки.
-            -->
-            <td :data-label="t('items.quantity_short')">
-              <template v-if="item.partial && item.partial.length">
-                <span class="qty-main">{{ item.payload.quantity ?? '—' }} {{ t('items.pieces_word') }}</span>
-                <span
-                  class="qty-partial"
-                  :title="item.partial
-                    .map((p) => `${p.property_title}: ${formatAmount(p.total)} ${p.unit_full ?? p.unit_short ?? ''}`)
-                    .join('; ')"
-                >
-                  ({{ item.partial.map((p) => `${formatAmount(p.total)} ${p.unit_short ?? ''}`.trim()).join(', ') }})
-                </span>
-              </template>
-              <template v-else>{{ item.payload.quantity ?? '—' }}</template>
-            </td>
-            <td :data-label="t('common.created')">{{ formatDate(item.payload.created_at) }}</td>
-            <td :data-label="t('common.updated')">{{ formatDate(item.payload.updated_at) }}</td>
-            <td v-if="showOwnerColumn" :data-label="t('common.owner')">
-              <span
-                v-if="item.payload.user"
-                class="owner-name"
-                :class="isOwner(item.payload.user) ? 'owner--me' : 'owner--other'"
-              >{{ item.payload.user.name }}</span>
-              <span v-else>—</span>
-            </td>
-            <td class="actions">
-              <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
-              <NuxtLink
-                v-if="canEdit(item)"
-                :to="`/items/${item.payload.id}`"
-                class="action-link action-edit"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-              >
-                <img src="/img/icon/edit.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <NuxtLink
-                v-else
-                :to="`/items/${item.payload.id}`"
-                class="action-link action-view"
-                :title="t('common.open')"
-                :aria-label="t('common.open')"
-              >
-                <img src="/img/icon/view.svg" class="action-icon" alt="" />
-              </NuxtLink>
-              <a
-                href="#"
-                class="action-link action-del"
-                :class="{ 'action-del--forbidden': !canDelete(item) }"
-                :title="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
-                :aria-label="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
-                @click.prevent="deleteItem(item.payload.id)"
-              >
-                <img src="/img/icon/delete.svg" class="action-icon" alt="" />
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else class="empty">{{ t('items.no_items') }}</div>
-
-      <TablePagination
+      <IndexTable
+        :rows="items"
+        :columns="columns"
+        :loading="loading"
+        :error="error"
+        :empty-text="t('items.no_items')"
         :page="meta.current_page || 1"
         :last-page="meta.last_page"
-        @go="goToPage"
-      />
+        :open-to="(item) => `/items/${item.payload.id}`"
+        :row-key="(item) => item.payload.id"
+        @page="goToPage"
+      >
+        <template #select-all>
+          <input
+            type="checkbox"
+            :checked="allSelected"
+            :indeterminate.prop="someSelected && !allSelected"
+            @change="toggleAll"
+          />
+        </template>
+        <template #cell-select="{ row: item }">
+          <input
+            type="checkbox"
+            :checked="selected.has(item.payload.id)"
+            @change="toggleOne(item.payload.id)"
+          />
+        </template>
+        <template #cell-id="{ row: item }">{{ item.payload.id }}</template>
+        <template #cell-image="{ row: item }">
+          <ItemPhoto :images="item.images" :alt="item.payload.title" :size="48" lightbox />
+        </template>
+        <template #cell-title="{ row: item }">{{ item.payload.title }}</template>
+        <template #cell-vendor="{ row: item }">
+          <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
+            {{ item.vendor.title }}
+          </NuxtLink>
+          <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} {{ t('placeholders.deleted') }}</span>
+          <span v-else class="muted">—</span>
+        </template>
+        <template #cell-category="{ row: item }">
+          <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
+            {{ item.category.title }}
+          </NuxtLink>
+          <span v-else-if="item.category" class="muted">{{ item.category.title }} {{ t('placeholders.deleted') }}</span>
+          <span v-else class="muted">—</span>
+        </template>
+        <template #cell-store="{ row: item }">
+          <!-- Ссылка на карточку хранилища, как у категории и производителя.
+               В цепочке store первым идёт само хранилище, дальше — предки.
+               У удалённого ссылки нет: переход вёл бы в 404, поэтому название
+               остаётся текстом с пометкой. -->
+          <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
+            {{ item.store[0].title }}
+          </NuxtLink>
+          <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} {{ t('placeholders.deleted') }}</span>
+          <span v-else class="muted">—</span>
+        </template>
+        <!--
+          У расходуемого предмета одного числа мало: «2» ничего не говорит о
+          том, сколько на самом деле осталось, — расход идёт по свойствам, и штука
+          может быть неполной. Поэтому штуки и запас рядом: «2 шт (1800 мл)».
+        -->
+        <template #cell-quantity="{ row: item }">
+          <template v-if="item.partial && item.partial.length">
+            <span class="qty-main">{{ item.payload.quantity ?? '—' }} {{ t('items.pieces_word') }}</span>
+            <span
+              class="qty-partial"
+              :title="item.partial
+                .map((p) => `${p.property_title}: ${formatAmount(p.total)} ${p.unit_full ?? p.unit_short ?? ''}`)
+                .join('; ')"
+            >
+              ({{ item.partial.map((p) => `${formatAmount(p.total)} ${p.unit_short ?? ''}`.trim()).join(', ') }})
+            </span>
+          </template>
+          <template v-else>{{ item.payload.quantity ?? '—' }}</template>
+        </template>
+        <template #cell-created_at="{ row: item }">{{ formatDate(item.payload.created_at) }}</template>
+        <template #cell-updated_at="{ row: item }">{{ formatDate(item.payload.updated_at) }}</template>
+        <template #cell-owner="{ row: item }">
+          <span
+            v-if="item.payload.user"
+            class="owner-name"
+            :class="isOwner(item.payload.user) ? 'owner--me' : 'owner--other'"
+          >{{ item.payload.user.name }}</span>
+          <span v-else>—</span>
+        </template>
+        <template #actions="{ row: item }">
+          <LabelListToggler :item-id="item.payload.id" :in-any-list="itemsInLists.has(item.payload.id)" @changed="onTogglerChanged" />
+          <NuxtLink
+            v-if="canEdit(item)"
+            :to="`/items/${item.payload.id}`"
+            class="action-link action-edit"
+            :title="t('common.edit')"
+            :aria-label="t('common.edit')"
+          >
+            <img src="/img/icon/edit.svg" class="action-icon" alt="" />
+          </NuxtLink>
+          <NuxtLink
+            v-else
+            :to="`/items/${item.payload.id}`"
+            class="action-link action-view"
+            :title="t('common.open')"
+            :aria-label="t('common.open')"
+          >
+            <img src="/img/icon/view.svg" class="action-icon" alt="" />
+          </NuxtLink>
+          <a
+            href="#"
+            class="action-link action-del"
+            :class="{ 'action-del--forbidden': !canDelete(item) }"
+            :title="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
+            :aria-label="canDelete(item) ? t('common.delete') : t('items.delete_blocked')"
+            @click.prevent="deleteItem(item.payload.id)"
+          >
+            <img src="/img/icon/delete.svg" class="action-icon" alt="" />
+          </a>
+        </template>
+      </IndexTable>
     </template>
   </div>
 </template>
@@ -229,7 +205,6 @@ import { categorySelectOptions } from '~/composables/categorySelectOptions'
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
 const { isOwner } = useCurrentUser()
-const { openRow } = useRowOpen()
 const route = useRoute()
 const router = useRouter()
 
@@ -281,6 +256,23 @@ const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)
 const allSelected = computed(() => items.value.length > 0 && items.value.every(i => selected.value.has(i.payload.id)))
 const showOwnerColumn = computed(() => items.value.some(i => i.payload.user && i.payload.user.id))
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  // «Фото», а не «Изображение», как в выдаче поиска: колонок здесь больше
+  // десяти, и слово из одиннадцати букв отдавало картинке вдвое больше места,
+  // чем она занимает, — колонка выходила 94px против 42px самой картинки, а
+  // «Название» сжималось.
+  { key: 'image', label: t('items.image'), class: 'img-col' },
+  { key: 'title', label: t('items.title') },
+  { key: 'vendor', label: t('items.vendor') },
+  { key: 'category', label: t('items.category') },
+  { key: 'store', label: t('items.store') },
+  { key: 'quantity', label: t('items.quantity_short') },
+  { key: 'created_at', label: t('common.created') },
+  { key: 'updated_at', label: t('common.updated') },
+  ...(showOwnerColumn.value ? [{ key: 'owner', label: t('common.owner') }] : []),
+])
 
 const rightsOf = (item: ItemResponse): AccessRight[] => item.rights ?? []
 const canEdit = (item: ItemResponse): boolean => rightsOf(item).includes('edit')
@@ -607,53 +599,6 @@ watch(
   border-radius: 4px;
 }
 
-.items-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.items-table th,
-.items-table td {
-  /*
-   * Вертикальный отступ 6px, а не 8px.
-   *
-   * Высоту строки задаёт фотография в 32px, и на 10 строках каждые два пикселя
-   * — это 20px, которых не хватало кнопкам пагинации: список показан, а
-   * перелистывать его приходилось прокруткой. По горизонтали 12px оставлены:
-   * там они держат колонки, а высоты строки не касаются.
-   */
-  padding: 6px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.items-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.items-table td {
-  color: var(--text-secondary);
-}
-
-.items-table tr:hover td {
-  background: var(--bg-elevated);
-}
-
-.cb-col {
-  width: 1px;
-  white-space: nowrap;
-  padding-right: 0;
-}
-
-.cb-col input[type="checkbox"] {
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 .actions {
   white-space: nowrap;
 }
@@ -705,105 +650,10 @@ watch(
 }
 
 
-
-.page-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-
 @media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .items-table,
-  .items-table tbody,
-  .items-table tr,
-  .items-table td {
-    display: block;
-  }
-
-  .items-table thead {
-    display: none;
-  }
-
-  .items-table tr {
-    position: relative;
-    margin-bottom: 14px;
-    padding: 44px 14px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--bg-sunken) 25%, transparent);
-  }
-
-  .items-table td {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 0;
-    border-bottom: 0;
-    color: var(--text);
-    font-size: 15px;
-    white-space: normal;
-  }
-
-  .items-table td.cb-col {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: auto;
-    padding: 0;
-  }
-
-  .items-table td.cb-col input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-  }
-
-  .items-table td.actions {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: auto;
-    padding: 0;
-    white-space: nowrap;
-  }
-
-  /* Картинка в узком экране встаёт в верхнюю полосу карточки рядом с
-     галочкой, а не отдельной строкой с подписью «Изображение»: подпись над
-     картинкой в тридцать пикселей читается как название, и строка получается
-     вдвое выше карточки. Полоса под это и отведена — 44px, из них на картинку
-     уходит 40. */
-  .items-table td.img-col {
-    position: absolute;
-    top: 1px;
-    left: 42px;
-    width: auto;
-    padding: 0;
-  }
-
-  .items-table td.img-col::before {
-    display: none;
-  }
-
-  .items-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 3px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-  }
-
-  .items-table tr:hover td {
-    background: transparent;
   }
 }
 </style>
