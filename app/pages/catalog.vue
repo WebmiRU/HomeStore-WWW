@@ -26,7 +26,7 @@
           @click="select(category.id)"
         >
           <span class="tile__photo">
-            <ItemPhoto :images="category.images" :alt="category.title" :size="200" />
+            <ItemPhoto :images="category.images" :alt="category.title" :size="200" square />
           </span>
           <span class="tile__title">{{ category.title }}</span>
           <span class="tile__count">{{ t('catalog.items_count', { count: category.items_count ?? 0 }) }}</span>
@@ -42,7 +42,7 @@
       -->
       <template v-else>
         <div class="catalog-head">
-          <ItemPhoto :images="selected?.images" :alt="selected?.title ?? ''" :size="48" />
+          <ItemPhoto :images="selected?.images" :alt="selected?.title ?? ''" :size="48" square />
           <h4 class="catalog-head__title">{{ selected?.title }}</h4>
           <NuxtLink :to="`/items?category_id=${selectedId}`" class="btn-add">{{ t('catalog.all_items') }}</NuxtLink>
         </div>
@@ -59,7 +59,7 @@
                 @click="select(child.id)"
               >
                 <span class="tile__photo">
-                  <ItemPhoto :images="child.images" :alt="child.title" :size="200" />
+                  <ItemPhoto :images="child.images" :alt="child.title" :size="200" square />
                 </span>
                 <span class="tile__title">{{ child.title }}</span>
                 <span class="tile__count">{{ t('catalog.items_count', { count: child.items_count ?? 0 }) }}</span>
@@ -77,12 +77,24 @@
                 class="tile"
               >
                 <span class="tile__photo">
-                  <ItemPhoto :images="item.images" :alt="item.payload.title" :size="200" />
+                  <ItemPhoto :images="item.images" :alt="item.payload.title" :size="200" square />
                 </span>
                 <span class="tile__title">{{ item.payload.title }}</span>
                 <span class="tile__count">{{ t('catalog.pieces', { count: item.payload.quantity ?? 0 }) }}</span>
               </NuxtLink>
             </div>
+
+            <!--
+              Постранично, а не одной страницей: в категории может лежать две
+              сотни предметов, и десять первых показывали бы часть каталога
+              молча, как будто он и неполон.
+            -->
+            <TablePagination
+              v-if="lastPage > 1"
+              :page="page"
+              :last-page="lastPage"
+              @go="goToPage"
+            />
           </div>
         </template>
 
@@ -97,6 +109,7 @@ import { computed, ref, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import type { CategoryResponse } from '~/repository/modules/category'
 import type { ItemResponse } from '~/repository/modules/item'
+import TablePagination from '~/components/TablePagination.vue'
 
 /**
  * Каталог: категории и то, что в них лежит, плиткой с фотографиями.
@@ -117,6 +130,8 @@ const router = useRouter()
 const categories = ref<CategoryResponse[]>([])
 const items = ref<ItemResponse[]>([])
 const selectedId = ref<number | null>(null)
+const page = ref(1)
+const lastPage = ref(1)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
@@ -136,10 +151,18 @@ async function loadItems() {
     return
   }
 
-  // Одна страница: каталог показывает, что лежит в категории, а не весь
-  // список, — постраничных кнопок в мозаике быть не может.
-  const result = await $api.item.list(1, selectedId.value)
+  const result = await $api.item.list(page.value, selectedId.value)
   items.value = result.data
+  lastPage.value = result.meta?.last_page ?? 1
+}
+
+/**
+ * Страница предметов в адрес не пишется: это не отдельное место, и кнопка
+ * «назад» в браузере возвращать список не должна.
+ */
+function goToPage(next: number) {
+  page.value = next
+  void loadItems()
 }
 
 async function load() {
@@ -159,13 +182,25 @@ async function load() {
 
 function select(id: number) {
   selectedId.value = id
+  page.value = 1
   void router.replace({ query: { category_id: String(id) } })
   void loadItems()
 }
 
-watch(selectedId, () => {
-  if (!loading.value && selectedId.value !== null) void loadItems()
-})
+/*
+ * Выбор живёт в адресе, и назад он тоже должен работать: переход на «Все
+ * категории» убирал параметр из адреса, а выбранной категория оставалась —
+ * страница выглядела прежней, хотя меняться должна была.
+ */
+watch(
+  () => route.query.category_id,
+  (value) => {
+    const id = Number(value)
+    selectedId.value = Number.isFinite(id) && id > 0 ? id : null
+    page.value = 1
+    if (!loading.value && selectedId.value !== null) void loadItems()
+  },
+)
 
 void load()
 </script>
@@ -217,12 +252,17 @@ void load()
   flex-direction: column;
   align-items: stretch;
   padding: 0;
+  /*
+   * Рамка плитки скруглена так же, как сама плитка.
+   *
+   * Рамки нет только у фотографии внутри: она очерчена своим скруглением, и
+   * вторая линия поверх читалась как ещё одна граница вокруг картинки. Плитка
+   * же рамку сохраняет — по ней видно, где заканчивается плитка.
+   */
   border: 1px solid var(--border);
-  /* Скругление меньше, чем кажется нужным на первый взгляд: плитка 200px
-     снятая с круглых 10px читалась как скруглённая карточка, а рядом с
-     такими же прямоугольными блоками в остальном интерфейсе — как мягкая
-     подушка. */
-  border-radius: 6px;
+  /* Тот же радиус, что у фотографии: плитка и снимок в ней — одна целая вещь,
+     и разные радиусы читались бы как вложенность, которой нет. */
+  border-radius: 4px;
   background: var(--bg);
   color: var(--text-secondary);
   font: inherit;
@@ -253,10 +293,14 @@ void load()
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  /* У самой фотографии углы прямые: плитка скруглена, а картинка — это её
-     содержимое, и скруглённый снимок читался бы как вырезка из фотобумаги, а
-     не как сама фотография. */
-  border-radius: 0;
+  /*
+   * Подложка под фотографией скруглена сверху и не скруглена снизу.
+   *
+   * Снизу подложка уходит в подпись плитки, и скруглённый угол на стыке
+   * отрывал её от рамки: между подписью и фотографией появлялась дыра, которой
+   * там нет, — они одного поля. Сверху скругление нужно, там край плитки.
+   */
+  border-radius: 4px 4px 0 0;
   background: var(--bg-elevated);
 }
 
@@ -264,6 +308,10 @@ void load()
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Скругление и на самой картинке: overflow у контейнера обрезает углы, но не
+     закругляет их — снимок оставался прямоугольным и торчал углами из-под
+     скруглённой плитки. */
+  border-radius: 4px;
 }
 
 .tile__title {

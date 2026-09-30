@@ -4,7 +4,10 @@
       v-for="(code, index) in rows"
       :key="index"
       class="input-group codes-editor__row"
-      :class="{ 'codes-editor__row--duplicate': duplicateIndex === index }"
+      :class="{
+        'codes-editor__row--duplicate': duplicateIndex === index,
+        'codes-editor__row--plain': readonly || !isFilled(code),
+      }"
     >
       <!--
         Кнопки перестановки — слева от поля, а не перетаскивание.
@@ -13,24 +16,21 @@
         можно хоть одним большим пальцем. И наводить курсор незачем.
       -->
       <!--
-        Переставлять можно только заполненные строки, и сравнивается индекс со
-        списком строк на экране: в нём всегда есть пустая строка для следующего
-        кода, а в буфере codes её может не быть — и сравнение с codes гасило
-        стрелку у последнего настоящего кода.
+        У пустой строки управления нет вовсе.
       -->
-      <template v-if="!readonly">
+      <template v-if="!readonly && isFilled(code)">
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
           :title="t('images.order_up')"
-          :disabled="!isFilled(code) || index === 0"
+          :disabled="!canMoveUp(index)"
           @click="moveCode(index, -1)"
         >▲</button>
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
           :title="t('images.order_down')"
-          :disabled="!isFilled(code) || index === rows.length - 1"
+          :disabled="!canMoveDown(index)"
           @click="moveCode(index, 1)"
         >▼</button>
       </template>
@@ -54,7 +54,7 @@
         в поле что-то введено.
       -->
       <button
-        v-if="!readonly"
+        v-if="!readonly && isFilled(code)"
         type="button"
         class="input-group__btn input-group__btn--minus input-group__btn--icon"
         :title="index === 0 ? t('items.code_clear') : t('items.code_remove')"
@@ -365,6 +365,30 @@ async function removeCode(index: number) {
  * здесь равносильна смене главного кода.
  */
 /**
+ * Есть ли выше строка с кодом, с которой можно поменяться местами.
+ *
+ * Активная стрелка, которая ничего не делает, вводит в заблуждение: человек
+ * нажимает и не видит ничего. При одном коде переставлять нечего, и обе
+ * стрелки погашены.
+ */
+function canMoveUp(index: number): boolean {
+  for (let i = index - 1; i >= 0; i--) {
+    if (isFilled(rows.value[i]!)) return true
+  }
+
+  return false
+}
+
+/** Есть ли ниже строка с кодом. */
+function canMoveDown(index: number): boolean {
+  for (let i = index + 1; i < rows.value.length; i++) {
+    if (isFilled(rows.value[i]!)) return true
+  }
+
+  return false
+}
+
+/**
  * Заполнена ли строка кода.
  *
  * Пустая строка — это поле для следующего кода, а не код: переставлять её
@@ -517,6 +541,19 @@ async function focusRow(index: number) {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
+
+/*
+ * У строки без кнопок поле скруглено со всех сторон.
+ *
+ * Правое скругление у поля снято осознанно: справа к нему примыкает кнопка, и
+ * два скруглённых угла рядом выглядели бы дырой. Но у пустой строки кнопок
+ * нет — она техническая, поле для следующего кода, — и без правого скругления
+ * она выгляделала разрезанной: слева кругло, справа угол.
+ */
+.codes-editor__row--plain .input-group__control {
+  border-radius: 4px;
+}
+
 
 /*
  * Перестановка — служебное действие, а не «добавить» и не «убрать», поэтому

@@ -51,6 +51,14 @@ const props = defineProps<{
    * ничего не делает.
    */
   lightbox?: boolean
+  /**
+   * Прямые углы вместо обычных.
+   *
+   * Радиус по умолчанию считается от размера, и на обложке «Каталога» в 200px
+   * это 20px — снимок выглядел вырезкой из фотобумаги, а не самой
+   * фотографией. Там плитка и так скруглена.
+   */
+  square?: boolean
 }>()
 
 const { thumbVariants } = useThumbnail()
@@ -164,7 +172,9 @@ const frameStyle = computed(() => {
     height: px,
     // Скругление и спиннер ведём за размером. У 84px полоса 8px и колесо 22px;
     // на 40px те же 8px читаются как кнопка, а 22px не влезает в ячейку.
-    borderRadius: `${Math.max(3, Math.round(props.size / 10))}px`,
+    // На «Каталоге» скругление снимается: обложка — это содержимое плитки, и
+    // сильно скруглённый снимок читается как вырезка из фотобумаги.
+    borderRadius: props.square ? '0' : `${Math.max(3, Math.round(props.size / 10))}px`,
     '--photo-spinner': `${Math.max(10, Math.round(props.size / 4))}px`,
   }
 })
