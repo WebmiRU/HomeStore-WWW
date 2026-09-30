@@ -1,19 +1,7 @@
 <template>
   <div class="balance-chart">
     <div class="controls">
-      <div class="control-group">
-        <span class="control-label">{{ t('journal.period_label') }}</span>
-        <button
-          v-for="range in ranges"
-          :key="range.value"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: period === range.value }"
-          @click="setPeriod(range.value)"
-        >
-          {{ range.label }}
-        </button>
-      </div>
+      <PeriodPicker v-model:range="range" />
 
       <!--
         У расходуемого предмета сводка и по штукам, и по свойствам: «Остаток: 2,
@@ -54,6 +42,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { themeToken, themeTokenAlpha } from '~/utils/themeToken'
+import { lastYearsRange } from '~/utils/periodPresets'
 import * as echarts from 'echarts'
 import type { AuditLogBalancePoint, AuditLogBalanceSeries } from '~/repository/modules/auditLog'
 
@@ -68,14 +57,14 @@ const { t } = useI18n()
 // без перерисовки на новом фоне остались бы цвета прежней темы.
 const { resolved } = useTheme()
 
-const ranges = [
-  { label: t('balance.day'), value: 'day' },
-  { label: t('balance.month'), value: 'month' },
-  { label: t('balance.year'), value: 'year' },
-  { label: t('balance.all_time'), value: 'all' },
-]
-
-const period = ref<string>('year')
+/*
+ * Период — тот же набор заготовок и свои даты, что в журнале и статистике.
+ *
+ * Раньше здесь был свой вдвое меньший список («День, Месяц, Год, Всё время»)
+ * без своих дат: одни и те же периоды назывались по-разному и стояли в
+ * разном порядке, и отрезок «со вторника по понедельник» выбрать было нечем.
+ */
+const range = ref<[string, string] | null>(lastYearsRange(1))
 const loading = ref(true)
 const error = ref<string | null>(null)
 const points = ref<AuditLogBalancePoint[]>([])
@@ -123,12 +112,12 @@ const propertyRemainders = computed(() => series.value
   })))
 
 function rangeParams(): { date_from?: string; date_to?: string } {
-  if (period.value === 'all') return {}
-  const to = new Date()
-  const from = new Date()
-  const days = { day: 1, month: 30, year: 365 }[period.value as 'day' | 'month' | 'year']
-  from.setDate(to.getDate() - days)
-  return { date_from: from.toISOString(), date_to: to.toISOString() }
+  const r = range.value
+  if (!r || !r[0] || !r[1]) return {}
+  return {
+    date_from: new Date(r[0] + 'T00:00:00').toISOString(),
+    date_to: new Date(r[1] + 'T23:59:59').toISOString(),
+  }
 }
 
 async function load() {
@@ -150,10 +139,8 @@ async function load() {
   }
 }
 
-function setPeriod(value: string) {
-  period.value = value
-  load()
-}
+// Период меняет выборку — перезапрашиваем.
+watch(range, () => load())
 
 // --- построение ряда -----------------------------------------------------
 
@@ -368,7 +355,7 @@ function onResize() {
 watch(
   () => [props.entityType, props.entityId],
   () => {
-    period.value = 'year'
+    range.value = lastYearsRange(1)
     points.value = []
     load()
   },

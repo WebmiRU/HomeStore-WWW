@@ -5,51 +5,18 @@
     </div>
 
     <div class="journal-controls">
-      <div class="preset-row">
-        <span class="control-label">{{ t('journal.period_label') }}</span>
-        <button
-          v-for="preset in periodPresets"
-          :key="preset.label"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: activePreset(preset) }"
-          @click="setRange(preset.range())"
-        >
-          {{ preset.label }}
-        </button>
-      </div>
+      <!--
+        Период и свои даты — общий компонент, тот же, что в статистике
+        предмета и в графике остатков. Блок «Шаг» есть только там, где он
+        влияет на подписи: на вкладке записей он был бы пустой кнопкой.
+      -->
+      <PeriodPicker
+        v-model:range="dateRange"
+        v-model:granularity="granularity"
+        :granularity-options="activeTab === 'analytics' ? granularities : []"
+      />
 
       <div class="preset-row">
-        <div class="control-group date-group">
-          <span class="control-label">{{ t('journal.own_dates') }}</span>
-          <ClientOnly>
-            <VueDatepicker
-              v-model="dateRange"
-              range
-              :format="'dd.MM.yyyy'"
-              value-format="yyyy-MM-dd"
-              :enable-time-picker="false"
-              :clearable="false"
-              auto-apply
-              @closed="applyDateRange"
-            />
-          </ClientOnly>
-        </div>
-
-        <div class="control-group" v-if="activeTab === 'analytics'">
-          <span class="control-label">{{ t('journal.step_label') }}</span>
-          <button
-            v-for="g in granularities"
-            :key="g.value"
-            type="button"
-            class="ctl-btn"
-            :class="{ active: granularity === g.value }"
-            @click="setGranularity(g.value)"
-          >
-            {{ g.label }}
-          </button>
-        </div>
-
         <div class="control-group">
           <span class="control-label">{{ t('journal.object_label') }}</span>
           <select v-model="entityFilter" class="ctl-select" @change="applyFilters">
@@ -165,18 +132,8 @@ import {
   summarize,
   useAuditLabelMaps,
 } from '~/utils/auditLabels'
-import {
-  isoLocal,
-  todayRange,
-  type PeriodPreset,
-  defaultPeriodPresets,
-} from '~/utils/periodPresets'
+import { todayRange } from '~/utils/periodPresets'
 import type { AuditLogEntry, AuditLogStatsPoint } from '~/repository/modules/auditLog'
-import '@vuepic/vue-datepicker/dist/main.css'
-
-const VueDatepicker = defineAsyncComponent(() =>
-  import('@vuepic/vue-datepicker').then((m) => m.default),
-)
 
 const { $api } = useNuxtApp()
 const { t } = useI18n()
@@ -225,41 +182,12 @@ const granularities = computed<{ label: string; value: string }[]>(() => [
 ])
 const granularity = ref<'day' | 'hour'>('day')
 
-// ---- период (календарь) ----
+// ---- период ----
+// null — «всё время»: у PeriodPicker это и есть заготовка без границ.
 const dateRange = ref<[string, string] | null>(todayRange())
-const periodPresets: PeriodPreset[] = defaultPeriodPresets()
 
-const hasRange = computed(() => {
-  const r = dateRange.value
-  return !!(r && typeof r[0] === 'string' && typeof r[1] === 'string')
-})
-
-function toISO(v: unknown): string | null {
-  if (v == null) return null
-  if (typeof v === 'string') return v.slice(0, 10)
-  if (v instanceof Date && !Number.isNaN(v.getTime())) return isoLocal(v)
-  return null
-}
-
-function applyDateRange() {
-  const r = dateRange.value
-  const from = r ? toISO(r[0]) : null
-  const to = r ? toISO(r[1] ?? r[0]) : null
-  dateRange.value = from && to ? [from, to] : null
-  reloadAll()
-}
-
-function setRange(r: [string, string] | null) {
-  dateRange.value = r
-  reloadAll()
-}
-
-function activePreset(preset: PeriodPreset): boolean {
-  const r = preset.range()
-  if (r === null) return !hasRange.value
-  const cur = dateRange.value
-  return !!(cur && cur[0] === r[0] && cur[1] === r[1])
-}
+/** Период и шаг приходят из PeriodPicker: перезагрузка на их смену. */
+watch([dateRange, granularity], () => reloadAll())
 
 function rangeParams(): { date_from?: string; date_to?: string } {
   const r = dateRange.value
@@ -344,10 +272,7 @@ function loadActive() {
   else loadList()
 }
 
-function setGranularity(value: 'day' | 'hour') {
-  granularity.value = value
-  loadStats()
-}
+
 
 function applyFilters() {
   reloadAll()

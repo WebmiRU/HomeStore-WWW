@@ -1,51 +1,11 @@
 <template>
   <div class="entity-stats">
     <div class="stats-controls">
-      <div class="preset-row">
-        <span class="control-label">{{ t('journal.period_label') }}</span>
-        <button
-          v-for="preset in periodPresets"
-          :key="preset.label"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: activePreset(preset) }"
-          @click="setRange(preset.range())"
-        >
-          {{ preset.label }}
-        </button>
-      </div>
-
-      <div class="preset-row">
-        <div class="control-group date-group">
-          <span class="control-label">{{ t('journal.own_dates') }}</span>
-          <ClientOnly>
-            <VueDatepicker
-              v-model="dateRange"
-              range
-              :format="'dd.MM.yyyy'"
-              value-format="yyyy-MM-dd"
-              :enable-time-picker="false"
-              :clearable="false"
-              auto-apply
-              @closed="applyDateRange"
-            />
-          </ClientOnly>
-        </div>
-
-        <div class="control-group">
-          <span class="control-label">{{ t('journal.step_label') }}</span>
-          <button
-            v-for="g in granularities"
-            :key="g.value"
-            type="button"
-            class="ctl-btn"
-            :class="{ active: granularity === g.value }"
-            @click="setGranularity(g.value)"
-          >
-            {{ g.label }}
-          </button>
-        </div>
-      </div>
+      <PeriodPicker
+        v-model:range="dateRange"
+        v-model:granularity="granularity"
+        :granularity-options="granularities"
+      />
     </div>
 
     <!--
@@ -168,19 +128,9 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { actionLabel, actionBadgeClass, formatDate, summarize, useAuditLabelMaps } from '~/utils/auditLabels'
-import {
-  isoLocal,
-  todayRange,
-  type PeriodPreset,
-  defaultPeriodPresets,
-} from '~/utils/periodPresets'
+import { todayRange } from '~/utils/periodPresets'
 import type { AuditLogEntry, AuditLogStatsPoint, AuditLogPartialSummaryRow } from '~/repository/modules/auditLog'
 import { formatAmount } from '~/utils/amount'
-import '@vuepic/vue-datepicker/dist/main.css'
-
-const VueDatepicker = defineAsyncComponent(() =>
-  import('@vuepic/vue-datepicker').then((m) => m.default),
-)
 
 const props = defineProps<{
   entityType: string
@@ -214,40 +164,11 @@ const granularities = [
 ]
 const granularity = ref<'day' | 'hour'>('day')
 
+// null — «всё время»: у PeriodPicker это заготовка без границ.
 const dateRange = ref<[string, string] | null>(todayRange())
-const periodPresets: PeriodPreset[] = defaultPeriodPresets()
 
-const hasRange = computed(() => {
-  const r = dateRange.value
-  return !!(r && typeof r[0] === 'string' && typeof r[1] === 'string')
-})
-
-function toISO(v: unknown): string | null {
-  if (v == null) return null
-  if (typeof v === 'string') return v.slice(0, 10)
-  if (v instanceof Date && !Number.isNaN(v.getTime())) return isoLocal(v)
-  return null
-}
-
-function applyDateRange() {
-  const r = dateRange.value
-  const from = r ? toISO(r[0]) : null
-  const to = r ? toISO(r[1] ?? r[0]) : null
-  dateRange.value = from && to ? [from, to] : null
-  reloadAll()
-}
-
-function setRange(r: [string, string] | null) {
-  dateRange.value = r
-  reloadAll()
-}
-
-function activePreset(preset: PeriodPreset): boolean {
-  const r = preset.range()
-  if (r === null) return !hasRange.value
-  const cur = dateRange.value
-  return !!(cur && cur[0] === r[0] && cur[1] === r[1])
-}
+/** Период и шаг приходят из PeriodPicker: перезагрузка на их смену. */
+watch([dateRange, granularity], () => reloadAll())
 
 function rangeParams(): { date_from?: string; date_to?: string } {
   const r = dateRange.value
@@ -378,11 +299,6 @@ function reloadAll() {
   loadStats()
   loadList()
   loadPartialSummary()
-}
-
-function setGranularity(value: 'day' | 'hour') {
-  granularity.value = value
-  loadStats()
 }
 
 function goToPage(next: number) {
@@ -582,48 +498,6 @@ watch(
   line-height: 1.5;
 }
 
-/* --- датапикер в тёмной теме --- */
-.date-group :deep(.dp__input) {
-  --dp-input-padding: 4px 10px 4px 42px;
-  height: 30px;
-  background: var(--bg-elevated);
-  color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-}
-
-.date-group :deep(.dp__input:hover) {
-  border-color: var(--border-strong);
-}
-
-.date-group :deep(.dp__input_icon) {
-  color: var(--text-dim);
-}
-
-.date-group :deep(.dp__theme_light) {
-  --dp-background-color: var(--bg);
-  --dp-text-color: var(--text);
-  --dp-hover-color: var(--accent-bg);
-  --dp-hover-text-color: var(--text);
-  --dp-hover-icon-color: var(--text);
-  --dp-primary-color: var(--accent);
-  --dp-primary-text-color: var(--text);
-  --dp-secondary-color: var(--border);
-  --dp-border-color: var(--border);
-  --dp-menu-border-color: var(--bg-hover);
-  --dp-border-color-hover: var(--border-strong);
-  --dp-disabled-color: var(--border-strong);
-  --dp-disabled-border-color: var(--border);
-  --dp-scroll-bar-background: var(--bg-elevated);
-  --dp-scroll-bar-color: var(--border-strong);
-  --dp-success-color: var(--success);
-  --dp-success-border-color: var(--success);
-  --dp-tooltip-color: var(--border-strong);
-  --dp-action-row-color: var(--border-strong);
-  --dp-icon-color: var(--border-strong);
-}
 
 .section-divider {
   border: none;

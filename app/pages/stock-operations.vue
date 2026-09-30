@@ -6,23 +6,7 @@
 
     <div class="mv-controls">
       <div class="preset-row">
-        <span class="control-label">{{ t('movements.period') }}</span>
-        <button
-          v-for="preset in periodPresets"
-          :key="preset.value"
-          type="button"
-          class="ctl-btn"
-          :class="{ active: period === preset.value }"
-          @click="setPeriod(preset.value)"
-        >
-          {{ preset.label }}
-        </button>
-
-        <div v-if="period === 'custom'" class="control-group">
-          <input v-model="dateFrom" type="date" class="ctl-input" />
-          <span class="control-label">—</span>
-          <input v-model="dateTo" type="date" class="ctl-input" />
-        </div>
+        <PeriodPicker v-model:range="dateRange" />
       </div>
 
       <div class="preset-row">
@@ -333,26 +317,24 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const meta = ref<{ current_page: number; last_page: number }>({ current_page: 0, last_page: 0 })
 
-const period = ref('')
-const dateFrom = ref('')
-const dateTo = ref('')
+/*
+ * Период — пара дат либо null на «всё время».
+ *
+ * Раньше здесь был свой набор из четырёх заготовок и два отдельных поля ввода
+ * даты вместо календаря: те же периоды, что и в журнале, назывались и
+ * выглядели по-разному, а свои даты набирались руками в двух полях.
+ */
+const dateRange = ref<[string, string] | null>(null)
 const direction = ref<StockDirectionValue | ''>('')
 const comment = ref('')
 const onlyActive = ref(false)
 const onlyReversed = ref(false)
 const onlyReversals = ref(false)
 
-const periodPresets = [
-  { value: '', label: t('movements.period_all') },
-  { value: 'today', label: t('movements.period_today') },
-  { value: 'week', label: t('movements.period_week') },
-  { value: 'month', label: t('movements.period_month') },
-  { value: 'custom', label: t('journal.own_dates') },
-]
 
 const hasCustomFilters = computed(
   () =>
-    period.value !== '' ||
+    dateRange.value !== null ||
     direction.value !== '' ||
     comment.value !== '' ||
     onlyActive.value ||
@@ -362,9 +344,12 @@ const hasCustomFilters = computed(
 
 function currentFilters() {
   return {
-    period: period.value as never,
-    date_from: dateFrom.value || undefined,
-    date_to: dateTo.value || undefined,
+    // Сервер ждёт period и границы дат. Период у нас уже посчитан, поэтому
+    // уходит 'custom' с конкретными датами — иначе пришлось бы держать
+    // второй источник правды в виде строкового кода заготовки.
+    period: dateRange.value ? ('custom' as never) : ('' as never),
+    date_from: dateRange.value?.[0] || undefined,
+    date_to: dateRange.value?.[1] || undefined,
     direction: direction.value || undefined,
     comment: comment.value || undefined,
     only_active: onlyActive.value || undefined,
@@ -393,9 +378,11 @@ async function load(page?: number) {
 
 function syncQuery() {
   const query: Record<string, string> = {}
-  if (period.value) query.period = period.value
-  if (dateFrom.value) query.date_from = dateFrom.value
-  if (dateTo.value) query.date_to = dateTo.value
+  if (dateRange.value) {
+    query.period = 'custom'
+    query.date_from = dateRange.value[0]
+    query.date_to = dateRange.value[1]
+  }
   if (direction.value) query.direction = direction.value
   if (comment.value) query.comment = comment.value
   if (onlyActive.value) query.only_active = '1'
@@ -404,23 +391,20 @@ function syncQuery() {
   router.push({ query })
 }
 
+/**
+ * Фильтры в адрес, загрузка — из него.
+ *
+ * Раньше здесь стоял ещё и load(1), и период менял адрес, и страница
+ * перечитывалась дважды: на каждый выбор уходило по два одинаковых запроса
+ * списка и два запроса сводки. Адрес — единственный источник правды, и он же
+ * триггер перезагрузки.
+ */
 function applyFilters() {
   syncQuery()
-  load(1)
 }
 
-function setPeriod(value: string) {
-  period.value = value
-  if (value === 'custom' && !dateFrom.value && !dateTo.value) {
-    // Свои даты без границ — это «всё время» с двумя лишними кнопками:
-    // подставляем текущий месяц, дальше пользователь поправит.
-    const now = new Date()
-    const iso = (d: Date) => d.toISOString().slice(0, 10)
-    dateTo.value = iso(now)
-    dateFrom.value = iso(new Date(now.getFullYear(), now.getMonth(), 1))
-  }
-  applyFilters()
-}
+/** Период приходит из PeriodPicker: фильтры применяются на его смену. */
+watch(dateRange, () => applyFilters())
 
 function setState(state: 'all' | 'active' | 'reversed' | 'reversals') {
   onlyActive.value = state === 'active'
@@ -430,9 +414,7 @@ function setState(state: 'all' | 'active' | 'reversed' | 'reversals') {
 }
 
 function resetFilters() {
-  period.value = ''
-  dateFrom.value = ''
-  dateTo.value = ''
+  dateRange.value = null
   direction.value = ''
   comment.value = ''
   onlyActive.value = false
@@ -549,9 +531,12 @@ async function confirmReverse() {
 watch(
   () => route.query,
   () => {
-    period.value = (route.query.period as string) ?? ''
-    dateFrom.value = (route.query.date_from as string) ?? ''
-    dateTo.value = (route.query.date_to as string) ?? ''
+    const from = route.query.date_from as string | undefined
+    const to = route.query.date_to as string | undefined
+    // Период в адресе хранится двумя датами: заготовки «Сегодня» и «Неделя»
+    // меняются день ото дня, и код в адресе устаревал бы, показывая период,
+    // которого уже нет.
+    dateRange.value = from && to ? [from, to] : null
     direction.value = (route.query.direction as StockDirectionValue) ?? ''
     comment.value = (route.query.comment as string) ?? ''
     onlyActive.value = route.query.only_active === '1'
