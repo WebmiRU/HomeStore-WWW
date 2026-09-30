@@ -1065,7 +1065,7 @@ export const ru = {
     clear_value: 'Clear the value',
     remove_value: 'Remove the value',
     add_more: 'Add another value',
-    default_set_empty: 'The default set for the category is empty',
+    default_set_empty: 'Набор свойств по умолчанию для этой категории пуст',
     default_set_hint: 'Список свойств по умолчанию считается по уже заполненным значениям в этой категории. Любое другое свойство можно добавить отсюда — набор по умолчанию не ограничивает.',
     empty: 'Пока нет ни одного свойства. Выберите его в списке выше — и заполните значение.',
     by_default: 'по умолчанию',
