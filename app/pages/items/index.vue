@@ -26,7 +26,7 @@
           :aria-expanded="filtersOpen"
           @click="filtersOpen = !filtersOpen"
         >
-          <img src="/img/icon/filter.svg" class="btn-filters-icon" alt="" />
+          <img src="/img/icon/funnel.svg" class="btn-filters-icon" alt="" />
           {{ t('items.filters') }}
         </button>
         <NuxtLink to="/items/create" class="btn-add">{{ t('items.add') }}</NuxtLink>
@@ -111,7 +111,7 @@
             </td>
             <td data-label="ID">{{ item.payload.id }}</td>
             <td class="img-col">
-              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="38" lightbox />
+              <ItemPhoto :images="item.images" :alt="item.payload.title" :size="48" lightbox />
             </td>
             <td :data-label="t('items.title')">{{ item.payload.title }}</td>
             <td :data-label="t('items.vendor')">
@@ -552,43 +552,46 @@ watch(
 }
 
 /*
- * Кнопка «Фильтры» — та же, что «Добавить», но спокойнее: она не ведёт
- * на новую карточку, а раскрывает панель на этой же странице, и заливать её
- * акцентом значило бы уравнять её по весу с главным действием.
+ * Кнопка «Фильтры» — бирюзовая, как воронка у строки категории.
  *
- * Отмеченная — заливка акцентом: фильтры заданы, и панель сейчас свёрнута.
- * Без отметки человек увидит отфильтрованный список и не поймёт, почему он
- * такой короткий.
+ * Тот же знак фильтра в том же цвете уже стоит в списке категорий, и
+ * кнопка, раскрывающая отбор, читалась как чужеродная серая вставка рядом с
+ * акцентным «Добавить». Цвет тот же, что и в иконке категории, — иначе
+ * пришлось бы красить саму иконку, а она в SVG фиксированная.
+ *
+ * Акцент «Добавить» не перенимает: он ведёт на новую карточку, а эта
+ * кнопка раскрывает панель на этой же странице.
  */
 .btn-filters {
+  --funnel: #55aaaa;
+
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
   background: transparent;
-  color: var(--text-muted);
-  border-color: var(--border-strong);
+  color: var(--funnel);
+  border-color: color-mix(in srgb, var(--funnel) 45%, var(--bg));
 }
 
 .btn-filters:hover {
-  background: var(--bg-elevated);
-  color: var(--text);
+  background: color-mix(in srgb, var(--funnel) 14%, transparent);
+  color: var(--funnel);
 }
 
+/*
+ * Задан фильтр — кнопка залита. Иначе человек видит короткий отфильтрованный
+ * список и не понимает, почему он такой: панель-то свёрнута.
+ */
 .btn-filters--on {
-  background: var(--accent-bg);
-  color: var(--accent-ink);
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--funnel) 22%, transparent);
+  border-color: var(--funnel);
 }
 
 .btn-filters-icon {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   display: block;
-  /* Иконка currentColor, но задать её здесь: сама по себе она в наследуемой
-   * заливке кнопки оказалась бы того же акцентного тона на акцентном фоне и
-   * пропала. */
-  color: inherit;
 }
 
 .loading,

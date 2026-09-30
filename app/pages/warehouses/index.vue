@@ -24,7 +24,7 @@
           <tr v-for="w in warehouses" :key="w.id" @dblclick="openRow($event, `/warehouses/${w.id}`)">
             <td data-label="ID">{{ w.id }}</td>
             <td class="img-col">
-              <ItemPhoto :images="w.images" :alt="w.title" :size="38" lightbox />
+              <ItemPhoto :images="w.images" :alt="w.title" :size="48" lightbox />
             </td>
             <td :data-label="t('common.title')">{{ w.title }}</td>
             <td :data-label="t('common.created')">{{ formatDate(w.created_at) }}</td>

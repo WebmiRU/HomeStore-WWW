@@ -47,7 +47,7 @@
             </td>
             <td data-label="ID">{{ node.store.id }}</td>
             <td class="img-col">
-              <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="38" lightbox />
+              <ItemPhoto :images="node.store.images" :alt="node.store.title" :size="48" lightbox />
             </td>
             <td :data-label="t('stores.title')">
               <span class="tree-prefix">{{ '\u2014'.repeat(node.depth) }}</span>
