@@ -96,9 +96,19 @@
             step="any"
           >
         </label>
-        <p v-if="actualPreview" class="norm-change__actual-note" :class="{ 'norm-change__actual-note--bad': actualHintBad }">
-          {{ actualPreview }}
-        </p>
+        <div v-if="actualLines.length" class="norm-change__actual-note" :class="{ 'norm-change__actual-note--bad': actualHintBad }">
+          <p v-if="actualHintBad" class="norm-change__actual-head">{{ t('norm_change.does_not_fit_hint') }}</p>
+          <!--
+            Числа — теми же голубыми, что и в готовых вариантах выше: человек
+            сравнивает «это 5 шт» с «Будет 5 шт» и делает это глазами по цифрам,
+            а не по словам.
+          -->
+          <p v-for="line in actualLines" :key="line.property_id" class="norm-change__actual-line">
+            {{ line.title }}:
+            <b class="norm-change__num">{{ line.total }}</b> {{ line.unit }}
+            — {{ t('norm_change.that_is') }} <b class="norm-change__num">{{ line.pieces }}</b> {{ t('norm_change.pieces') }}<span v-if="line.entered !== null">, {{ t('norm_change.entered_word') }} <b class="norm-change__num">{{ line.entered }}</b></span>
+          </p>
+        </div>
       </div>
 
       <p v-if="error" class="modal__error">{{ error }}</p>
@@ -193,12 +203,11 @@ const error = ref<string | null>(null)
  * расхождения бывают двух: штук больше, чем товара, и товара больше, чем штук.
  * Итог всё равно считает сервер, это подсказка.
  */
-const actualPreview = computed(() => {
+const actualLines = computed(() => {
   const quantity = Number(actualQuantity.value)
-  const quantityFilled = actualQuantity.value !== '' && Number.isFinite(quantity)
+  const quantityFilled = actualQuantity.value !== '' && actualQuantity.value !== null && Number.isFinite(quantity)
 
-  const lines: string[] = []
-  let bad = false
+  const lines: { property_id: number; title: string; total: string; unit: string; pieces: number; entered: number | null }[] = []
   // Во сколько штук укладывается вписанное — по большему из заполненных полей:
   // штуку держит любое из отмеченных свойств, и наибольшее требование и есть
   // искомое число штук.
@@ -216,26 +225,36 @@ const actualPreview = computed(() => {
     if (!filled) continue
 
     sawTotal = true
-    fitsPieces = Math.max(fitsPieces, Math.ceil(total / row.to - 0.0001))
-
     const pieces = Math.ceil(total / row.to - 0.0001)
+    fitsPieces = Math.max(fitsPieces, pieces)
 
-    lines.push(
-      quantityFilled && quantity > 0
-        ? `${row.title}: ${formatAmount(total)} ${row.unit ?? ''} — ${t('norm_change.that_is')} ` +
-          `${pieces} ${t('norm_change.pieces')}, ${t('norm_change.entered_word')} ${quantity}`
-        : `${row.title}: ${t('norm_change.entered')} ${formatAmount(total)} ${row.unit ?? ''}`
-    )
+    lines.push({
+      property_id: row.property_id,
+      title: row.title,
+      total: formatAmount(total),
+      unit: row.unit ?? '',
+      pieces,
+      // Совпавшее число штук не повторяем: «это 5 шт, а введено 5» читается
+      // как противоречие, которого нет.
+      entered: quantityFilled && quantity > 0 && quantity !== pieces ? quantity : null,
+    })
   }
 
-  if (lines.length === 0) return null
+  if (lines.length > 0 && quantityFilled && quantity > 0 && sawTotal && quantity !== fitsPieces) {
+    for (const line of lines) line.entered = line.entered ?? quantity
+  }
 
-  // Заявлено штук не столько, сколько набирается: лишние были бы пустыми
-  // (50 000 мл при норме 10 000 — это ровно пять полных, шестой не существует).
-  if (quantityFilled && quantity > 0 && sawTotal && quantity !== fitsPieces) bad = true
-
-  return bad ? `${t('norm_change.does_not_fit_hint')} ${lines.join('; ')}` : lines.join('; ')
+  return lines
 })
+
+/**
+ * Не сходятся ли числа.
+ *
+ * Заявлено штук не столько, сколько набирается из запаса: лишние были бы
+ * пустыми (50 000 мл при норме 10 000 — это ровно пять полных, шестой не
+ * существует).
+ */
+const actualHintBad = computed(() => actualLines.value.some((line) => line.entered !== null))
 
 /** Кнопку не жмём, пока в своих числах чего-то не хватает. */
 const canApply = computed(() => {
@@ -249,8 +268,6 @@ const canApply = computed(() => {
     return Number.isFinite(value) && value >= 0
   })
 })
-
-const actualHintBad = computed(() => (actualPreview.value ?? '').startsWith(t('norm_change.does_not_fit_hint')))
 
 const options = computed(() => [
   {
@@ -441,9 +458,22 @@ function apply() {
   color: var(--text-secondary);
 }
 
+.norm-change__actual-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.norm-change__actual-line {
+  margin: 2px 0 0;
+}
+
 /* Числа не сходятся: подсказка об этом же — иначе человек жмёт «сохранить так»
    и получает отказ, думая, что кнопка сломалась. */
 .norm-change__actual-note--bad {
+  color: var(--warn);
+}
+
+.norm-change__actual-note--bad .norm-change__num {
   color: var(--warn);
 }
 </style>
