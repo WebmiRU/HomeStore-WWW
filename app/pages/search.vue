@@ -38,7 +38,14 @@
         </thead>
         <template v-for="r in pageResults" :key="`${r.type}-${r.payload.id}`">
           <tbody class="result-group">
-            <tr>
+            <!--
+              Двойной клик открывает карточку — как в индексных таблицах.
+              Находки в поиске смотрят глазами и часто сразу идут смотреть
+              подробности; искать глазом иконку правки в конце строки каждый
+              раз незачем. Клик по ссылке, кнопке или полю ввода не считается:
+              двойной клик по чекбоксу отмечал бы предмет, а не открывал его.
+            -->
+            <tr @dblclick="openRow($event, r.type === 'item' ? `/items/${r.payload.id}` : `/stores/${r.payload.id}`)">
               <td class="cb-col">
               <input
                 type="checkbox"
@@ -155,6 +162,7 @@ const { $api } = useNuxtApp()
 const { chainForStore } = useLocationChain()
 const route = useRoute()
 const router = useRouter()
+const { openRow } = useRowOpen()
 
 const query = ref((route.query.q as string) || '')
 const loading = ref(true)

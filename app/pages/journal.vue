@@ -121,8 +121,7 @@
               <span v-else class="muted">—</span>
             </td>
             <td :data-label="t('journal.actor')">
-              <span v-if="entry.actor">{{ entry.actor.name }}</span>
-              <span v-else class="muted">—</span>
+              <UserLink :user="entry.actor" />
             </td>
             <td :data-label="t('journal.details')" class="details-cell">
               <span class="details-text">{{ summarize(entry) }}</span>

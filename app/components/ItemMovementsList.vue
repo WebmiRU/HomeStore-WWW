@@ -100,8 +100,7 @@
               видно.
             -->
             <td class="mvlist__cell-author">
-              <NuxtLink v-if="op.author" :to="`/users/${op.author.id}`" class="mvlist__author">{{ op.author.name }}</NuxtLink>
-              <span v-else class="muted">—</span>
+              <UserLink :user="op.author" />
             </td>
           </tr>
         </tbody>
@@ -436,20 +435,7 @@ onMounted(() => load(1))
   font-size: 13px;
   color: var(--text-muted);
 }
-/*
- * Ссылка на автора операции: тот же вид, что у ссылок в списках предметов и
- * складах, иначе колонка выглядит частью текста, а не переходом.
- */
 .mvlist__cell-author {
   white-space: nowrap;
-}
-
-.mvlist__author {
-  color: var(--link);
-  text-decoration: none;
-}
-
-.mvlist__author:hover {
-  text-decoration: underline;
 }
 </style>

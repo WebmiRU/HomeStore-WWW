@@ -137,7 +137,9 @@
 
           <span class="mv-card__spacer" />
 
-          <span v-if="op.author" class="mv-card__author">{{ op.author.name }}</span>
+          <span class="mv-card__author">
+            <UserLink :user="op.author" />
+          </span>
           <time class="mv-card__time">{{ formatDate(op.created_at) }}</time>
         </header>
 
