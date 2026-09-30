@@ -13,25 +13,24 @@
         можно хоть одним большим пальцем. И наводить курсор незачем.
       -->
       <!--
-        Переставлять первую строку нельзя: её место закреплено. Это не пустая
-        строка для нового кода, а главный код предмета — тот, что печатается на
-        этикетке по умолчанию, — и он всегда первый. У неё обе стрелки
-        погашены: вверх ей некуда, а вниз она уехала бы со своего места, и
-        следующая строка заняла бы главный код.
+        Переставлять можно только заполненные строки, и сравнивается индекс со
+        списком строк на экране: в нём всегда есть пустая строка для следующего
+        кода, а в буфере codes её может не быть — и сравнение с codes гасило
+        стрелку у последнего настоящего кода.
       -->
       <template v-if="!readonly">
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
           :title="t('images.order_up')"
-          :disabled="index === 0"
+          :disabled="!isFilled(code) || index === 0"
           @click="moveCode(index, -1)"
         >▲</button>
         <button
           type="button"
           class="input-group__btn input-group__btn--move input-group__btn--icon"
           :title="t('images.order_down')"
-          :disabled="index === 0 || index === codes.length - 1"
+          :disabled="!isFilled(code) || index === rows.length - 1"
           @click="moveCode(index, 1)"
         >▼</button>
       </template>
@@ -365,6 +364,17 @@ async function removeCode(index: number) {
  * главным, и печатается на этикетку по умолчанию. Поэтому перестановка
  * здесь равносильна смене главного кода.
  */
+/**
+ * Заполнена ли строка кода.
+ *
+ * Пустая строка — это поле для следующего кода, а не код: переставлять её
+ * незачем, да и некуда. Стрелки у неё погашены, иначе она ездила бы по
+ * списку и занимала место главного кода, а код в ней так и остался бы пустым.
+ */
+function isFilled(code: string): boolean {
+  return code.trim() !== ''
+}
+
 async function moveCode(index: number, delta: number) {
   const to = index + delta
 
