@@ -23,6 +23,8 @@ export type DictionaryResponse = {
 
 export type DictionaryData = {
   title?: string
+  /** Значения приходят вместе со справочником: завести его сразу с ними. */
+  values?: string[]
 }
 
 type PaginatedResponse<T> = {
