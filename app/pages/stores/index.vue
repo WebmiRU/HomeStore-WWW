@@ -350,7 +350,15 @@ watch(() => route.query.page, syncPage)
 
 .stores-table th,
 .stores-table td {
-  padding: 8px 12px;
+  /*
+   * Вертикальный отступ 6px, как в списке предметов.
+   *
+   * Высоту строки задаёт миниатюра в 48px, и на десяти строках каждые два
+   * пикселя — это 20px. В списке складов на них не хватало: кнопки пагинации
+   * уезжали за нижний край окна 965px, то есть на ноутбуке, где список и
+   * должен помещаться целиком.
+   */
+  padding: 6px 12px;
   text-align: left;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
