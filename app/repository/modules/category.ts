@@ -2,6 +2,7 @@ import FetchFactory from '../factory'
 import type { $Fetch } from 'ofetch'
 import type { UserBrief } from './code'
 import type { PropertyResponse } from './property'
+import type { ImageResponse } from './image'
 
 export type CategoryBrief = {
   id: number
@@ -19,6 +20,8 @@ export type CategoryResponse = {
   parent?: CategoryBrief | null
   /** Сколько предметов лежит прямо в этой категории, без вложенных. */
   items_count: number
+  /** Фотографии категории: ею её узнают в списке и в «Каталоге». */
+  images: ImageResponse[]
   created_at: string
   updated_at: string
 }
@@ -26,6 +29,8 @@ export type CategoryResponse = {
 export type CategoryData = {
   title?: string
   parent_id?: number | null
+  /** Фотографии приходят вместе с категорией: завести её сразу с картинками. */
+  images?: { id: number; alt?: string | null }[]
 }
 
 type PaginatedResponse<T> = {

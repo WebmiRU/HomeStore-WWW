@@ -13,6 +13,10 @@
       :empty-text="t('categories.no_categories')"
       :open-to="(row) => `/categories/${row.id}`"
     >
+      <template #cell-id="{ row }">{{ row.id }}</template>
+      <template #cell-photo="{ row }">
+        <ItemPhoto :images="row.images" :alt="row.title" :size="48" lightbox />
+      </template>
       <template #cell-title="{ row }">
         <span class="tree-prefix">{{ '—'.repeat(row.depth) }}</span>
         <span v-if="row.depth > 0" class="tree-space"> </span>
@@ -77,6 +81,7 @@ const { t } = useI18n()
 const categories = ref<CategoryResponse[]>([])
 const columns = computed(() => [
   { key: 'id', label: 'ID' },
+  { key: 'photo', label: t('list_common.photo'), class: 'img-col' },
   { key: 'title', label: t('categories.title') },
   { key: 'items_count', label: t('list_common.items_count') },
   { key: 'created_at', label: t('common.created') },

@@ -19,6 +19,7 @@ export const ru = {
   nav: {
     home: 'Главная',
     items: 'Предметы',
+    catalog: 'Каталог',
     stores: 'Хранилища',
     warehouses: 'Склады',
     categories: 'Категории',
@@ -137,6 +138,19 @@ export const ru = {
     code_label: 'КОД:',
     code_placeholder: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
     find: 'Найти',
+  },
+
+  catalog: {
+    title: 'Каталог',
+    all_categories: 'Все категории',
+    all_items: 'Все предметы',
+    subcategories: 'Подкатегории',
+    items: 'Предметы',
+    category_empty: 'Категория пуста',
+    no_categories: 'Категорий пока нет',
+    items_count: 'Предметов: {count}',
+    pieces: '{count} шт',
+    load_failed: 'Не удалось загрузить каталог',
   },
 
   items: {

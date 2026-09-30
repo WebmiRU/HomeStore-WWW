@@ -51,6 +51,13 @@
         </div>
       </section>
 
+      <!--
+        Фотографии категории: ею её узнают в списке и в «Каталоге».
+      -->
+      <section v-if="activeTab === 'images'" class="tab-section">
+        <ImagesTable v-model="images" entity="category" :entity-id="Number(id)" />
+      </section>
+
       <section v-if="activeTab === 'properties'" class="tab-section">
         <div v-if="propertiesLoading" class="loading">{{ t('form.loading') }}</div>
         <div v-else-if="propertiesError" class="error">{{ propertiesError }}</div>
@@ -111,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ImageResponse } from '~/repository/modules/image'
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import { categoryParentOptions } from '~/composables/categorySelectOptions'
@@ -136,6 +144,7 @@ const form = reactive<{ title: string; parent_id: number | null }>({ title: '', 
 
 const tabs = computed(() => [
   { key: 'main', label: t('categories.main_tab') },
+  { key: 'images', label: t('form.images_tab') },
   { key: 'properties', label: t('form.properties_tab') },
   { key: 'stats', label: t('form.stats_tab') },
 ])
@@ -143,10 +152,13 @@ const tabs = computed(() => [
 const activeTab = computed(() => {
   const tab = route.query.tab
 
-  return tab === 'stats' || tab === 'properties' ? tab : 'main'
+  return ['stats', 'properties', 'images'].includes(tab as string) ? (tab as string) : 'main'
 })
 
 const parentOptions = computed(() => categoryParentOptions(categories.value, Number(id)))
+
+/** Фотографии категории: вкладка и форма создания правят один и тот же список. */
+const images = ref<ImageResponse[]>([])
 
 const children = computed(() =>
   categories.value
@@ -164,6 +176,7 @@ async function load() {
     ])
     form.title = category.title
     form.parent_id = category.parent_id
+    images.value = category.images ?? []
     categories.value = all
   } catch (err: any) {
     loadError.value = formatApiError(err, t('categories.card_load_failed'))

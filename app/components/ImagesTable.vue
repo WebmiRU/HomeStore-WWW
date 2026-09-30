@@ -112,7 +112,7 @@ import { ref, computed, watch } from 'vue'
 import type { ImageResponse } from '~/repository/modules/image'
 
 const props = withDefaults(defineProps<{
-  entity: 'item' | 'store' | 'warehouse'
+  entity: 'item' | 'store' | 'warehouse' | 'category'
   /**
    * Id сущности. В форме создания его ещё нет, и компонент переходит в
    * черновой режим: файлы грузятся без привязки, порядок и подписи живут
@@ -158,6 +158,12 @@ const METHODS = {
     remove: (id: number, imageId: number) => $api.image.deleteForWarehouse(id, imageId),
     saveAlt: (id: number, imageId: number, alt: string | null) => $api.image.updateAltForWarehouse(id, imageId, alt),
     reorder: (id: number, ids: number[]) => $api.image.reorderForWarehouse(id, ids),
+  },
+  category: {
+    upload: (id: number, file: File) => $api.image.uploadForCategory(id, file),
+    remove: (id: number, imageId: number) => $api.image.deleteForCategory(id, imageId),
+    saveAlt: (id: number, imageId: number, alt: string | null) => $api.image.updateAltForCategory(id, imageId, alt),
+    reorder: (id: number, ids: number[]) => $api.image.reorderForCategory(id, ids),
   },
 } as const
 

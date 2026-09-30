@@ -85,6 +85,14 @@ class ImageModule extends FetchFactory<any> {
     return this.unwrapUpload(result)
   }
 
+  /** Фото категории: ею категория узнаётся в списке и в «Каталоге». */
+  async uploadForCategory(categoryId: number, file: File): Promise<ImageUploadResult> {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await this.call('POST', `${this.baseUrl}/category/${categoryId}`, form)
+    return this.unwrapUpload(result)
+  }
+
   private unwrapUpload(result: any): ImageUploadResult {
     return {
       image: ((result as any)?.data ?? result) as ImageResponse,
@@ -111,6 +119,12 @@ class ImageModule extends FetchFactory<any> {
     return unwrapped as ImageResponse
   }
 
+  async updateAltForCategory(categoryId: number, imageId: number, alt: string | null): Promise<ImageResponse> {
+    const result = await this.call('PATCH', `${this.baseUrl}/category/${categoryId}/image/${imageId}/alt`, { alt })
+    const unwrapped = (result as any)?.data ?? result
+    return unwrapped as ImageResponse
+  }
+
   async reorderForItem(itemId: number, ids: number[]): Promise<void> {
     await this.call('POST', `${this.baseUrl}/item/${itemId}/image/reorder`, { ids })
   }
@@ -123,8 +137,16 @@ class ImageModule extends FetchFactory<any> {
     await this.call('POST', `${this.baseUrl}/warehouse/${warehouseId}/image/reorder`, { ids })
   }
 
+  async reorderForCategory(categoryId: number, ids: number[]): Promise<void> {
+    await this.call('POST', `${this.baseUrl}/category/${categoryId}/image/reorder`, { ids })
+  }
+
   async deleteForItem(itemId: number, imageId: number): Promise<void> {
     await this.call('DELETE', `${this.baseUrl}/item/${itemId}/image/${imageId}`)
+  }
+
+  async deleteForCategory(categoryId: number, imageId: number): Promise<void> {
+    await this.call('DELETE', `${this.baseUrl}/category/${categoryId}/image/${imageId}`)
   }
 
   async deleteForStore(storeId: number, imageId: number): Promise<void> {

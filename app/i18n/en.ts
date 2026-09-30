@@ -11,6 +11,7 @@ export const en: Record<TranslationKey, string> = {
   nav: {
     home: 'Home',
     items: 'Items',
+    catalog: 'Catalog',
     stores: 'Storage',
     warehouses: 'Warehouses',
     categories: 'Categories',
@@ -129,6 +130,19 @@ export const en: Record<TranslationKey, string> = {
     code_label: 'CODE:',
     code_placeholder: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
     find: 'Find',
+  },
+
+  catalog: {
+    title: 'Catalog',
+    all_categories: 'All categories',
+    all_items: 'All items',
+    subcategories: 'Subcategories',
+    items: 'Items',
+    category_empty: 'The category is empty',
+    no_categories: 'There are no categories yet',
+    items_count: 'Items: {count}',
+    pieces: '{count} pcs',
+    load_failed: 'Could not load the catalog',
   },
 
   items: {

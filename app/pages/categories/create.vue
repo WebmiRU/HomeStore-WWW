@@ -24,6 +24,15 @@
         <span class="field-hint">{{ t('categories.parent_hint') }}</span>
       </label>
 
+      <!--
+        Фотографии в форме создания работают в черновом режиме: файлы уходят в
+        базу без привязки и ждут владельца, а при сохранении отправляются
+        вместе с категорией.
+      -->
+      <section v-if="activeTab === 'images'" class="tab-section">
+        <ImagesTable v-model="images" entity="category" />
+      </section>
+
       <div class="form-actions">
         <button type="submit" class="btn-save" :disabled="saving">{{ t('form.save') }}</button>
         <NuxtLink to="/categories" class="btn-cancel">{{ t('form.cancel') }}</NuxtLink>
@@ -37,6 +46,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { formatApiError } from '~/composables/formatApiError'
 import { categoryParentOptions } from '~/composables/categorySelectOptions'
 import type { CategoryResponse } from '~/repository/modules/category'
+import type { ImageResponse } from '~/repository/modules/image'
 
 const { $api, $notify } = useNuxtApp()
 const { t } = useI18n()
@@ -49,10 +59,24 @@ const saving = ref(false)
 
 const categories = ref<CategoryResponse[]>([])
 
-const tabs = computed(() => [{ key: 'main', label: t('categories.main_tab') }])
+const tabs = computed(() => [
+  { key: 'main', label: t('categories.main_tab') },
+  { key: 'images', label: t('form.images_tab') },
+])
+
+const activeTab = computed(() => (route.query.tab === 'images' ? 'images' : 'main'))
 
 // Открывается как «добавить внутрь» из страницы категории: ?parent_id=3
 const preselectedParent = typeof route.query.parent_id === 'string' ? Number(route.query.parent_id) : null
+
+const images = ref<ImageResponse[]>([])
+
+/** Фотографии уходят вместе с категорией: id перечислены, привязка — на сервере. */
+function imagesPayload(): { id: number; alt?: string | null }[] {
+  return [...images.value]
+    .filter((image) => image.id > 0)
+    .map((image) => ({ id: image.id, alt: image.alt ?? null }))
+}
 
 const form = reactive<{ title: string; parent_id: number | null }>({
   title: '',
@@ -78,7 +102,7 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const created = await $api.category.create({ title: form.title, parent_id: form.parent_id })
+    const created = await $api.category.create({ title: form.title, parent_id: form.parent_id, images: imagesPayload() })
     $notify.add(t('form.created', { title: t('categories.one') }), { type: 'success' })
     router.push(`/categories/${created.id}`)
   } catch (err: any) {

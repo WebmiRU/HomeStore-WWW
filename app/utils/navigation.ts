@@ -37,6 +37,9 @@ export type NavEntry = NavItem | NavGroup
 export const navTree: NavEntry[] = [
   { key: 'home', labelKey: 'nav.home', to: '/' },
   { key: 'items', labelKey: 'nav.items', to: '/items' },
+  // Каталог сразу после предметов: он и отвечает на вопрос «что у нас есть»,
+  // и в нём те же предметы, только по категориям и с картинками.
+  { key: 'catalog', labelKey: 'nav.catalog', to: '/catalog' },
   { key: 'stores', labelKey: 'nav.stores', to: '/stores' },
   { key: 'warehouses', labelKey: 'nav.warehouses', to: '/warehouses' },
   { key: 'categories', labelKey: 'nav.categories', to: '/categories' },
