@@ -549,14 +549,18 @@ async function load() {
  *
  * @param  Record<number, 'recalculate' | 'keep'>  $normDecisions  решение по нормам, если оно уже принято
  */
-async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {}) {
+async function save(
+  $normDecisions: Record<number, 'recalculate' | 'keep' | 'custom'> = {},
+  $normActual?: { quantity: number; properties: Record<number, number> }
+) {
   saving.value = true
   try {
     const payload: Partial<ItemPayload> & {
       codes?: string[]
       properties?: ItemPropertyInput[]
       partial_properties?: ItemPartialPropertyInput[]
-      partial_norms?: Record<number, 'recalculate' | 'keep'>
+      partial_norms?: Record<number, 'recalculate' | 'keep' | 'custom'>
+      partial_actual?: { quantity: number; properties: Record<number, number> }
     } = {
       title: form.title,
       title_print: form.title_print || null,
@@ -571,6 +575,10 @@ async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {})
 
     if (Object.keys($normDecisions).length > 0) {
       payload.partial_norms = $normDecisions
+    }
+
+    if ($normActual) {
+      payload.partial_actual = $normActual
     }
     const qty = String(quantityInput.value).trim()
     if (qty !== '') {
@@ -587,6 +595,20 @@ async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {})
     //   - коды: обычному предмету без кодов сервер подставляет сгенерированный
     //     UUID, и в форме до перезагрузки страницы его не видно;
     //   - количество помеченного предмета пересчитано по кодам.
+    // Значения свойств — тоже: при смене нормы по «своим числам» человек ввёл
+    // 10 000 мл, а сервер вывел из факта 200 и записал именно это. Без
+    // обновления форма показывала бы введённое, и человек решил бы, что
+    // норма не применилась.
+    if (saved.properties && saved.properties.length > 0) {
+      properties.value = toPropertyInputs(saved.properties)
+
+      // Редактор значений перечитывает буфер только по resetKey: без смены
+      // ключа он продолжал бы показывать то, что человек ввёл, а не то, что
+      // сервер записал. При смене нормы по «своим числам» это и было видно
+      // глазом: введено 10 000, записано 200.
+      propertiesKey.value = String(Date.now())
+    }
+
     const savedCodes = saved.codes ?? []
     if (savedCodes.length > 0) {
       codes.value = [...savedCodes]
@@ -620,15 +642,20 @@ async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {})
         to: Number(row.to),
         current: Number(row.current),
         unit: unitOf(Number(row.property_id)),
+        // Признак «остаток помещается» едет вместе с числами: без него
+        // вариант, который раздул бы запас с 4 500 до 40 000, выглядел бы
+        // как обычный и оставался бы доступным.
         outcomes: row.outcomes
           ? {
               recalculate: {
                 quantity: Number(row.outcomes.recalculate?.quantity ?? 0),
                 stock: Number(row.outcomes.recalculate?.stock ?? 0),
+                fits: row.outcomes.recalculate?.fits !== false,
               },
               keep: {
                 quantity: Number(row.outcomes.keep?.quantity ?? 0),
                 stock: Number(row.outcomes.keep?.stock ?? 0),
+                fits: row.outcomes.keep?.fits !== false,
               },
             }
           : undefined,
@@ -642,12 +669,28 @@ async function save($normDecisions: Record<number, 'recalculate' | 'keep'> = {})
   }
 }
 
-function applyNormDecision(mode: 'recalculate' | 'keep'): void {
+/**
+ * Решение по нормам из диалога.
+ *
+ * При «своих числах» решение одно на все свойства набора, а фактические
+ * величины едут отдельным полем: сервер выводит из них норму сам, иначе
+ * введённые 10 000 мл остались бы нормой при 200 бутылках по 200 мл.
+ */
+function applyNormDecision(
+  mode: 'recalculate' | 'keep' | 'custom',
+  actual: { quantity: number; properties: Record<number, number> } | null = null
+): void {
   const decisions = Object.fromEntries(
     normChangeRows.value.map((row) => [row.property_id, mode])
-  ) as Record<number, 'recalculate' | 'keep'>
+  ) as Record<number, 'recalculate' | 'keep' | 'custom'>
 
   normDialogOpen.value = false
+
+  if (mode === 'custom' && actual) {
+    save(decisions, actual)
+    return
+  }
+
   save(decisions)
 }
 
