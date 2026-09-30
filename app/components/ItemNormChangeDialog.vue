@@ -137,6 +137,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '~/utils/amount'
+import { piecesInStock } from '~/utils/partialMath'
 
 export type NormChangeRow = {
   property_id: number
@@ -225,7 +226,7 @@ const actualLines = computed(() => {
     if (!filled) continue
 
     sawTotal = true
-    const pieces = Math.ceil(total / row.to - 0.0001)
+    const pieces = piecesInStock(total, row.to)
     fitsPieces = Math.max(fitsPieces, pieces)
 
     lines.push({
