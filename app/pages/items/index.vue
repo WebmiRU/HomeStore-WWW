@@ -123,14 +123,22 @@
         </template>
         <template #cell-title="{ row: item }">{{ item.payload.title }}</template>
         <template #cell-vendor="{ row: item }">
-          <NuxtLink v-if="item.vendor && !item.vendor.deleted" :to="`/vendors/${item.vendor.id}`" class="row-link">
+          <NuxtLink
+            v-if="item.vendor && !item.vendor.deleted"
+            :to="objectLink(`/vendors/${item.vendor.id}`, 'vendor_id', item.vendor.id)"
+            class="row-link"
+          >
             {{ item.vendor.title }}
           </NuxtLink>
           <span v-else-if="item.vendor" class="muted">{{ item.vendor.title }} {{ t('placeholders.deleted') }}</span>
           <span v-else class="muted">—</span>
         </template>
         <template #cell-category="{ row: item }">
-          <NuxtLink v-if="item.category && !item.category.deleted" :to="`/categories/${item.category.id}`" class="row-link">
+          <NuxtLink
+            v-if="item.category && !item.category.deleted"
+            :to="objectLink(`/categories/${item.category.id}`, 'category_id', item.category.id)"
+            class="row-link"
+          >
             {{ item.category.title }}
           </NuxtLink>
           <span v-else-if="item.category" class="muted">{{ item.category.title }} {{ t('placeholders.deleted') }}</span>
@@ -141,7 +149,11 @@
                В цепочке store первым идёт само хранилище, дальше — предки.
                У удалённого ссылки нет: переход вёл бы в 404, поэтому название
                остаётся текстом с пометкой. -->
-          <NuxtLink v-if="item.store?.[0] && !item.store[0].deleted" :to="`/stores/${item.store[0].id}`" class="row-link">
+          <NuxtLink
+            v-if="item.store?.[0] && !item.store[0].deleted"
+            :to="objectLink(`/stores/${item.store[0].id}`, 'store_id', item.store[0].id)"
+            class="row-link"
+          >
             {{ item.store[0].title }}
           </NuxtLink>
           <span v-else-if="item.store?.[0]" class="muted">{{ item.store[0].title }} {{ t('placeholders.deleted') }}</span>
@@ -224,6 +236,8 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 import { categorySelectOptions } from '~/composables/categorySelectOptions'
 
 const { $api, $notify } = useNuxtApp()
+// Настройка «клик по ссылке»: переход на страницу объекта или отбор в списке.
+const { options } = useOptions()
 const { t } = useI18n()
 const { isOwner } = useCurrentUser()
 const route = useRoute()
@@ -307,6 +321,21 @@ watch(
 )
 
 const hasActiveFilters = computed(() => !!(categoryFilter.value || vendorFilter.value || storeFilter.value))
+
+/**
+ * Куда ведёт клик по названию объекта: на его страницу или в фильтр списка.
+ *
+ * В режиме отбора человек остаётся в списке, а объект попадает в фильтр:
+ * посмотреть, что лежит в этом хранилище, не выходя из списка, — обычный
+ * вопрос, и уход со страницы его не закрывает. Отбор уходит в адрес по той же
+ * причине, что и прочие фильтры: его можно переслать ссылкой, а кнопка «назад»
+ * возвращает к прошлому состоянию.
+ */
+function objectLink(to: string, filterKey: 'vendor_id' | 'category_id' | 'store_id', id: number): string {
+  if (options.value.link_click !== 'filter') return to
+
+  return `/items?${filterKey}=${id}`
+}
 
 const selectedIds = computed(() => [...selected.value])
 const someSelected = computed(() => selected.value.size > 0)

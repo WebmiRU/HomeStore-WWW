@@ -135,6 +135,33 @@
 
       <div class="options-divider" />
 
+      <!--
+        Что делает клик по названию объекта в списке предметов.
+      -->
+      <span class="field-label">{{ t('options_page.link_click_title') }}</span>
+      <div class="mode-row">
+        <label
+          v-for="linkClickOption in linkClickOptions"
+          :key="linkClickOption.value"
+          class="mode-choice"
+          :class="{ 'mode-choice--on': linkClick === linkClickOption.value }"
+        >
+          <input
+            type="radio"
+            name="link-click"
+            :value="linkClickOption.value"
+            :checked="linkClick === linkClickOption.value"
+            @change="linkClick = linkClickOption.value"
+          />
+          <span>{{ t(linkClickOption.labelKey) }}</span>
+        </label>
+      </div>
+      <p class="options-card__hint">
+        {{ t('options_page.link_click_hint') }}
+      </p>
+
+      <div class="options-divider" />
+
       <label class="menu-row menu-row--plain">
         <span class="menu-row__check">
           <input
@@ -198,7 +225,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { isNavGroup, navTree, sortNavKeys, type NavGroup, type NavItem } from '~/utils/navigation'
-import type { Accent, Locale, OperationMode, Theme } from '~/repository/modules/option'
+import type { Accent, LinkClick, Locale, OperationMode, Theme } from '~/repository/modules/option'
 import type { TranslationKey } from '~/i18n/ru'
 import { formatApiError } from '~/composables/formatApiError'
 
@@ -239,6 +266,22 @@ const modes: { value: OperationMode; labelKey: TranslationKey }[] = [
 const order = ref<string[]>([])
 const hidden = ref<Set<string>>(new Set())
 const operationMode = ref<OperationMode>('search')
+/**
+ * Что делает клик по ссылке на объект: переход на его страницу или отбор в
+ * фильтре списка.
+ *
+ * Список: по умолчанию ведёт на страницу объекта — так это было, и человек
+ * знает, чего ждёт. В режиме отбора клик по хранилищу, категории или
+ * производителю оставляет человека в списке и добавляет объект в фильтр:
+ * посмотреть, что лежит в этом хранилище, не выходя из списка.
+ */
+const linkClick = ref<LinkClick>('navigate')
+
+const linkClickOptions = computed<{ value: LinkClick; labelKey: string }[]>(() => [
+  { value: 'navigate', labelKey: 'options_page.link_click_navigate' },
+  { value: 'filter', labelKey: 'options_page.link_click_filter' },
+])
+
 const rememberOperationMode = ref(true)
 /** Язык в форме: он же и то, что сейчас показано на экране. */
 const localeChoice = ref<Locale>('ru')
@@ -346,6 +389,7 @@ function fillFromOptions(): void {
   hidden.value = new Set(options.value.menu_hidden)
   operationMode.value = options.value.operation_mode
   rememberOperationMode.value = options.value.remember_operation_mode
+  linkClick.value = options.value.link_click
   localeChoice.value = options.value.locale
 }
 
@@ -355,6 +399,7 @@ function fillDefaults(): void {
   hidden.value = new Set()
   operationMode.value = 'search'
   rememberOperationMode.value = true
+  linkClick.value = 'navigate'
   localeChoice.value = 'ru'
 }
 
@@ -398,6 +443,7 @@ const dirty = computed(
     [...hidden.value].sort().join() !== [...options.value.menu_hidden].sort().join() ||
     operationMode.value !== options.value.operation_mode ||
     rememberOperationMode.value !== options.value.remember_operation_mode ||
+    linkClick.value !== options.value.link_click ||
     localeChoice.value !== options.value.locale ||
     themeChoice.value !== options.value.theme ||
     accentChoice.value !== options.value.accent,
@@ -414,6 +460,7 @@ async function saveAll(): Promise<void> {
       menu_hidden: [...hidden.value],
       operation_mode: operationMode.value,
       remember_operation_mode: rememberOperationMode.value,
+      link_click: linkClick.value,
       locale: localeChoice.value,
       theme: themeChoice.value,
       accent: accentChoice.value,

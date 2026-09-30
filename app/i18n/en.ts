@@ -870,6 +870,10 @@ export const en: Record<TranslationKey, string> = {
     mode_search: 'Search',
     mode_replenish: 'Replenish',
     mode_writeoff: 'Write off',
+    link_click_title: 'Clicking a link to an object',
+    link_click_navigate: 'Go to its page',
+    link_click_filter: 'Filter the list',
+    link_click_hint: 'A store, category or vendor name in the item list: either open the object\u2019s page, or stay in the list and add the object to the filter.',
     remember_mode: 'Remember the chosen mode',
     remember_mode_hint:
       'When on, the home page opens in the same mode after a reload and on another device. When off, it always starts with search, and switching works only until the page is reloaded.',

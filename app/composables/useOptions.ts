@@ -14,6 +14,7 @@ const defaultOptions = (): OptionResponse => ({
   operation_mode: 'search',
   locale: 'ru',
   remember_operation_mode: true,
+  link_click: 'navigate',
   // Те же умолчания, что отдаёт сервер: тема «как в системе» и синий акцент.
   // Дублирование неприятное, но без него на первый экран, пока настройки не
   // приехали, показалось бы тёмное с зелёным, а потом щёлкнуло на другое.

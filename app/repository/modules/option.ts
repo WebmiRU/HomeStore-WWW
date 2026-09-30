@@ -27,6 +27,9 @@ export type Theme = 'dark' | 'light' | 'system'
  * Одно поле означало бы, что «светлая пурпурная» — это отдельное значение, и
  * список тем разрастался бы на каждое сочетание.
  */
+/** Что делает клик по ссылке на объект: переход или отбор в фильтре. */
+export type LinkClick = 'navigate' | 'filter'
+
 export type Accent = 'green' | 'purple' | 'blue' | 'amber' | 'red' | 'teal' | 'pink' | 'slate'
 
 export type OptionResponse = {
@@ -48,6 +51,8 @@ export type OptionResponse = {
    * переключение живёт только до перезагрузки страницы.
    */
   remember_operation_mode: boolean
+  /** Клик по ссылке на объект: переход на страницу или отбор в фильтре. */
+  link_click: LinkClick
   /**
    * Тема оформления: тёмная, светлая или как в системе.
    *
